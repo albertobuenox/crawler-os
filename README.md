@@ -1,50 +1,92 @@
-# Crawler OS
+<div align="center">
 
-Herramienta de mesa en tiempo real para **CarlRPG** (Dungeon Crawler Carl). La IA administra la sesión; los Crawlers usan un HUD holográfico.
+<img src="public/icons/icon.svg" width="88" alt="Crawler OS" />
 
-## Stack
+**SYSTEM / SESSION TOOL / CARLRPG**
 
-- **Next.js 15** + TypeScript + Tailwind
-- **Supabase** (Auth, Postgres, Realtime, Storage, Edge Functions)
-- **Vercel** (deploy frontend)
+# CRAWLER OS
 
-## Documentación del proyecto
+*La Tierra ya no es un planeta. Es un dungeon televisado. The System lleva la cuenta, reparte el loot y cobra las multas. Tú eres un crawler: una hoja holográfica, un inventario y una audiencia que espera verte morir con estilo. Esto es el visor que te inyectaron al cruzar el primer piso.*
 
-| Carpeta | Contenido |
-|---|---|
-| [Design/](Design/) | Sistema visual Crawler OS |
-| [Rules/](Rules/) | Reglas de estilo para agentes |
-| [docs/](docs/) | Reglas CarlRPG (local, PDFs no en git) |
+[![The System](https://img.shields.io/badge/The_System-00D4FF?style=for-the-badge&labelColor=05060D)](#roles)
+[![Crawler HUD](https://img.shields.io/badge/Crawler_HUD-E879F9?style=for-the-badge&labelColor=05060D)](#roles)
+[![Reward](https://img.shields.io/badge/Loot-F97316?style=for-the-badge&labelColor=05060D)](#roles)
 
-## Setup local
+La IA dirige la mesa. Los crawlers viven el HUD. La TV muestra el dungeon.
 
-```bash
-npm install
-cp .env.example .env.local
-# Rellenar credenciales Supabase
-npm run dev
-```
+</div>
 
-## Supabase
-
-1. Crear proyecto en [supabase.com](https://supabase.com)
-2. `npx supabase link --project-ref YOUR_REF`
-3. `npm run db:push`
-4. Habilitar Realtime en tablas: `sessions`, `crawlers`, `table_state`, `event_log`, `notifications`, `dice_requests`, `combat_rounds`
-
-## Scripts
-
-- `npm run dev` — desarrollo
-- `npm run build` — producción
-- `npm run db:push` — aplicar migraciones
-- `npm run db:types` — regenerar tipos TS
+---
 
 ## Roles
 
-- **La IA** — `/ia/*` — control total de sesión
-- **Crawler** — `/crawler/*` — HUD del jugador
-- **Mesa TV** — `/table/[code]` — vista compartida sin nav
+| | Ruta | Qué ve |
+|---|---|---|
+| **La IA** | `/ia` | Control total. Recursos, crawlers, dados, loot, penalizaciones. Acento **cian**. |
+| **Crawler** | `/crawler` | Su visor. Hoja, inventario, notificaciones, log personal. Acento **magenta**. |
+| **Mesa TV** | `/table/[code]` | Vista compartida, sin nav. El dungeon en la tele. |
 
-## Deploy (Vercel)
+El crawler no ve controles de Master. Ni deshabilitados.
 
-Importar repo, añadir env vars de `.env.example`, configurar Auth redirect URLs en Supabase.
+## Stack
+
+Next.js 15 · TypeScript · Tailwind · **Supabase** (Auth, Postgres, Realtime) · **Vercel**
+
+Void `#05060D` · Sistema `#00D4FF` · Crawler `#E879F9` · Loot `#F97316` · Penalty `#FF3B5C`
+
+## Jack In
+
+```bash
+npm install
+```
+
+Crea `.env.local` (no lo subas a git):
+
+```
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+```bash
+npm run dev
+```
+
+### Supabase
+
+1. Proyecto en [supabase.com](https://supabase.com)
+2. SQL Editor: `supabase/migrations/20260302120000_initial_schema.sql` (una vez)
+3. Realtime en `sessions`, `crawlers`, `table_state`, `event_log`, `notifications`, `dice_requests`, `combat_rounds`, `map_pins`
+4. Auth → Email: desactivar confirmación para testear
+5. Auth → URL Configuration: Site URL + redirects
+
+### Scripts
+
+| Comando | |
+|---|---|
+| `npm run dev` | desarrollo |
+| `npm run build` | producción |
+| `npm run db:push` | aplicar migraciones |
+| `npm run db:types` | tipos TS |
+
+## Deploy
+
+Importar el repo en [Vercel](https://vercel.com). Pegar las env vars. Poner la URL de Vercel en los redirects de Supabase. Redeploy.
+
+## Spec
+
+| | |
+|---|---|
+| [Design/](Design/) | HUD, tokens, pantallas |
+| [Rules/](Rules/) | Contrato para agentes |
+| [docs/](docs/) | CarlRPG — local, no en git |
+
+---
+
+<div align="center">
+
+*The System is not angry. The System is disappointed.*  
+*And also angry.*
+
+</div>
