@@ -1,0 +1,279 @@
+export type UserRole = "ia" | "crawler";
+
+export type StatKey = "str" | "int" | "con" | "dex" | "cha";
+
+export type SessionPhase =
+  | "exploration"
+  | "combat_1"
+  | "combat_2"
+  | "combat_3"
+  | "combat_4"
+  | "combat_5"
+  | "rest"
+  | "paused";
+
+export type CrawlerStatus = "exploring" | "combat" | "downed" | "dead" | "afk";
+
+export type ResourceKind =
+  | "item"
+  | "achievement"
+  | "map"
+  | "monster"
+  | "npc"
+  | "box"
+  | "buff"
+  | "debuff"
+  | "quest"
+  | "floor"
+  | "skill_template";
+
+export type Rarity =
+  | "common"
+  | "uncommon"
+  | "rare"
+  | "epic"
+  | "legendary"
+  | "celestial";
+
+export type EventType =
+  | "REWARD"
+  | "PENALTY"
+  | "SYSTEM"
+  | "COMBAT"
+  | "ROLL"
+  | "ACHIEVEMENT"
+  | "REST";
+
+export type NotificationType =
+  | "reward"
+  | "penalty"
+  | "system"
+  | "combat"
+  | "roll"
+  | "achievement"
+  | "loot_box";
+
+export type DiceRollKind =
+  | "opposed"
+  | "unopposed"
+  | "stat_check"
+  | "attack"
+  | "scaled";
+
+export interface Profile {
+  id: string;
+  role: UserRole;
+  display_name: string | null;
+}
+
+export interface GameSession {
+  id: string;
+  code: string;
+  name: string;
+  floor_number: number;
+  phase: SessionPhase;
+  created_by: string;
+  is_active: boolean;
+  skill_advancement_hours: number;
+}
+
+export interface Crawler {
+  id: string;
+  session_id: string;
+  owner_user_id: string | null;
+  name: string;
+  race: string | null;
+  gender_pronouns: string | null;
+  level: number;
+  crawler_number: string | null;
+  class_name: string | null;
+  floor: number;
+  size: string | null;
+  deity: string | null;
+  portrait_url: string | null;
+  str_base: number;
+  int_base: number;
+  con_base: number;
+  dex_base: number;
+  cha_base: number;
+  str_enhanced: number;
+  int_enhanced: number;
+  con_enhanced: number;
+  dex_enhanced: number;
+  cha_enhanced: number;
+  hp_boxes_filled: number;
+  mana_current: number;
+  mana_max: number;
+  dr_total: number;
+  evade_total: number;
+  move: number;
+  step: number;
+  armor: string | null;
+  ai_favor_remaining: number;
+  past_trauma: string | null;
+  popularity: string | null;
+  loose_ends: string | null;
+  regrets: string | null;
+  notes: string | null;
+  personal_space: Record<string, unknown>;
+  amenities: unknown[];
+  pet: Record<string, unknown>;
+  mount_vehicle: Record<string, unknown>;
+  clubs: unknown[];
+  sponsors: unknown[];
+  racial_abilities: unknown[];
+  class_abilities: unknown[];
+  things_killed: unknown[];
+  analyze_intel: Record<string, unknown>;
+  status: CrawlerStatus;
+  unconscious_rounds_remaining: number;
+}
+
+export interface Resource {
+  id: string;
+  session_id: string;
+  kind: ResourceKind;
+  name: string;
+  slug: string | null;
+  rarity: Rarity;
+  description: string | null;
+  system_copy: string | null;
+  icon_url: string | null;
+  payload: Record<string, unknown>;
+}
+
+export interface ItemInstance {
+  id: string;
+  crawler_id: string;
+  resource_id: string;
+  quantity: number;
+  equipped_slot: string | null;
+  hotlist_index: number | null;
+  notes: string | null;
+  resource?: Resource;
+}
+
+export interface Skill {
+  id: string;
+  crawler_id: string;
+  name: string;
+  skill_type: "attack" | "spell" | "utility" | "passive";
+  rank: number;
+  linked_stat: StatKey;
+  check_marks: number;
+  notes: string | null;
+}
+
+export interface TableState {
+  id: string;
+  session_id: string;
+  shown_type: "none" | "map" | "item" | "monster" | "text" | "image";
+  resource_id: string | null;
+  title: string | null;
+  body_text: string | null;
+  image_url: string | null;
+  zoom: number;
+  pan_x: number;
+  pan_y: number;
+  show_grid: boolean;
+}
+
+export interface MapPin {
+  id: string;
+  session_id: string;
+  label: string;
+  pin_type: string;
+  x: number;
+  y: number;
+  color: string;
+  crawler_id: string | null;
+}
+
+export interface DiceRequest {
+  id: string;
+  session_id: string;
+  crawler_id: string | null;
+  roll_kind: DiceRollKind;
+  label: string;
+  dc: number | null;
+  advantage: boolean;
+  disadvantage: boolean;
+  mob_advantage: boolean;
+  status: "pending" | "rolled" | "cancelled";
+}
+
+export interface DiceRoll {
+  id: string;
+  request_id: string;
+  raw_rolls: number[];
+  modifier: number;
+  total: number;
+  is_success: boolean | null;
+}
+
+export interface EventLogEntry {
+  id: string;
+  session_id: string;
+  event_type: EventType;
+  message: string;
+  target_crawler_id: string | null;
+  payload: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface Notification {
+  id: string;
+  session_id: string;
+  user_id: string;
+  notification_type: NotificationType;
+  title: string;
+  body: string | null;
+  is_read: boolean;
+  cinematic_shown: boolean;
+  payload: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface CombatRound {
+  id: string;
+  session_id: string;
+  round_number: number;
+  phase: SessionPhase;
+  mob_declarations: unknown[];
+  is_active: boolean;
+}
+
+export interface LootBox {
+  id: string;
+  session_id: string;
+  resource_id: string;
+  assigned_crawler_id: string | null;
+  status: "sealed" | "opening" | "opened";
+  contents: unknown[];
+}
+
+export interface Effect {
+  id: string;
+  crawler_id: string;
+  name: string;
+  effect_kind: "internal" | "external" | "debuff";
+  is_stackable: boolean;
+  payload: Record<string, unknown>;
+}
+
+export const RARITY_COLORS: Record<Rarity, string> = {
+  common: "var(--rarity-common)",
+  uncommon: "var(--rarity-uncommon)",
+  rare: "var(--rarity-rare)",
+  epic: "var(--rarity-epic)",
+  legendary: "var(--rarity-legendary)",
+  celestial: "var(--rarity-celestial)",
+};
+
+export const STAT_LABELS: Record<StatKey, string> = {
+  str: "STR",
+  int: "INT",
+  con: "CON",
+  dex: "DEX",
+  cha: "CHA",
+};

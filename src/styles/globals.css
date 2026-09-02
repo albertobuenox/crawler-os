@@ -1,0 +1,82 @@
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700;800&family=Rajdhani:wght@500;600;700&family=Sora:wght@400;500;600;700&display=swap");
+@import "tailwindcss";
+@import "./tokens.css";
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    min-height: 100vh;
+    background: var(--grad-canvas);
+    color: var(--text-2);
+    font-family: var(--font-ui);
+    font-size: var(--fs-body);
+  }
+
+  h1,
+  h2,
+  h3 {
+    color: var(--text-1);
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  .font-stat {
+    font-family: var(--font-stat);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .font-mono-system {
+    font-family: var(--font-mono);
+  }
+
+  .text-label {
+    font-size: var(--fs-label);
+    letter-spacing: var(--ls-label);
+    text-transform: uppercase;
+    color: var(--text-3);
+  }
+
+  .canvas-bokeh::before,
+  .canvas-bokeh::after {
+    content: "";
+    pointer-events: none;
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(40px);
+    z-index: 0;
+    opacity: 0.2;
+  }
+
+  .canvas-bokeh::before {
+    width: 180px;
+    height: 180px;
+    top: 10%;
+    right: 15%;
+    background: var(--orange-500);
+  }
+
+  .canvas-bokeh::after {
+    width: 140px;
+    height: 140px;
+    bottom: 15%;
+    left: 10%;
+    background: var(--cyan-500);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

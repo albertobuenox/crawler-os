@@ -1,0 +1,120 @@
+"use client";
+
+import { useEffect, useCallback } from "react";
+import { createClient } from "@/lib/supabase/client";
+
+export function useRealtimeTable<T = Record<string, unknown>>(
+  table: string,
+  filter: string,
+  onChange: (payload: { eventType: string; new: T; old: T }) => void
+) {
+  const supabase = createClient();
+
+  const stableOnChange = useCallback(onChange, [onChange]);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel(`${table}:${filter}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table,
+          filter,
+        },
+        (payload) => {
+          stableOnChange({
+            eventType: payload.eventType,
+            new: payload.new as T,
+            old: payload.old as T,
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [supabase, table, filter, stableOnChange]);
+}
+
+export function useSessionBroadcast(
+  sessionId: string | undefined,
+  onMessage: (event: string, payload: unknown) => void
+) {
+  const supabase = createClient();
+
+  useEffect(() => {
+    if (!sessionId) return;
+
+    const channel = supabase.channel(`session:${sessionId}`, {
+      config: { broadcast: { self: true } },
+    });
+
+    channel
+      .on("broadcast", { event: "cinematic" }, ({ payload }) =>
+        onMessage("cinematic", payload)
+      )
+      .on("broadcast", { event: "dice_anim" }, ({ payload }) =>
+        onMessage("dice_anim", payload)
+      )
+      .on("broadcast", { event: "table_update" }, ({ payload }) =>
+        onMessage("table_update", payload)
+      )
+      .on("broadcast", { event: "loot_box" }, ({ payload }) =>
+        onMessage("loot_box", payload)
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [sessionId, supabase, onMessage]);
+
+  const broadcast = useCallback(
+    async (event: string, payload: unknown) => {
+      if (!sessionId) return;
+      const channel = supabase.channel(`session:${sessionId}`);
+      await channel.send({ type: "broadcast", event, payload: payload as Record<string, unknown> });
+    },
+    [sessionId, supabase]
+  );
+
+  return { broadcast };
+}
+
+export async function fetchProfile() {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+  return data;
+}
+
+export async function fetchActiveSession(userId: string) {
+  const supabase = createClient();
+  const { data: member } = await supabase
+    .from("session_members")
+    .select("session_id, sessions(*)")
+    .eq("user_id", userId)
+    .order("joined_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  return member?.sessions ?? null;
+}
+
+export async function fetchMyCrawler(sessionId: string, userId: string) {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("crawlers")
+    .select("*")
+    .eq("session_id", sessionId)
+    .eq("owner_user_id", userId)
+    .maybeSingle();
+  return data;
+}

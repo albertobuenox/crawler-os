@@ -1,0 +1,193 @@
+/* Crawler OS / The System HUD — design tokens
+   Fuente de verdad para implementación. Documentación: Design/*.md */
+
+:root {
+  /* Void */
+  --void-950: #05060d;
+  --void-900: #0a0c18;
+  --void-800: #10131f;
+  --navy-850: #0d1224;
+  --navy-700: #151b32;
+
+  /* Glass fills */
+  --glass-hi: rgba(255, 255, 255, 0.08);
+  --glass-mid: rgba(255, 255, 255, 0.05);
+  --glass-low: rgba(255, 255, 255, 0.03);
+  --glass-cyan: rgba(0, 212, 255, 0.06);
+  --glass-magenta: rgba(232, 121, 249, 0.06);
+  --glass-danger: rgba(255, 59, 92, 0.08);
+  --glass-reward: rgba(249, 115, 22, 0.08);
+
+  /* Neon */
+  --cyan-300: #7df9ff;
+  --cyan-400: #22f0ff;
+  --cyan-500: #00d4ff;
+  --cyan-700: #0891b2;
+  --magenta-400: #f0abfc;
+  --magenta-500: #e879f9;
+  --purple-500: #a855f7;
+  --purple-600: #7c3aed;
+  --blue-600: #2563eb;
+  --orange-400: #fb923c;
+  --orange-500: #f97316;
+  --pink-500: #ec4899;
+  --gold-400: #fbbf24;
+
+  /* Game semantic */
+  --hp: #ff3b5c;
+  --hp-soft: #fb7185;
+  --mana: #3b82f6;
+  --stamina: #34d399;
+  --xp: #fbbf24;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --danger: #ff3b5c;
+  --info: #00d4ff;
+  --offline: #64748b;
+
+  /* Rarity */
+  --rarity-common: #e2e8f0;
+  --rarity-uncommon: #34d399;
+  --rarity-rare: #00d4ff;
+  --rarity-epic: #a855f7;
+  --rarity-legendary: #fbbf24;
+  --rarity-celestial: #e879f9;
+
+  /* Text */
+  --text-1: #f8fafc;
+  --text-2: #cbd5e1;
+  --text-3: #94a3b8;
+  --text-4: #64748b;
+  --text-cyan: #a5f3fc;
+  --text-on-neon: #05060d;
+
+  /* Stroke */
+  --stroke-glass: rgba(255, 255, 255, 0.1);
+  --stroke-cyan: rgba(0, 212, 255, 0.35);
+  --stroke-cyan-hot: rgba(34, 240, 255, 0.7);
+  --stroke-magenta: rgba(232, 121, 249, 0.35);
+  --stroke-reward: rgba(249, 115, 22, 0.45);
+  --stroke-danger: rgba(255, 59, 92, 0.55);
+  --stroke-inset: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+
+  /* Glow */
+  --glow-cyan: 0 0 24px rgba(0, 212, 255, 0.45);
+  --glow-magenta: 0 0 24px rgba(232, 121, 249, 0.4);
+  --glow-orange: 0 0 28px rgba(249, 115, 22, 0.5);
+  --glow-gold: 0 0 28px rgba(251, 191, 36, 0.55);
+  --glow-danger: 0 0 24px rgba(255, 59, 92, 0.5);
+  --glow-purple: 0 0 24px rgba(168, 85, 247, 0.4);
+
+  /* Gradients */
+  --grad-cta-energy: linear-gradient(90deg, #f97316 0%, #ec4899 100%);
+  --grad-cta-session: linear-gradient(90deg, #7c3aed 0%, #2563eb 100%);
+  --grad-glass: linear-gradient(145deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0.03) 42%, rgba(0, 212, 255, 0.04) 100%);
+  --grad-canvas: radial-gradient(ellipse 60% 50% at 80% -10%, rgba(168, 85, 247, 0.22), transparent 60%),
+    radial-gradient(ellipse 50% 40% at 10% 110%, rgba(0, 212, 255, 0.12), transparent 60%),
+    var(--void-950);
+
+  /* Type */
+  --font-display: "Orbitron", "Rajdhani", "Segoe UI", sans-serif;
+  --font-ui: "Sora", "Inter", "Segoe UI", sans-serif;
+  --font-stat: "Rajdhani", "Sora", sans-serif;
+  --font-mono: "JetBrains Mono", "Share Tech Mono", ui-monospace, monospace;
+
+  --fs-display: clamp(2rem, 4vw, 3rem);
+  --fs-h1: clamp(1.5rem, 2.4vw, 2rem);
+  --fs-h2: 1.375rem;
+  --fs-h3: 1rem;
+  --fs-body: 0.875rem;
+  --fs-ui: 0.8125rem;
+  --fs-label: 0.6875rem;
+  --fs-stat: clamp(1.75rem, 3vw, 2.25rem);
+  --fs-stat-sm: 1.125rem;
+  --fs-mono: 0.75rem;
+  --fs-mono-sm: 0.625rem;
+
+  --ls-display: 0.08em;
+  --ls-label: 0.14em;
+  --ls-system: 0.18em;
+
+  /* Space / radius */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  --r-sm: 8px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-xl: 24px;
+  --r-pill: 999px;
+
+  --blur-glass: 24px;
+  --blur-modal: 32px;
+
+  --z-canvas: 0;
+  --z-shell: 10;
+  --z-nav: 20;
+  --z-drop: 30;
+  --z-overlay: 40;
+  --z-modal: 50;
+  --z-toast: 60;
+  --z-cinematic: 70;
+
+  --t-micro: 120ms;
+  --t-ui: 180ms;
+  --t-panel: 280ms;
+  --t-modal: 360ms;
+  --ease-hologram: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --shadow-glass: var(--stroke-inset), 0 8px 32px rgba(0, 0, 0, 0.45), 0 0 40px rgba(0, 212, 255, 0.06);
+}
+
+.glass {
+  position: relative;
+  background: var(--grad-glass);
+  backdrop-filter: blur(var(--blur-glass)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(140%);
+  border: 1px solid var(--stroke-glass);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-glass);
+}
+
+.well {
+  background: rgba(16, 19, 31, 0.82);
+  border: 1px solid var(--stroke-glass);
+  border-radius: var(--r-md);
+}
+
+.btn-energy {
+  background: var(--grad-cta-energy);
+  color: var(--text-1);
+  border: 0;
+  border-radius: var(--r-pill);
+  box-shadow: var(--glow-orange);
+  font-family: var(--font-ui);
+  font-weight: 600;
+}
+
+.btn-neon {
+  background: rgba(5, 6, 13, 0.65);
+  color: var(--cyan-400);
+  border: 1.5px solid var(--cyan-400);
+  border-radius: var(--r-md);
+  box-shadow: var(--glow-cyan);
+  font-family: var(--font-ui);
+  font-weight: 600;
+}
+
+.btn-session {
+  background: var(--grad-cta-session);
+  color: var(--text-1);
+  border: 0;
+  border-radius: var(--r-pill);
+  box-shadow: var(--glow-purple);
+  font-family: var(--font-ui);
+  font-weight: 600;
+}
