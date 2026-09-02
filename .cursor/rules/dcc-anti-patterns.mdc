@@ -1,0 +1,25 @@
+---
+description: Anti-patrones visuales y de producto — lo que no se implementa
+alwaysApply: true
+---
+
+# Anti-patrones
+
+## Visual
+
+- Fondo blanco/gris SaaS, light mode, pergamino, 8-bit, rain/glitch cyberpunk sucio.
+- Cards sólidas `#1e293b` sin blur. Sombra Material. Radius 4px.
+- Glow en todos los elementos. Scanline agresivo. Confetti.
+- Una sola fuente Inter para títulos de piso y logs.
+- Botones default shadcn/Bootstrap/MUI sin reskin.
+- Emoji como icono de UI. Select nativo para rol Master/Crawler.
+
+## Producto
+
+- Mostrar UI de Master al crawler (aunque disabled).
+- Log global omnisciente en el HUD del jugador.
+- Empty states de plantilla CRUD.
+- Paywall “Upgrade Pro” literal (el outline neón es estilo, no billing).
+- Theme de terceros “cyberpunk CSS” que pise `Design/12-tokens.css`.
+
+Si el diseño y el código discrepan: ganan `References/` + tokens, no el kit de componentes.

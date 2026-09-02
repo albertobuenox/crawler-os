@@ -1,0 +1,21 @@
+---
+description: Pantallas canónicas y shells Master vs Crawler
+alwaysApply: true
+---
+
+# Pantallas y shells
+
+Spec: `Design/09-pantallas.md`, `Design/10-arquitectura-de-informacion.md`.
+
+## Shells
+
+- **MasterShell:** 1440, topbar + icon rail, tablas/KPIs/log, acento cian.
+- **CrawlerShell:** HUD, bottom nav tiles con glow (ref 2), barras HP sticky, acento magenta/naranja.
+
+No reutilizar el backoffice Master como “jugador simplificado”.
+
+## Rutas canónicas
+
+Login (tiles Master/Crawler, panel 440) · Master dashboard estilo media-kit (KPIs + chart dual + donut + log) · Recursos lista/editor/preview · Asignación (qué/quién/reward|penalty|silent) · Grid crawlers · Character sheet · Inventario · Notificaciones · Cinematic reward/penalty · Event log · Player home · Settings **sin light mode**.
+
+Header: breadcrumb `SYSTEM / SECCIÓN / ENTIDAD`. Loading = skeletons radius heredado. Crawler dead = HUD desaturado + `YOU ARE DEAD`.

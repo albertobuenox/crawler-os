@@ -1,0 +1,23 @@
+---
+description: Contexto del producto Crawler OS — Dungeon Crawler Carl (Master vs Jugador)
+alwaysApply: true
+---
+
+# Producto
+
+App de sesión para Dungeon Crawler Carl. Estética HUD holográfica (SAO / isekai / glass neon). Spec: `Design/`, reglas: `Rules/`, refs: `References/`.
+
+## Roles
+
+- **Master:** crea y administra recursos, asigna loot/penalizaciones, edita hojas e inventarios, dispara notificaciones, ve el log global. Desktop-first, denso, acento cian.
+- **Crawler:** hoja, inventario, notificaciones, log personal, HUD. Móvil-first, inmersivo. No ve controles de Master.
+
+Si el rol no puede, el control no se renderiza (no disabled “solo admin”).
+
+## Vocabulario
+
+Crawlers no Users. Master no Admin. Character Sheet no Profile. Event Log no Feed. The System no Inbox. Floor no Level-de-app. Reward / Penalty no success/error genéricos.
+
+## Al implementar
+
+1. ¿Master, Crawler o ambos? 2. Pantalla en `Design/09-pantallas.md`. 3. Componentes en `Design/08`. 4. Tokens en `Design/12-tokens.css`. 5. Si hay loot/pena, `Rules/04-notificaciones-logs.md`.

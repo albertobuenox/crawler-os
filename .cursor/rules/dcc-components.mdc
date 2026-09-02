@@ -1,0 +1,31 @@
+---
+description: Componentes HUD — botones, glass, inputs, slots, tablas, barras
+globs: **/*.{tsx,jsx,vue,css,scss,html}
+alwaysApply: false
+---
+
+# Componentes
+
+Spec: `Design/08-componentes.md`. Tokens: `Design/12-tokens.css`.
+
+## Botones (solo estas familias)
+
+```tsx
+<button className="btn-session">Jack In</button>     // pill púrpura→azul, iniciar sesión/piso
+<button className="btn-energy">Claim</button>        // pill naranja→rosa, reward
+<button className="btn-neon">Open sheet</button>     // outline cian, secundario
+```
+
+Nunca `bg-blue-600` / Submit / OK. Ghost para cancel.
+
+## Primitives
+
+- **GlassPanel:** variantes default | system | identity | nested | danger | reward.
+- **Input:** 44px, well, label uppercase, focus glow cian. No placeholder-only.
+- **Resource bars:** HP rojo, Mana azul, Stamina verde, XP oro. Rajdhani `n/max`.
+- **Inventory slot:** 64px, stroke = rareza, dashed si vacío.
+- **Master table:** filas 48px, hover cyan 4%, IDs mono.
+- **Icons:** line (Lucide/Phosphor/Tabler), cian. Nav: cada icono un aura distinta.
+- **Empty:** frase del Sistema (`Design/11`), no “No data”.
+
+Reskin total si usas shadcn/MUI. El default de la librería no entra en producción.

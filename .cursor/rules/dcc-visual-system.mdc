@@ -1,0 +1,22 @@
+---
+description: Identidad visual Crawler OS — void, glass, neón, tipografía, tokens
+alwaysApply: true
+---
+
+# Identidad visual
+
+Leer `Design/02-sistema-de-color.md`, `Design/04-materiales-y-efectos.md`, `Design/12-tokens.css`.
+
+## MUST
+
+- Canvas `--void-950` + radiales púrpura/cian + bokeh. Nunca fondo claro.
+- Cards: glass (`blur(24px)`, fill blanco 3–9%, radius 20–24px, rim light superior, nested wells `--void-800`).
+- Tokens del CSS de Design. Prohibido hex sueltos o Tailwind default (`bg-slate-900`, `blue-500`) como paleta.
+- Cian `#00D4FF` = Sistema/datos. Magenta = crawler/perfil. Naranja `#F97316→#EC4899` = reward. Rojo `#FF3B5C` = penalty/HP. Oro = legendary/XP.
+- Fuentes: Orbitron (Sistema), Sora (UI), Rajdhani tabular (stats), JetBrains Mono (logs).
+- KPI: número enorme cian + label uppercase tiny (`letter-spacing: 0.14em`).
+- Glow solo en hover/foco, dato vivo, nav activa, rareza. Un acento por elemento.
+
+## NEVER
+
+Light mode. Pergamino medieval. Pixel 8-bit. Glitch permanente. Radius 4px en cards. Texto cian sobre glow cian sin well oscuro. Material shadow sobre blanco.

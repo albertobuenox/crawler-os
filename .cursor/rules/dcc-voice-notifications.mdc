@@ -1,0 +1,24 @@
+---
+description: Voz del Sistema, cinematics de reward/penalty, toasts y event log
+alwaysApply: true
+---
+
+# Voz, notificaciones y logs
+
+Copy: `Design/11-voz-del-sistema.md`. Motion: `Design/07-motion.md`. Flujo: `Rules/04-notificaciones-logs.md`.
+
+## Color por tipo
+
+Reward = naranja/oro + `btn-energy` Claim. Penalty/death = `--danger` + Acknowledge. System = cian + `btn-neon`. No reutilizar el mismo toast para los tres.
+
+## Tres capas
+
+Cinematic z-70 (Reward/Penalty) · Toast z-60 (System Message, ≤42/110 chars) · Lista unread + log mono `[REWARD]|[PENALTY]|[SYSTEM]|[COMBAT]`.
+
+Grant loot en modo Reward dispara las tres. Silent = solo log + lista. El Master no está obligado a ver el cinematic que él dispara.
+
+## Copy
+
+Headers LitRPG: `SYSTEM MESSAGE`, `REWARD`, `PENALTY`, `YOU ARE DEAD`. Cuerpo en idioma de la UI. Tono The System: corto, sarcástico, corporativo.  
+
+**Never:** “Oops”, “Success!”, “No data to display”, “Welcome to our community”, emojis en mensajes del Sistema, confetti, toast verde Material.
