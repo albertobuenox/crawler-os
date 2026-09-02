@@ -23,7 +23,7 @@ export function EventLogList({ entries, compact, className }: EventLogListProps)
   if (entries.length === 0) {
     return (
       <p className="font-mono-system text-sm text-[var(--text-3)]">
-        No events yet. The dungeon is watching.
+        No hay eventos. El dungeon observa.
       </p>
     );
   }

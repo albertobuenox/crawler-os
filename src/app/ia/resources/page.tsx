@@ -9,6 +9,7 @@ import { Input, Textarea, Select } from "@/components/ui/Input";
 import type { GameSession, Resource, ResourceKind, Rarity } from "@/lib/types";
 import { castSession } from "@/lib/utils";
 import { RARITY_COLORS } from "@/lib/types";
+import { kindOptions, rarityOptions, KIND_LABEL, RARITY_LABEL } from "@/lib/copy";
 
 const KINDS: ResourceKind[] = [
   "item", "achievement", "map", "monster", "npc", "box", "buff", "debuff", "quest", "floor", "skill_template",
@@ -66,29 +67,29 @@ export default function IAResourcesPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap justify-between gap-4">
-        <h2 className="font-display text-xl">Resources</h2>
+        <h2 className="font-display text-xl">Recursos</h2>
         <Button variant="energy" onClick={() => setShowForm(!showForm)}>
-          {showForm ? "Cancel" : "Nuevo Recurso"}
+          {showForm ? "Cancelar" : "Nuevo recurso"}
         </Button>
       </div>
 
       {showForm && (
-        <GlassPanel title="Resource editor">
+        <GlassPanel title="Editor de recursos">
           <form onSubmit={createResource} className="grid gap-4 lg:grid-cols-2">
-            <Input label="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-            <Select label="Kind" value={form.kind} onChange={(e) => setForm({ ...form, kind: e.target.value as ResourceKind })} options={KINDS.map((k) => ({ value: k, label: k }))} />
-            <Select label="Rarity" value={form.rarity} onChange={(e) => setForm({ ...form, rarity: e.target.value as Rarity })} options={RARITIES.map((r) => ({ value: r, label: r }))} />
-            <Textarea label="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-            <Textarea label="System copy" className="lg:col-span-2" value={form.system_copy} onChange={(e) => setForm({ ...form, system_copy: e.target.value })} />
-            <Button type="submit" variant="session">Save Resource</Button>
+            <Input label="Nombre" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+            <Select label="Tipo" value={form.kind} onChange={(e) => setForm({ ...form, kind: e.target.value as ResourceKind })} options={kindOptions(KINDS)} />
+            <Select label="Rareza" value={form.rarity} onChange={(e) => setForm({ ...form, rarity: e.target.value as Rarity })} options={rarityOptions(RARITIES)} />
+            <Textarea label="Descripción" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+            <Textarea label="Copy del Sistema" className="lg:col-span-2" value={form.system_copy} onChange={(e) => setForm({ ...form, system_copy: e.target.value })} />
+            <Button type="submit" variant="session">Guardar recurso</Button>
           </form>
         </GlassPanel>
       )}
 
       <div className="flex flex-wrap gap-2">
-        <Button variant={filter === "all" ? "neon" : "ghost"} size="sm" onClick={() => setFilter("all")}>All</Button>
+        <Button variant={filter === "all" ? "neon" : "ghost"} size="sm" onClick={() => setFilter("all")}>Todo</Button>
         {KINDS.map((k) => (
-          <Button key={k} variant={filter === k ? "neon" : "ghost"} size="sm" onClick={() => setFilter(k)}>{k}</Button>
+          <Button key={k} variant={filter === k ? "neon" : "ghost"} size="sm" onClick={() => setFilter(k)}>{KIND_LABEL[k]}</Button>
         ))}
       </div>
 
@@ -96,21 +97,21 @@ export default function IAResourcesPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-[var(--stroke-glass)] text-left text-label">
-              <th className="p-3">Name</th>
-              <th className="p-3">Kind</th>
-              <th className="p-3">Rarity</th>
-              <th className="p-3">Actions</th>
+              <th className="p-3">Nombre</th>
+              <th className="p-3">Tipo</th>
+              <th className="p-3">Rareza</th>
+              <th className="p-3">Acciones</th>
             </tr>
           </thead>
           <tbody>
             {filtered.map((r) => (
               <tr key={r.id} className="border-b border-[rgba(255,255,255,0.04)] hover:bg-[rgba(0,212,255,0.04)]">
                 <td className="p-3 font-medium text-[var(--text-1)]">{r.name}</td>
-                <td className="p-3 capitalize text-[var(--text-3)]">{r.kind}</td>
-                <td className="p-3 capitalize" style={{ color: RARITY_COLORS[r.rarity] }}>{r.rarity}</td>
+                <td className="p-3 text-[var(--text-3)]">{KIND_LABEL[r.kind]}</td>
+                <td className="p-3" style={{ color: RARITY_COLORS[r.rarity] }}>{RARITY_LABEL[r.rarity]}</td>
                 <td className="p-3">
                   <Link href={`/ia/resources/${r.id}`}>
-                    <Button variant="ghost" size="sm">Edit</Button>
+                    <Button variant="ghost" size="sm">Editar</Button>
                   </Link>
                 </td>
               </tr>

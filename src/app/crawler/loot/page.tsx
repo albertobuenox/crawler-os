@@ -38,14 +38,14 @@ export default function CrawlerLootPage() {
 
   return (
     <main className="p-4 pb-24">
-      <GlassPanel title="Loot Boxes">
+      <GlassPanel title="Cajas de loot">
         {boxes.length === 0 ? (
-          <p className="text-sm text-[var(--text-3)]">No sealed boxes. The System is hoarding.</p>
+          <p className="text-sm text-[var(--text-3)]">Ninguna caja sellada. The System acapara.</p>
         ) : (
           boxes.map((b) => (
             <div key={b.id} className="well mb-2 flex items-center justify-between p-3">
               <span>{b.resource.name}</span>
-              <Button variant="energy" size="sm" onClick={() => openBox(b)}>Open</Button>
+              <Button variant="energy" size="sm" onClick={() => openBox(b)}>Abrir</Button>
             </div>
           ))
         )}
@@ -55,7 +55,7 @@ export default function CrawlerLootPage() {
         open={!!opening}
         type="loot_box"
         title="LOOT BOX"
-        body="The System has decided you deserve a treat."
+        body="The System ha decidido que te mereces un premio."
         itemName={opening?.resource.name}
         rarity={opening?.resource.rarity}
         onClose={() => { setOpening(null); load(); }}

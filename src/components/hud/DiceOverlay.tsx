@@ -59,11 +59,11 @@ export function DiceOverlay({
 
             {result && (
               <p className="mt-3 font-mono-system text-sm text-[var(--text-2)]">
-                Rolls: [{result.raw.join(", ")}]
+                Tiradas: [{result.raw.join(", ")}]
                 {result.success !== null && result.success !== undefined && (
                   <span className={result.success ? " text-[var(--ok)]" : " text-[var(--danger)]"}>
                     {" "}
-                    — {result.success ? "SUCCESS" : "FAIL"}
+                    — {result.success ? "ÉXITO" : "FALLO"}
                   </span>
                 )}
               </p>
@@ -72,11 +72,11 @@ export function DiceOverlay({
             <div className="mt-6 flex gap-2">
               {!result && canRoll && (
                 <Button variant="energy" className="flex-1" loading={rolling} onClick={onRoll}>
-                  Roll
+                  Tirar
                 </Button>
               )}
               <Button variant="ghost" className="flex-1" onClick={onClose}>
-                {result ? "Close" : "Cancel"}
+                {result ? "Cerrar" : "Cancelar"}
               </Button>
             </div>
           </motion.div>

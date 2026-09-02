@@ -33,7 +33,7 @@ export default function CrawlerSheetPage() {
     setEffects((ef as Effect[]) ?? []);
   }
 
-  if (!crawler) return <p className="p-4 text-[var(--text-3)]">No character sheet.</p>;
+  if (!crawler) return <p className="p-4 text-[var(--text-3)]">Sin hoja de personaje.</p>;
 
   const stats = (["str", "int", "con", "dex", "cha"] as const).map((s) => ({
     key: s.toUpperCase(),
@@ -49,31 +49,31 @@ export default function CrawlerSheetPage() {
           <StatGrid stats={stats} />
           <div className="mt-4 space-y-3">
             <HealthBoxes boxesFilled={crawler.hp_boxes_filled} conEnhanced={crawler.con_enhanced} />
-            <ResourceBar label="Mana" current={crawler.mana_current} max={crawler.mana_max} />
+            <ResourceBar label="Maná" current={crawler.mana_current} max={crawler.mana_max} />
           </div>
-          <p className="mt-4 text-xs text-[var(--text-3)]">AI Favor: {crawler.ai_favor_remaining} remaining</p>
+          <p className="mt-4 text-xs text-[var(--text-3)]">Favor de IA: {crawler.ai_favor_remaining} restante</p>
         </GlassPanel>
 
         {crawler.past_trauma && (
-          <GlassPanel title="Past Trauma"><p className="text-sm">{crawler.past_trauma}</p></GlassPanel>
+          <GlassPanel title="Trauma pasado"><p className="text-sm">{crawler.past_trauma}</p></GlassPanel>
         )}
 
-        <GlassPanel title="Active Effects">
-          {effects.length === 0 ? <p className="text-sm text-[var(--text-3)]">None</p> : effects.map((e) => (
+        <GlassPanel title="Efectos activos">
+          {effects.length === 0 ? <p className="text-sm text-[var(--text-3)]">Ninguno</p> : effects.map((e) => (
             <div key={e.id} className="well mb-1 px-2 py-1 text-sm capitalize">{e.name}</div>
           ))}
         </GlassPanel>
 
-        <GlassPanel title="Personal Space">
-          <pre className="text-xs text-[var(--text-2)]">{JSON.stringify(crawler.personal_space, null, 2) || "Empty"}</pre>
+        <GlassPanel title="Espacio personal">
+          <pre className="text-xs text-[var(--text-2)]">{JSON.stringify(crawler.personal_space, null, 2) || "Vacío"}</pre>
         </GlassPanel>
 
-        <GlassPanel title="Pet">
-          <pre className="text-xs">{JSON.stringify(crawler.pet, null, 2) || "No pet"}</pre>
+        <GlassPanel title="Mascota">
+          <pre className="text-xs">{JSON.stringify(crawler.pet, null, 2) || "Sin mascota"}</pre>
         </GlassPanel>
 
-        <GlassPanel title="Sponsors">
-          <pre className="text-xs">{JSON.stringify(crawler.sponsors, null, 2) || "None"}</pre>
+        <GlassPanel title="Patrocinadores">
+          <pre className="text-xs">{JSON.stringify(crawler.sponsors, null, 2) || "Ninguno"}</pre>
         </GlassPanel>
       </main>
     </>

@@ -48,11 +48,11 @@ export function rollD20(advantage = false, disadvantage = false): { rolls: numbe
 }
 
 export const COMBAT_PHASES = [
-  { key: "combat_1", label: "Phase 1 — Mob Declaration" },
-  { key: "combat_2", label: "Phase 2 — Crawler Reactions" },
-  { key: "combat_3", label: "Phase 3 — Mob Resolution" },
-  { key: "combat_4", label: "Phase 4 — Crawler Attacks" },
-  { key: "combat_5", label: "Phase 5 — Cleanup" },
+  { key: "combat_1", label: "Fase 1 — Declaración de mobs" },
+  { key: "combat_2", label: "Fase 2 — Reacciones de crawlers" },
+  { key: "combat_3", label: "Fase 3 — Resolución de mobs" },
+  { key: "combat_4", label: "Fase 4 — Ataques de crawlers" },
+  { key: "combat_5", label: "Fase 5 — Limpieza" },
 ] as const;
 
 export const GEAR_SLOTS = [

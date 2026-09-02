@@ -62,7 +62,7 @@ export default function IATablePage() {
     if (!session) return;
     await supabase.from("map_pins").insert({
       session_id: session.id,
-      label: "Party",
+      label: "Grupo",
       pin_type: "party",
       x: 0.5,
       y: 0.5,
@@ -75,21 +75,21 @@ export default function IATablePage() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-3">
-      <GlassPanel className="lg:col-span-2" title="Mesa" subtitle="Show to all crawlers in real time">
+      <GlassPanel className="lg:col-span-2" title="Mesa" subtitle="Se muestra a todos los crawlers en tiempo real">
         <TableCanvas tableState={tableState} resource={shownResource} pins={pins} />
         <div className="mt-4 flex flex-wrap gap-2">
-          <Button variant="neon" size="sm" onClick={() => showOnTable("text")}>Show Text</Button>
-          <Button variant="neon" size="sm" onClick={() => showOnTable("item")}>Show Item</Button>
-          <Button variant="neon" size="sm" onClick={() => showOnTable("map", { show_grid: true })}>Show Map</Button>
-          <Button variant="ghost" size="sm" onClick={() => showOnTable("none")}>Clear</Button>
-          <Button variant="ghost" size="sm" onClick={addPin}>Add Pin</Button>
+          <Button variant="neon" size="sm" onClick={() => showOnTable("text")}>Mostrar texto</Button>
+          <Button variant="neon" size="sm" onClick={() => showOnTable("item")}>Mostrar objeto</Button>
+          <Button variant="neon" size="sm" onClick={() => showOnTable("map", { show_grid: true })}>Mostrar mapa</Button>
+          <Button variant="ghost" size="sm" onClick={() => showOnTable("none")}>Limpiar</Button>
+          <Button variant="ghost" size="sm" onClick={addPin}>Añadir chincheta</Button>
         </div>
       </GlassPanel>
-      <GlassPanel title="Display controls">
+      <GlassPanel title="Controles de pantalla">
         <div className="space-y-3">
           <SelectResource resources={resources} value={selectedResource} onChange={setSelectedResource} />
-          <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} />
-          <Input label="Body" value={body} onChange={(e) => setBody(e.target.value)} />
+          <Input label="Título" value={title} onChange={(e) => setTitle(e.target.value)} />
+          <Input label="Cuerpo" value={body} onChange={(e) => setBody(e.target.value)} />
         </div>
       </GlassPanel>
     </div>
@@ -99,7 +99,7 @@ export default function IATablePage() {
 function SelectResource({ resources, value, onChange }: { resources: Resource[]; value: string; onChange: (v: string) => void }) {
   return (
     <select className="well h-11 w-full px-3 text-sm" value={value} onChange={(e) => onChange(e.target.value)}>
-      <option value="">Select resource...</option>
+      <option value="">Seleccionar recurso...</option>
       {resources.map((r) => (
         <option key={r.id} value={r.id}>{r.name}</option>
       ))}

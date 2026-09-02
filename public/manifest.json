@@ -1,7 +1,7 @@
 {
   "name": "Crawler OS",
   "short_name": "Crawler OS",
-  "description": "The System HUD for CarlRPG sessions",
+  "description": "HUD de The System para sesiones CarlRPG",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#05060D",

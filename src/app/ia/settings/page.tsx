@@ -15,9 +15,9 @@ export default function IASettingsPage() {
   }
 
   return (
-    <GlassPanel title="Settings">
-      <p className="mb-4 text-sm text-[var(--text-3)]">Theme: System Standard (only)</p>
-      <Button variant="danger" onClick={signOut}>Sign Out</Button>
+    <GlassPanel title="Ajustes">
+      <p className="mb-4 text-sm text-[var(--text-3)]">Tema: Estándar del Sistema (único)</p>
+      <Button variant="danger" onClick={signOut}>Cerrar sesión</Button>
     </GlassPanel>
   );
 }

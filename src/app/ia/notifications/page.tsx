@@ -22,7 +22,7 @@ export default function IANotificationsPage() {
   }
 
   return (
-    <GlassPanel title="The System" subtitle="Notification history">
+    <GlassPanel title="The System" subtitle="Historial de notificaciones">
       <ul className="space-y-2">
         {notifications.map((n) => (
           <li key={n.id} className={`well p-3 ${!n.is_read ? "border-[var(--stroke-cyan)]" : ""}`}>
@@ -31,7 +31,7 @@ export default function IANotificationsPage() {
           </li>
         ))}
         {notifications.length === 0 && (
-          <p className="text-sm text-[var(--text-3)]">Nothing from The System yet.</p>
+          <p className="text-sm text-[var(--text-3)]">Nada de The System todavía.</p>
         )}
       </ul>
     </GlassPanel>

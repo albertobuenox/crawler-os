@@ -8,6 +8,7 @@ import { Select } from "@/components/ui/Input";
 import type { Crawler, CombatRound, GameSession } from "@/lib/types";
 import { castSession } from "@/lib/utils";
 import { COMBAT_PHASES } from "@/lib/rules";
+import { PHASE_LABEL } from "@/lib/copy";
 
 export default function IAWorldPage() {
   const supabase = createClient();
@@ -78,16 +79,16 @@ export default function IAWorldPage() {
     const { data: boxRes } = await supabase.from("resources").insert({
       session_id: session.id,
       kind: "box",
-      name: "Mystery Box",
+      name: "Caja misteriosa",
       rarity: "legendary",
-      system_copy: "The System is feeling generous. Probably.",
+      system_copy: "The System se siente generoso. Probablemente.",
       payload: { contents: [] },
     }).select().single();
     if (boxRes) {
       await supabase.from("loot_boxes").insert({
         session_id: session.id,
         resource_id: boxRes.id,
-        contents: [{ name: "Random Loot", rarity: "rare" }],
+        contents: [{ name: "Botín aleatorio", rarity: "rare" }],
       });
     }
     load();
@@ -95,25 +96,25 @@ export default function IAWorldPage() {
 
   return (
     <div className="space-y-6">
-      <GlassPanel title="World / Floor" subtitle={`FN affects all DC calculations`}>
+      <GlassPanel title="Mundo / Piso" subtitle="FN afecta a todos los cálculos de DC">
         <div className="flex flex-wrap items-end gap-4">
           <Select
-            label="Floor Number (FN)"
+            label="Número de piso (FN)"
             value={String(floorNumber)}
             onChange={(e) => setFloorNumber(+e.target.value)}
-            options={Array.from({ length: 20 }, (_, i) => ({ value: String(i + 1), label: `Floor ${i + 1}` }))}
+            options={Array.from({ length: 20 }, (_, i) => ({ value: String(i + 1), label: `Piso ${i + 1}` }))}
           />
-          <Button variant="session" onClick={updateFloor}>Set Floor</Button>
+          <Button variant="session" onClick={updateFloor}>Fijar piso</Button>
         </div>
       </GlassPanel>
 
-      <GlassPanel title="Combat — 5 Phases">
+      <GlassPanel title="Combate — 5 fases">
         {!combat ? (
-          <Button variant="energy" onClick={startCombat}>Start Combat Round</Button>
+          <Button variant="energy" onClick={startCombat}>Iniciar ronda de combate</Button>
         ) : (
           <div className="space-y-4">
             <p className="text-sm text-[var(--text-cyan)]">
-              Round {combat.round_number} · {combat.phase}
+              Ronda {combat.round_number} · {PHASE_LABEL[combat.phase as keyof typeof PHASE_LABEL] ?? combat.phase}
             </p>
             <div className="flex flex-wrap gap-2">
               {COMBAT_PHASES.map((p) => (
@@ -126,7 +127,7 @@ export default function IAWorldPage() {
         )}
       </GlassPanel>
 
-      <GlassPanel title="Rests">
+      <GlassPanel title="Descansos">
         <div className="mb-4 flex flex-wrap gap-2">
           {crawlers.map((c) => (
             <label key={c.id} className="flex items-center gap-1 text-sm">
@@ -146,18 +147,18 @@ export default function IAWorldPage() {
           ))}
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="neon" size="sm" onClick={() => applyRest("short")}>Short Rest (2h)</Button>
-          <Button variant="neon" size="sm" onClick={() => applyRest("long")}>Long Rest (8h)</Button>
-          <Button variant="session" size="sm" onClick={() => applyRest("full_day")}>Full Day (30h)</Button>
+          <Button variant="neon" size="sm" onClick={() => applyRest("short")}>Descanso corto (2h)</Button>
+          <Button variant="neon" size="sm" onClick={() => applyRest("long")}>Descanso largo (8h)</Button>
+          <Button variant="session" size="sm" onClick={() => applyRest("full_day")}>Día completo (30h)</Button>
         </div>
       </GlassPanel>
 
-      <GlassPanel title="Loot Boxes">
-        <Button variant="energy" onClick={createLootBox}>Create Loot Box</Button>
+      <GlassPanel title="Cajas de loot">
+        <Button variant="energy" onClick={createLootBox}>Crear caja de loot</Button>
       </GlassPanel>
 
-      <GlassPanel title="Map pins" subtitle="Manage on Mesa">
-        <p className="text-sm text-[var(--text-3)]">Use the Mesa screen to place pins on maps.</p>
+      <GlassPanel title="Chinchetas del mapa" subtitle="Se gestionan en Mesa">
+        <p className="text-sm text-[var(--text-3)]">Usa la pantalla Mesa para colocar chinchetas en los mapas.</p>
       </GlassPanel>
     </div>
   );

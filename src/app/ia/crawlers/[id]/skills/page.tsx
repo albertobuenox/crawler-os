@@ -7,6 +7,7 @@ import { GlassPanel } from "@/components/ui/GlassPanel";
 import { Button } from "@/components/ui/Button";
 import { Input, Select } from "@/components/ui/Input";
 import type { Skill } from "@/lib/types";
+import { SKILL_TYPE_LABEL } from "@/lib/copy";
 
 export default function IASkillsEditorPage() {
   const { id } = useParams<{ id: string }>();
@@ -32,19 +33,19 @@ export default function IASkillsEditorPage() {
   }
 
   return (
-    <GlassPanel title="Skills editor">
+    <GlassPanel title="Editor de habilidades">
       <form onSubmit={addSkill} className="mb-6 grid gap-3 sm:grid-cols-2">
-        <Input label="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-        <Select label="Type" value={form.skill_type} onChange={(e) => setForm({ ...form, skill_type: e.target.value })} options={["attack","spell","utility","passive"].map((t) => ({ value: t, label: t }))} />
-        <Input label="Rank" type="number" value={form.rank} onChange={(e) => setForm({ ...form, rank: +e.target.value })} />
-        <Select label="Stat" value={form.linked_stat} onChange={(e) => setForm({ ...form, linked_stat: e.target.value })} options={["str","int","con","dex","cha"].map((s) => ({ value: s, label: s.toUpperCase() }))} />
-        <Button type="submit" variant="session">Add Skill</Button>
+        <Input label="Nombre" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+        <Select label="Tipo" value={form.skill_type} onChange={(e) => setForm({ ...form, skill_type: e.target.value })} options={["attack","spell","utility","passive"].map((t) => ({ value: t, label: SKILL_TYPE_LABEL[t] ?? t }))} />
+        <Input label="Rango" type="number" value={form.rank} onChange={(e) => setForm({ ...form, rank: +e.target.value })} />
+        <Select label="Característica" value={form.linked_stat} onChange={(e) => setForm({ ...form, linked_stat: e.target.value })} options={["str","int","con","dex","cha"].map((s) => ({ value: s, label: s.toUpperCase() }))} />
+        <Button type="submit" variant="session">Añadir habilidad</Button>
       </form>
       <ul className="space-y-2">
         {skills.map((s) => (
           <li key={s.id} className="well flex items-center justify-between px-3 py-2 text-sm">
-            <span>{s.name} (rank {s.rank}) — checks: {s.check_marks}</span>
-            <Button variant="neon" size="sm" onClick={() => markCheck(s.id, s.check_marks + 1)}>+ Check</Button>
+            <span>{s.name} (rango {s.rank}) — marcas: {s.check_marks}</span>
+            <Button variant="neon" size="sm" onClick={() => markCheck(s.id, s.check_marks + 1)}>+ Marca</Button>
           </li>
         ))}
       </ul>

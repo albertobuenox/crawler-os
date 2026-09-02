@@ -7,6 +7,7 @@ import { GlassPanel } from "@/components/ui/GlassPanel";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import type { UserRole } from "@/lib/types";
+import { authErrorEs } from "@/lib/copy";
 import { cn } from "@/lib/utils";
 import { Cpu, User } from "lucide-react";
 
@@ -57,8 +58,8 @@ export default function LoginPage() {
     } catch (err) {
       setError(
         err instanceof Error
-          ? err.message
-          : "Access denied. The System does not recognize this crawler."
+          ? authErrorEs(err.message)
+          : "Acceso denegado. The System no reconoce a este crawler."
       );
     } finally {
       setLoading(false);
@@ -93,15 +94,15 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
-            label="Crawler handle"
+            label="Identificador"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
+            placeholder="tu@correo.com"
             required
           />
           <Input
-            label="Passphrase"
+            label="Contraseña"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -114,7 +115,7 @@ export default function LoginPage() {
             className="w-full"
             loading={loading}
           >
-            {isSignup ? "Register" : role === "ia" ? "Jack In" : "Enter the Dungeon"}
+            {isSignup ? "Registrarse" : role === "ia" ? "Conectar" : "Entrar al dungeon"}
           </Button>
         </form>
 
@@ -123,7 +124,7 @@ export default function LoginPage() {
           className="mt-4 w-full text-center text-xs text-[var(--text-3)] hover:text-[var(--text-1)]"
           onClick={() => setIsSignup(!isSignup)}
         >
-          {isSignup ? "Already jacked in? Sign in" : "New crawler? Register"}
+          {isSignup ? "¿Ya estás dentro? Entrar" : "¿Crawler nuevo? Registrarse"}
         </button>
       </GlassPanel>
     </main>

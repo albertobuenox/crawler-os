@@ -31,6 +31,9 @@ export default function CrawlerNotificationsPage() {
   return (
     <main className="space-y-4 p-4 pb-24">
       <GlassPanel title="The System">
+        {notifications.length === 0 && (
+          <p className="text-sm text-[var(--text-3)]">Nada de The System todavía. El dungeon observa.</p>
+        )}
         {notifications.map((n) => (
           <div
             key={n.id}
@@ -41,7 +44,7 @@ export default function CrawlerNotificationsPage() {
             <p className="text-sm">{n.body}</p>
             {!n.is_read && (
               <Button variant="ghost" size="sm" className="mt-2" onClick={(e) => { e.stopPropagation(); ack(n.id); }}>
-                Acknowledge
+                Aceptar
               </Button>
             )}
           </div>

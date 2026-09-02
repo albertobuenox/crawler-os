@@ -116,9 +116,9 @@ export default function CrawlerHomePage() {
   if (!crawler) {
     return (
       <main className="flex min-h-screen items-center justify-center p-4">
-        <GlassPanel title="No crawler assigned">
-          <p className="mb-4 text-sm">Join a session with a floor code.</p>
-          <Link href="/join"><Button variant="energy">Enter Floor Code</Button></Link>
+        <GlassPanel title="Sin crawler asignado">
+          <p className="mb-4 text-sm">Únete a una sesión con un código de piso.</p>
+          <Link href="/join"><Button variant="energy">Introducir código</Button></Link>
         </GlassPanel>
       </main>
     );
@@ -137,7 +137,7 @@ export default function CrawlerHomePage() {
       <main className="space-y-4 p-4">
         {crawler.status === "downed" && (
           <div className="rounded-xl border border-[var(--stroke-danger)] bg-[var(--glass-danger)] p-3 text-center font-display text-sm text-[var(--danger)]">
-            YOU ARE DOWN — {crawler.unconscious_rounds_remaining} rounds remaining
+            CAÍDO — {crawler.unconscious_rounds_remaining} rondas restantes
           </div>
         )}
         {crawler.status === "dead" && (
@@ -146,13 +146,13 @@ export default function CrawlerHomePage() {
           </div>
         )}
 
-        <GlassPanel title="Current objective" subtitle={`Floor ${crawler.floor}`}>
-          <p className="text-sm text-[var(--text-2)]">Survive. The System is watching.</p>
+        <GlassPanel title="Objetivo actual" subtitle={`Piso ${crawler.floor}`}>
+          <p className="text-sm text-[var(--text-2)]">Sobrevive. The System te está mirando.</p>
         </GlassPanel>
 
-        <GlassPanel title="Recent System messages">
+        <GlassPanel title="Mensajes recientes de The System">
           {notifications.length === 0 ? (
-            <p className="text-sm text-[var(--text-3)]">All quiet. Suspiciously quiet.</p>
+            <p className="text-sm text-[var(--text-3)]">Todo en calma. Sospechosamente en calma.</p>
           ) : (
             notifications.map((n) => (
               <div key={n.id} className="mb-2 well p-2 text-sm">
@@ -163,12 +163,12 @@ export default function CrawlerHomePage() {
           )}
         </GlassPanel>
 
-        <GlassPanel title="Your log">
+        <GlassPanel title="Tu registro">
           <EventLogList entries={events} compact />
         </GlassPanel>
 
         <div className="grid grid-cols-2 gap-2">
-          <Link href="/crawler/inventory"><Button variant="neon" className="w-full">Inventory</Button></Link>
+          <Link href="/crawler/inventory"><Button variant="neon" className="w-full">Inventario</Button></Link>
           <Link href="/crawler/table"><Button variant="neon" className="w-full">Mesa</Button></Link>
         </div>
       </main>

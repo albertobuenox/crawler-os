@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { CrawlerStatusStrip } from "@/components/layout/Nav";
 import type { Crawler, Skill } from "@/lib/types";
 import { statModifier } from "@/lib/rules";
+import { SKILL_TYPE_LABEL } from "@/lib/copy";
 
 export default function CrawlerSkillsPage() {
   const supabase = createClient();
@@ -31,19 +32,19 @@ export default function CrawlerSkillsPage() {
     <>
       <CrawlerStatusStrip name={crawler.name} level={crawler.level} hpBoxes={crawler.hp_boxes_filled} conEnhanced={crawler.con_enhanced} mana={crawler.mana_current} manaMax={crawler.mana_max} />
       <main className="space-y-4 p-4 pb-24">
-        <GlassPanel title="Skills" subtitle="Advance every 2h / 4h of play">
+        <GlassPanel title="Habilidades" subtitle="Avance cada 2h / 4h de juego">
           {skills.length === 0 ? (
-            <p className="text-sm text-[var(--text-3)]">No skills yet. The System will assign them.</p>
+            <p className="text-sm text-[var(--text-3)]">Aún no hay habilidades. The System las asignará.</p>
           ) : (
             <ul className="space-y-2">
               {skills.map((s) => (
                 <li key={s.id} className="well flex items-center justify-between px-3 py-2 text-sm">
                   <div>
                     <span className="font-semibold text-[var(--text-1)]">{s.name}</span>
-                    <span className="ml-2 capitalize text-[var(--text-3)]">{s.skill_type}</span>
+                    <span className="ml-2 text-[var(--text-3)]">{SKILL_TYPE_LABEL[s.skill_type] ?? s.skill_type}</span>
                   </div>
                   <div className="text-right">
-                    <span className="font-stat text-[var(--cyan-400)]">Rank {s.rank}</span>
+                    <span className="font-stat text-[var(--cyan-400)]">Rango {s.rank}</span>
                     <span className="ml-2 text-xs text-[var(--text-4)]">
                       {s.linked_stat.toUpperCase()} {statModifier(crawler[`${s.linked_stat}_enhanced`]) >= 0 ? "+" : ""}
                       {statModifier(crawler[`${s.linked_stat}_enhanced`])}

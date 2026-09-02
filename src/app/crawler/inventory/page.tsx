@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { CrawlerStatusStrip } from "@/components/layout/Nav";
 import { InventorySlot } from "@/components/hud/InventorySlot";
 import type { Crawler, ItemInstance, Resource } from "@/lib/types";
+import { RARITY_LABEL } from "@/lib/copy";
 
 export default function CrawlerInventoryPage() {
   const supabase = createClient();
@@ -36,19 +37,19 @@ export default function CrawlerInventoryPage() {
     <>
       <CrawlerStatusStrip name={crawler.name} level={crawler.level} hpBoxes={crawler.hp_boxes_filled} conEnhanced={crawler.con_enhanced} mana={crawler.mana_current} manaMax={crawler.mana_max} />
       <main className="space-y-4 p-4 pb-24">
-        <GlassPanel title="Hotlist" subtitle="Quick access">
+        <GlassPanel title="Acceso rápido" subtitle="Hotlist">
           <div className="grid grid-cols-5 gap-2">
             {hotlist.length === 0 ? (
-              <p className="col-span-5 text-sm text-[var(--text-3)]">Hotlist empty.</p>
+              <p className="col-span-5 text-sm text-[var(--text-3)]">Hotlist vacía.</p>
             ) : hotlist.map((i) => (
               <InventorySlot key={i.id} name={i.resource.name} rarity={i.resource.rarity} hotlist onClick={() => setSelected(i)} />
             ))}
           </div>
         </GlassPanel>
 
-        <GlassPanel title="Inventory">
+        <GlassPanel title="Inventario">
           {items.length === 0 ? (
-            <p className="text-sm text-[var(--text-3)]">Nothing here but lint and poor decisions.</p>
+            <p className="text-sm text-[var(--text-3)]">Aquí no hay nada salvo pelusa y malas decisiones.</p>
           ) : (
             <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
               {items.map((i) => (
@@ -68,9 +69,9 @@ export default function CrawlerInventoryPage() {
 
         {selected && (
           <GlassPanel title={selected.resource.name}>
-            <p className="capitalize text-[var(--text-cyan)]">{selected.resource.rarity}</p>
+            <p className="text-[var(--text-cyan)]">{RARITY_LABEL[selected.resource.rarity]}</p>
             <p className="mt-2 text-sm">{selected.resource.system_copy ?? selected.resource.description}</p>
-            <Button variant="neon" className="mt-4" size="sm">Use (notify La IA)</Button>
+            <Button variant="neon" className="mt-4" size="sm">Usar (avisar a La IA)</Button>
           </GlassPanel>
         )}
       </main>

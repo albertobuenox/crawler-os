@@ -11,6 +11,7 @@ import { HealthBoxes, ResourceBar } from "@/components/hud/HealthBoxes";
 import { StatGrid } from "@/components/hud/StatKPI";
 import type { Crawler, Skill, Effect } from "@/lib/types";
 import { statModifier } from "@/lib/rules";
+import { EFFECT_KIND_LABEL, SKILL_TYPE_LABEL } from "@/lib/copy";
 
 export default function IACrawlerSheetPage() {
   const { id } = useParams<{ id: string }>();
@@ -69,7 +70,7 @@ export default function IACrawlerSheetPage() {
     setCrawler(data as Crawler);
   }
 
-  if (!crawler) return <p className="text-[var(--text-3)]">Loading sheet...</p>;
+  if (!crawler) return <p className="text-[var(--text-3)]">Cargando hoja...</p>;
 
   const stats = (["str", "int", "con", "dex", "cha"] as const).map((s) => ({
     key: s.toUpperCase(),
@@ -82,52 +83,52 @@ export default function IACrawlerSheetPage() {
         <div className="flex justify-between">
         <h2 className="font-display text-xl">{crawler.name}</h2>
         <div className="flex gap-2">
-          <Link href={`/ia/crawlers/${id}/skills`}><Button variant="neon" size="sm">Skills</Button></Link>
-          <Button variant="session" loading={saving} onClick={save}>Save</Button>
+          <Link href={`/ia/crawlers/${id}/skills`}><Button variant="neon" size="sm">Habilidades</Button></Link>
+          <Button variant="session" loading={saving} onClick={save}>Guardar</Button>
         </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <GlassPanel className="lg:col-span-2" title="Character Sheet">
+        <GlassPanel className="lg:col-span-2" title="Hoja de personaje">
           <div className="grid gap-4 sm:grid-cols-2">
-            <Input label="Name" value={crawler.name} onChange={(e) => setCrawler({ ...crawler, name: e.target.value })} />
-            <Input label="Level" type="number" value={crawler.level} onChange={(e) => setCrawler({ ...crawler, level: +e.target.value })} />
-            <Input label="Race" value={crawler.race ?? ""} onChange={(e) => setCrawler({ ...crawler, race: e.target.value })} />
-            <Input label="Class" value={crawler.class_name ?? ""} onChange={(e) => setCrawler({ ...crawler, class_name: e.target.value })} />
+            <Input label="Nombre" value={crawler.name} onChange={(e) => setCrawler({ ...crawler, name: e.target.value })} />
+            <Input label="Nivel" type="number" value={crawler.level} onChange={(e) => setCrawler({ ...crawler, level: +e.target.value })} />
+            <Input label="Raza" value={crawler.race ?? ""} onChange={(e) => setCrawler({ ...crawler, race: e.target.value })} />
+            <Input label="Clase" value={crawler.class_name ?? ""} onChange={(e) => setCrawler({ ...crawler, class_name: e.target.value })} />
           </div>
           <div className="mt-6">
             <StatGrid stats={stats} />
           </div>
           <div className="mt-6 space-y-4">
             <HealthBoxes boxesFilled={crawler.hp_boxes_filled} conEnhanced={crawler.con_enhanced} />
-            <ResourceBar label="Mana" current={crawler.mana_current} max={crawler.mana_max} />
+            <ResourceBar label="Maná" current={crawler.mana_current} max={crawler.mana_max} />
           </div>
           <div className="mt-4 flex gap-2">
-            <Button variant="danger" size="sm" onClick={() => applyDamage(10)}>Damage 10</Button>
-            <Button variant="neon" size="sm" onClick={() => setCrawler({ ...crawler, hp_boxes_filled: Math.max(0, crawler.hp_boxes_filled - 1) })}>Heal 1 box</Button>
+            <Button variant="danger" size="sm" onClick={() => applyDamage(10)}>Daño 10</Button>
+            <Button variant="neon" size="sm" onClick={() => setCrawler({ ...crawler, hp_boxes_filled: Math.max(0, crawler.hp_boxes_filled - 1) })}>Curar 1 casilla</Button>
           </div>
-          <Textarea label="Notes" className="mt-4" value={crawler.notes ?? ""} onChange={(e) => setCrawler({ ...crawler, notes: e.target.value })} />
+          <Textarea label="Notas" className="mt-4" value={crawler.notes ?? ""} onChange={(e) => setCrawler({ ...crawler, notes: e.target.value })} />
         </GlassPanel>
 
         <div className="space-y-4">
-          <GlassPanel title="AI Favor">
-            <StatGrid stats={[{ key: "Remaining", value: crawler.ai_favor_remaining }]} />
+          <GlassPanel title="Favor de IA">
+            <StatGrid stats={[{ key: "Restante", value: crawler.ai_favor_remaining }]} />
           </GlassPanel>
-          <GlassPanel title="Active Effects">
+          <GlassPanel title="Efectos activos">
             {effects.length === 0 ? (
-              <p className="text-sm text-[var(--text-3)]">No effects</p>
+              <p className="text-sm text-[var(--text-3)]">Sin efectos</p>
             ) : (
               <ul className="space-y-1 text-sm">
                 {effects.map((e) => (
-                  <li key={e.id} className="well px-2 py-1 capitalize">{e.name} ({e.effect_kind})</li>
+                  <li key={e.id} className="well px-2 py-1">{e.name} ({EFFECT_KIND_LABEL[e.effect_kind] ?? e.effect_kind})</li>
                 ))}
               </ul>
             )}
           </GlassPanel>
-          <GlassPanel title="Skills">
+          <GlassPanel title="Habilidades">
             {skills.map((s) => (
               <div key={s.id} className="well mb-2 px-2 py-1 text-sm">
-                {s.name} — rank {s.rank} ({s.skill_type})
+                {s.name} — rango {s.rank} ({SKILL_TYPE_LABEL[s.skill_type] ?? s.skill_type})
               </div>
             ))}
           </GlassPanel>

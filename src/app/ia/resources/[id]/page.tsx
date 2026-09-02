@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Input, Textarea, Select } from "@/components/ui/Input";
 import { InventorySlot } from "@/components/hud/InventorySlot";
 import type { Resource, ResourceKind, Rarity } from "@/lib/types";
+import { kindOptions, rarityOptions } from "@/lib/copy";
 
 export default function ResourceEditorPage() {
   const { id } = useParams<{ id: string }>();
@@ -33,16 +34,16 @@ export default function ResourceEditorPage() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-12">
-      <GlassPanel className="lg:col-span-7" title="Edit Resource">
+      <GlassPanel className="lg:col-span-7" title="Editar recurso">
         <div className="space-y-4">
-          <Input label="Name" value={resource.name} onChange={(e) => setResource({ ...resource, name: e.target.value })} />
-          <Select label="Kind" value={resource.kind} onChange={(e) => setResource({ ...resource, kind: e.target.value as ResourceKind })} options={["item","box","achievement","map","monster"].map((k) => ({ value: k, label: k }))} />
-          <Select label="Rarity" value={resource.rarity} onChange={(e) => setResource({ ...resource, rarity: e.target.value as Rarity })} options={["common","uncommon","rare","epic","legendary","celestial"].map((r) => ({ value: r, label: r }))} />
-          <Textarea label="System copy" value={resource.system_copy ?? ""} onChange={(e) => setResource({ ...resource, system_copy: e.target.value })} />
-          <Button variant="session" onClick={save}>Save</Button>
+          <Input label="Nombre" value={resource.name} onChange={(e) => setResource({ ...resource, name: e.target.value })} />
+          <Select label="Tipo" value={resource.kind} onChange={(e) => setResource({ ...resource, kind: e.target.value as ResourceKind })} options={kindOptions(["item","box","achievement","map","monster"])} />
+          <Select label="Rareza" value={resource.rarity} onChange={(e) => setResource({ ...resource, rarity: e.target.value as Rarity })} options={rarityOptions(["common","uncommon","rare","epic","legendary","celestial"])} />
+          <Textarea label="Copy del Sistema" value={resource.system_copy ?? ""} onChange={(e) => setResource({ ...resource, system_copy: e.target.value })} />
+          <Button variant="session" onClick={save}>Guardar</Button>
         </div>
       </GlassPanel>
-      <GlassPanel className="lg:col-span-5" title="Player preview">
+      <GlassPanel className="lg:col-span-5" title="Vista del crawler">
         <div className="flex flex-col items-center gap-4 py-6">
           <InventorySlot name={resource.name} rarity={resource.rarity} />
           <p className="text-center text-sm italic text-[var(--text-2)]">{resource.system_copy}</p>

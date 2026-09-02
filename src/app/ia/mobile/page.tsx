@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { ResourceBar } from "@/components/hud/HealthBoxes";
 import type { Crawler, GameSession } from "@/lib/types";
 import { castSession } from "@/lib/utils";
+import { STATUS_LABEL } from "@/lib/copy";
 
 /** Compact mobile remote for La IA */
 export default function IAMobilePage() {
@@ -31,24 +32,24 @@ export default function IAMobilePage() {
 
   return (
     <main className="space-y-4 p-4 lg:hidden">
-      <GlassPanel title="La IA — Mobile Remote" subtitle={session?.code}>
+      <GlassPanel title="La IA — mando móvil" subtitle={session?.code}>
         <div className="grid grid-cols-2 gap-2">
-          <Link href="/ia/dice"><Button variant="energy" className="w-full" size="sm">Request Roll</Button></Link>
-          <Link href="/ia/table"><Button variant="neon" className="w-full" size="sm">Show on Mesa</Button></Link>
-          <Link href="/ia/world"><Button variant="neon" className="w-full" size="sm">Combat Phase</Button></Link>
-          <Link href="/ia/crawlers"><Button variant="session" className="w-full" size="sm">Grant Loot</Button></Link>
+          <Link href="/ia/dice"><Button variant="energy" className="w-full" size="sm">Pedir tirada</Button></Link>
+          <Link href="/ia/table"><Button variant="neon" className="w-full" size="sm">Mostrar en Mesa</Button></Link>
+          <Link href="/ia/world"><Button variant="neon" className="w-full" size="sm">Fase de combate</Button></Link>
+          <Link href="/ia/crawlers"><Button variant="session" className="w-full" size="sm">Otorgar loot</Button></Link>
         </div>
       </GlassPanel>
 
-      <GlassPanel title="Party HP">
+      <GlassPanel title="HP del grupo">
         {crawlers.map((c) => (
           <div key={c.id} className="mb-3">
             <div className="mb-1 flex justify-between text-sm">
               <span>{c.name}</span>
-              <span className="capitalize text-[var(--text-3)]">{c.status}</span>
+              <span className="text-[var(--text-3)]">{STATUS_LABEL[c.status]}</span>
             </div>
             <ResourceBar
-              label="HP boxes remaining"
+              label="Casillas HP restantes"
               current={10 - c.hp_boxes_filled}
               max={10}
               color="var(--hp)"

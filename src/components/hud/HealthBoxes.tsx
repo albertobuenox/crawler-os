@@ -15,9 +15,9 @@ export function HealthBoxes({ boxesFilled, conEnhanced, className }: HealthBoxes
   return (
     <div className={cn("space-y-2", className)}>
       <div className="flex items-center justify-between">
-        <span className="text-label">Health Bar</span>
+        <span className="text-label">Barra de salud</span>
         <span className="font-stat text-sm text-[var(--hp)]">
-          {10 - filled}/10 boxes · {boxValue} HP each
+          {10 - filled}/10 casillas · {boxValue} HP c/u
         </span>
       </div>
       <div className="grid grid-cols-10 gap-1">
@@ -26,7 +26,7 @@ export function HealthBoxes({ boxesFilled, conEnhanced, className }: HealthBoxes
           return (
             <div
               key={i}
-              title={`Box ${i + 1}${isFilled ? " (damaged)" : ""}`}
+              title={`Casilla ${i + 1}${isFilled ? " (dañada)" : ""}`}
               className={cn(
                 "aspect-square rounded-sm border transition-colors",
                 isFilled

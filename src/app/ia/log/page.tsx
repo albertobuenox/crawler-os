@@ -26,7 +26,7 @@ export default function IALogPage() {
   }, [supabase]);
 
   return (
-    <GlassPanel title="Event Log" subtitle="Global — La IA view">
+    <GlassPanel title="Registro de eventos" subtitle="Global — vista de La IA">
       <EventLogList entries={events} />
     </GlassPanel>
   );

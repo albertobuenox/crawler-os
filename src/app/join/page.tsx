@@ -23,7 +23,12 @@ export default function JoinSessionPage() {
       const { data, error: rpcError } = await supabase.rpc("join_session_by_code", {
         p_code: code.toUpperCase(),
       });
-      if (rpcError) throw rpcError;
+      if (rpcError) {
+        const msg = rpcError.message.toLowerCase();
+        if (msg.includes("session not found")) throw new Error("Sesión no encontrada");
+        if (msg.includes("not authenticated")) throw new Error("No autenticado");
+        throw rpcError;
+      }
 
       const sessionId = (data as { session_id: string }).session_id;
       const {
@@ -55,7 +60,7 @@ export default function JoinSessionPage() {
       router.push("/crawler");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Session not found");
+      setError(err instanceof Error ? err.message : "Sesión no encontrada");
     } finally {
       setLoading(false);
     }
@@ -63,10 +68,10 @@ export default function JoinSessionPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center p-4">
-      <GlassPanel className="w-full max-w-md" title="FLOOR CODE" subtitle="Enter the session La IA created">
+      <GlassPanel className="w-full max-w-md" title="CÓDIGO DE PISO" subtitle="Introduce la sesión que creó La IA">
         <form onSubmit={handleJoin} className="space-y-4">
           <Input
-            label="Session code"
+            label="Código de sesión"
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase())}
             placeholder="FLOOR-XXXX"
@@ -75,7 +80,7 @@ export default function JoinSessionPage() {
           />
           {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
           <Button variant="neon" className="w-full" loading={loading} type="submit">
-            Join Session
+            Unirse a la sesión
           </Button>
         </form>
       </GlassPanel>

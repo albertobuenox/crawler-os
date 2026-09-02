@@ -11,6 +11,7 @@ import { castSession } from "@/lib/utils";
 import { computeDc } from "@/lib/rules";
 import type { DiceRollKind } from "@/lib/types";
 import { useSessionBroadcast } from "@/hooks/useSession";
+import { DICE_STATUS_LABEL } from "@/lib/copy";
 
 export default function IADicePage() {
   const supabase = createClient();
@@ -18,7 +19,7 @@ export default function IADicePage() {
   const [crawlers, setCrawlers] = useState<Crawler[]>([]);
   const [requests, setRequests] = useState<DiceRequest[]>([]);
   const [crawlerId, setCrawlerId] = useState("");
-  const [label, setLabel] = useState("Stat check");
+  const [label, setLabel] = useState("Prueba de característica");
   const [rollKind, setRollKind] = useState<DiceRollKind>("stat_check");
   const [advantage, setAdvantage] = useState(false);
   const [mobAdvantage, setMobAdvantage] = useState(false);
@@ -66,48 +67,48 @@ export default function IADicePage() {
 
   return (
     <div className="space-y-6">
-      <GlassPanel title="Request Roll" subtitle="La IA decides who rolls">
+      <GlassPanel title="Pedir tirada" subtitle="La IA decide quién tira">
         <div className="grid gap-4 sm:grid-cols-2 max-w-2xl">
           <Select
             label="Crawler"
             value={crawlerId}
             onChange={(e) => setCrawlerId(e.target.value)}
-            options={[{ value: "", label: "Any / IA rolls" }, ...crawlers.map((c) => ({ value: c.id, label: c.name }))]}
+            options={[{ value: "", label: "Cualquiera / tira La IA" }, ...crawlers.map((c) => ({ value: c.id, label: c.name }))]}
           />
           <Select
-            label="Roll type"
+            label="Tipo de tirada"
             value={rollKind}
             onChange={(e) => setRollKind(e.target.value as DiceRollKind)}
             options={[
-              { value: "stat_check", label: "Stat check (10+FN)" },
-              { value: "opposed", label: "Opposed (10+mod+FN)" },
-              { value: "unopposed", label: "Unopposed (10+FN×2)" },
-              { value: "attack", label: "Attack" },
+              { value: "stat_check", label: "Prueba de característica (10+FN)" },
+              { value: "opposed", label: "Enfrentada (10+mod+FN)" },
+              { value: "unopposed", label: "Sin oposición (10+FN×2)" },
+              { value: "attack", label: "Ataque" },
             ]}
           />
-          <Input label="Label" value={label} onChange={(e) => setLabel(e.target.value)} />
+          <Input label="Etiqueta" value={label} onChange={(e) => setLabel(e.target.value)} />
           {session && (
             <p className="self-end text-sm text-[var(--text-cyan)]">
-              DC preview: {computeDc(rollKind, session.floor_number)}
+              Vista previa DC: {computeDc(rollKind, session.floor_number)}
             </p>
           )}
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={advantage} onChange={(e) => setAdvantage(e.target.checked)} />
-            Advantage
+            Ventaja
           </label>
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={mobAdvantage} onChange={(e) => setMobAdvantage(e.target.checked)} />
-            Mob advantage (+5 DC)
+            Ventaja de mob (+5 DC)
           </label>
-          <Button variant="energy" onClick={requestRoll}>Request Roll</Button>
+          <Button variant="energy" onClick={requestRoll}>Pedir tirada</Button>
         </div>
       </GlassPanel>
 
-      <GlassPanel title="Recent requests">
+      <GlassPanel title="Peticiones recientes">
         <ul className="space-y-2 font-mono-system text-xs">
           {requests.map((r) => (
             <li key={r.id} className="well px-3 py-2">
-              {r.label} — DC {r.dc} — <span className="capitalize">{r.status}</span>
+              {r.label} — DC {r.dc} — {DICE_STATUS_LABEL[r.status] ?? r.status}
             </li>
           ))}
         </ul>

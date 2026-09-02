@@ -10,6 +10,7 @@ import { ResourceBar, HealthBoxes } from "@/components/hud/HealthBoxes";
 import type { Crawler, GameSession } from "@/lib/types";
 import { castSession } from "@/lib/utils";
 import { statModifier } from "@/lib/rules";
+import { STATUS_LABEL } from "@/lib/copy";
 
 export default function IACrawlersPage() {
   const supabase = createClient();
@@ -82,17 +83,17 @@ export default function IACrawlersPage() {
       <div className="flex justify-between">
         <h2 className="font-display text-xl">Crawlers</h2>
         <Button variant="session" onClick={() => setShowForm(!showForm)}>
-          {showForm ? "Cancel" : "New Crawler"}
+          {showForm ? "Cancelar" : "Nuevo crawler"}
         </Button>
       </div>
 
       {showForm && (
-        <GlassPanel title="Create crawler">
+        <GlassPanel title="Crear crawler">
           <form onSubmit={createCrawler} className="grid gap-4 sm:grid-cols-2">
-            <Input label="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-            <Input label="Race" value={form.race} onChange={(e) => setForm({ ...form, race: e.target.value })} />
-            <Input label="Class" value={form.class_name} onChange={(e) => setForm({ ...form, class_name: e.target.value })} />
-            <Input label="Level" type="number" value={form.level} onChange={(e) => setForm({ ...form, level: +e.target.value })} />
+            <Input label="Nombre" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+            <Input label="Raza" value={form.race} onChange={(e) => setForm({ ...form, race: e.target.value })} />
+            <Input label="Clase" value={form.class_name} onChange={(e) => setForm({ ...form, class_name: e.target.value })} />
+            <Input label="Nivel" type="number" value={form.level} onChange={(e) => setForm({ ...form, level: +e.target.value })} />
             {(["str", "int", "con", "dex", "cha"] as const).map((s) => (
               <Input
                 key={s}
@@ -103,7 +104,7 @@ export default function IACrawlersPage() {
               />
             ))}
             <div className="sm:col-span-2">
-              <Button type="submit" variant="energy">Create</Button>
+              <Button type="submit" variant="energy">Crear</Button>
             </div>
           </form>
         </GlassPanel>
@@ -119,22 +120,22 @@ export default function IACrawlersPage() {
                 <p className="text-xs text-[var(--text-cyan)]">
                   LV {c.level} · {c.class_name ?? "—"}
                 </p>
-                <p className="text-xs capitalize text-[var(--text-3)]">{c.status}</p>
+                <p className="text-xs text-[var(--text-3)]">{STATUS_LABEL[c.status]}</p>
               </div>
             </div>
             <div className="mt-4 space-y-2">
               <HealthBoxes boxesFilled={c.hp_boxes_filled} conEnhanced={c.con_enhanced} />
-              <ResourceBar label="Mana" current={c.mana_current} max={c.mana_max} />
+              <ResourceBar label="Maná" current={c.mana_current} max={c.mana_max} />
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
               <Link href={`/ia/crawlers/${c.id}`}>
-                <Button variant="neon" size="sm">Sheet</Button>
+                <Button variant="neon" size="sm">Hoja</Button>
               </Link>
               <Link href={`/ia/crawlers/${c.id}/skills`}>
-                <Button variant="neon" size="sm">Skills</Button>
+                <Button variant="neon" size="sm">Habilidades</Button>
               </Link>
               <Link href={`/ia/crawlers/${c.id}/grant`}>
-                <Button variant="energy" size="sm">Grant</Button>
+                <Button variant="energy" size="sm">Otorgar</Button>
               </Link>
             </div>
           </GlassPanel>

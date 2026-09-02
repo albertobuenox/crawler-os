@@ -7,6 +7,7 @@ import { GlassPanel } from "@/components/ui/GlassPanel";
 import { Button } from "@/components/ui/Button";
 import { Select, Textarea } from "@/components/ui/Input";
 import type { Crawler, Resource } from "@/lib/types";
+import { KIND_LABEL, RARITY_LABEL } from "@/lib/copy";
 import { useSessionBroadcast } from "@/hooks/useSession";
 
 export default function GrantPage() {
@@ -59,41 +60,41 @@ export default function GrantPage() {
   const selected = resources.find((r) => r.id === resourceId);
 
   return (
-    <GlassPanel title="Assign Resource" subtitle={crawler?.name}>
+    <GlassPanel title="Asignar recurso" subtitle={crawler?.name}>
       <div className="space-y-4 max-w-lg">
         <Select
-          label="Resource"
+          label="Recurso"
           value={resourceId}
           onChange={(e) => setResourceId(e.target.value)}
           options={[
-            { value: "", label: "Select..." },
-            ...resources.map((r) => ({ value: r.id, label: `${r.name} (${r.kind})` })),
+            { value: "", label: "Seleccionar..." },
+            ...resources.map((r) => ({ value: r.id, label: `${r.name} (${KIND_LABEL[r.kind]})` })),
           ]}
         />
         <Select
-          label="Delivery mode"
+          label="Modo de entrega"
           value={mode}
           onChange={(e) => setMode(e.target.value)}
           options={[
-            { value: "reward", label: "Reward cinematic" },
-            { value: "penalty", label: "Penalty cinematic" },
-            { value: "silent", label: "Silent (log only)" },
+            { value: "reward", label: "Cinemática de recompensa" },
+            { value: "penalty", label: "Cinemática de penalización" },
+            { value: "silent", label: "Silencioso (solo registro)" },
           ]}
         />
         <Textarea
-          label="System message"
-          placeholder="The System has decided you deserve a treat. Probably by accident."
+          label="Mensaje del Sistema"
+          placeholder="The System ha decidido que te mereces un premio. Probablemente por accidente."
           value={message}
           onChange={(e) => setMessage(e.target.value)}
         />
         {selected && (
           <div className="well p-3 text-sm">
             <p className="font-semibold text-[var(--text-1)]">{selected.name}</p>
-            <p className="capitalize text-[var(--text-cyan)]">{selected.rarity}</p>
+            <p className="text-[var(--text-cyan)]">{RARITY_LABEL[selected.rarity]}</p>
           </div>
         )}
         <Button variant={mode === "penalty" ? "danger" : "energy"} loading={loading} onClick={grant}>
-          Confirm
+          Confirmar
         </Button>
       </div>
     </GlassPanel>

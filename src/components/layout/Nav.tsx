@@ -20,15 +20,15 @@ import { cn } from "@/lib/utils";
 import { NotificationBadge } from "@/components/hud/EventLog";
 
 const iaNav = [
-  { href: "/ia", icon: Home, label: "Session", glow: "var(--glow-purple)" },
+  { href: "/ia", icon: Home, label: "Sesión", glow: "var(--glow-purple)" },
   { href: "/ia/crawlers", icon: Users, label: "Crawlers", glow: "var(--glow-magenta)" },
-  { href: "/ia/resources", icon: Database, label: "Resources", glow: "var(--glow-cyan)" },
-  { href: "/ia/world", icon: Map, label: "World", glow: "var(--glow-gold)" },
+  { href: "/ia/resources", icon: Database, label: "Recursos", glow: "var(--glow-cyan)" },
+  { href: "/ia/world", icon: Map, label: "Mundo", glow: "var(--glow-gold)" },
   { href: "/ia/table", icon: LayoutGrid, label: "Mesa", glow: "var(--glow-cyan)" },
-  { href: "/ia/dice", icon: Dices, label: "Dice", glow: "var(--glow-orange)" },
-  { href: "/ia/notifications", icon: Bell, label: "System", glow: "var(--glow-orange)" },
-  { href: "/ia/log", icon: ScrollText, label: "Log", glow: "var(--glow-cyan)" },
-  { href: "/ia/settings", icon: Settings, label: "Settings", glow: "var(--glow-purple)" },
+  { href: "/ia/dice", icon: Dices, label: "Dados", glow: "var(--glow-orange)" },
+  { href: "/ia/notifications", icon: Bell, label: "Sistema", glow: "var(--glow-orange)" },
+  { href: "/ia/log", icon: ScrollText, label: "Registro", glow: "var(--glow-cyan)" },
+  { href: "/ia/settings", icon: Settings, label: "Ajustes", glow: "var(--glow-purple)" },
 ];
 
 export function IANavRail({ unread = 0 }: { unread?: number }) {
@@ -60,12 +60,12 @@ export function IANavRail({ unread = 0 }: { unread?: number }) {
 }
 
 const crawlerNav = [
-  { href: "/crawler", icon: Home, label: "Home", color: "var(--purple-500)" },
-  { href: "/crawler/sheet", icon: User, label: "Sheet", color: "var(--magenta-500)" },
-  { href: "/crawler/inventory", icon: Backpack, label: "Items", color: "var(--cyan-500)" },
-  { href: "/crawler/skills", icon: Sparkles, label: "Skills", color: "var(--cyan-500)" },
+  { href: "/crawler", icon: Home, label: "Inicio", color: "var(--purple-500)" },
+  { href: "/crawler/sheet", icon: User, label: "Hoja", color: "var(--magenta-500)" },
+  { href: "/crawler/inventory", icon: Backpack, label: "Objetos", color: "var(--cyan-500)" },
+  { href: "/crawler/skills", icon: Sparkles, label: "Habilidades", color: "var(--cyan-500)" },
   { href: "/crawler/table", icon: LayoutGrid, label: "Mesa", color: "var(--gold-400)" },
-  { href: "/crawler/notifications", icon: Bell, label: "System", color: "var(--orange-500)" },
+  { href: "/crawler/notifications", icon: Bell, label: "Sistema", color: "var(--orange-500)" },
 ];
 
 export function CrawlerBottomNav({ unread = 0 }: { unread?: number }) {
@@ -104,7 +104,7 @@ export function IATopBar({ sessionCode, sessionName }: { sessionCode?: string; s
     <header className="flex h-16 items-center justify-between border-b border-[var(--stroke-glass)] px-6">
       <div>
         <p className="text-label text-[var(--text-cyan)]">SYSTEM / LA IA</p>
-        <h1 className="font-display text-lg tracking-wide">{sessionName ?? "Session Control"}</h1>
+        <h1 className="font-display text-lg tracking-wide">{sessionName ?? "Control de sesión"}</h1>
       </div>
       {sessionCode && (
         <code className="rounded-lg well px-3 py-1.5 font-mono-system text-sm text-[var(--cyan-400)]">
@@ -139,11 +139,11 @@ export function CrawlerStatusStrip({
       </div>
       <div className="mt-2 grid grid-cols-2 gap-2">
         <div>
-          <span className="text-label">HP boxes</span>
+          <span className="text-label">Casillas HP</span>
           <div className="font-stat text-[var(--hp)]">{boxesRemaining}/10</div>
         </div>
         <div>
-          <span className="text-label">Mana</span>
+          <span className="text-label">Maná</span>
           <div className="font-stat text-[var(--mana)]">
             {mana}/{manaMax}
           </div>

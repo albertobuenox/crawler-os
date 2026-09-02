@@ -16,10 +16,10 @@ interface CinematicOverlayProps {
 }
 
 const typeConfig = {
-  reward: { header: "REWARD", cta: "Claim", variant: "energy" as const },
-  penalty: { header: "PENALTY", cta: "Acknowledge", variant: "danger" as const },
-  loot_box: { header: "LOOT BOX", cta: "Open", variant: "energy" as const },
-  achievement: { header: "ACHIEVEMENT", cta: "Claim", variant: "energy" as const },
+  reward: { header: "REWARD", cta: "Reclamar", variant: "energy" as const },
+  penalty: { header: "PENALTY", cta: "Aceptar", variant: "danger" as const },
+  loot_box: { header: "LOOT BOX", cta: "Abrir", variant: "energy" as const },
+  achievement: { header: "ACHIEVEMENT", cta: "Reclamar", variant: "energy" as const },
 };
 
 export function CinematicOverlay({

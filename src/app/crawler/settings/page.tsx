@@ -16,9 +16,9 @@ export default function CrawlerSettingsPage() {
 
   return (
     <main className="p-4 pb-24">
-      <GlassPanel title="Settings">
-        <p className="mb-2 text-sm text-[var(--text-3)]">Add to Home Screen for full HUD experience.</p>
-        <Button variant="danger" onClick={signOut}>Sign Out</Button>
+      <GlassPanel title="Ajustes">
+        <p className="mb-2 text-sm text-[var(--text-3)]">Añade a la pantalla de inicio para el HUD completo.</p>
+        <Button variant="danger" onClick={signOut}>Cerrar sesión</Button>
       </GlassPanel>
     </main>
   );

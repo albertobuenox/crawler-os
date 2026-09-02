@@ -1,6 +1,7 @@
 "use client";
 
 import type { TableState, MapPin, Resource } from "@/lib/types";
+import { KIND_LABEL, RARITY_LABEL } from "@/lib/copy";
 import { cn } from "@/lib/utils";
 
 interface TableCanvasProps {
@@ -31,7 +32,7 @@ export function TableCanvas({
           className
         )}
       >
-        The System is waiting for La IA to show something.
+        The System espera a que La IA muestre algo.
       </div>
     );
   }
@@ -51,7 +52,7 @@ export function TableCanvas({
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={tableState.image_url}
-          alt={tableState.title ?? "Table display"}
+          alt={tableState.title ?? "Pantalla de mesa"}
           className="h-full w-full object-contain"
         />
       )}
@@ -73,9 +74,9 @@ export function TableCanvas({
       {(shown === "item" || shown === "monster") && resource && !minimal && (
         <div className="flex flex-col items-center justify-center p-8 text-center">
           <div className="glass p-6">
-            <p className="text-label">{resource.kind}</p>
+            <p className="text-label">{KIND_LABEL[resource.kind]}</p>
             <h3 className="mt-2 text-2xl font-bold text-[var(--text-1)]">{resource.name}</h3>
-            <p className="mt-2 text-sm capitalize text-[var(--text-cyan)]">{resource.rarity}</p>
+            <p className="mt-2 text-sm text-[var(--text-cyan)]">{RARITY_LABEL[resource.rarity]}</p>
             {resource.system_copy && (
               <p className="mt-4 max-w-md text-sm italic text-[var(--text-2)]">
                 {resource.system_copy}
