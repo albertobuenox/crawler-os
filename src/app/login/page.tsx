@@ -74,7 +74,14 @@ export default function LoginPage() {
   return (
     <main className="relative isolate flex min-h-screen items-center justify-center overflow-hidden p-4">
       <LoginBackdrop />
-      <div className="hud-frame relative z-10 w-full max-w-[480px]">
+      <div className="relative z-10 flex w-full max-w-[480px] flex-col items-center">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/logos/logo.webp"
+          alt="Dungeon Crawler World Earth"
+          className="relative z-20 mb-6 w-[min(42%,168px)] object-contain mix-blend-screen drop-shadow-[0_0_28px_rgba(0,212,255,0.35)] sm:mb-8"
+        />
+        <div className="hud-frame w-full">
       <GlassPanel className="hud-panel w-full" variant="system" title={BRAND} subtitle="CRAWLER OS">
         <p className="mb-4 text-center text-sm text-[var(--cyan-400)] [text-shadow:0_0_12px_rgba(0,212,255,0.55)]">
           ¿Quién entra al dungeon?
@@ -167,6 +174,7 @@ export default function LoginPage() {
 
         {error && <p className="mt-4 text-center text-sm text-[var(--danger)]">{error}</p>}
       </GlassPanel>
+        </div>
       </div>
     </main>
   );
