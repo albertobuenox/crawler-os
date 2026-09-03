@@ -3,8 +3,6 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { GlassPanel } from "@/components/ui/GlassPanel";
-import { Button } from "@/components/ui/Button";
-import { CrawlerStatusStrip } from "@/components/layout/Nav";
 import type { Crawler, Skill } from "@/lib/types";
 import { statModifier } from "@/lib/rules";
 import { SKILL_TYPE_LABEL, BRAND } from "@/lib/copy";
@@ -34,7 +32,6 @@ export default function CrawlerSkillsPage() {
 
   return (
     <>
-      <CrawlerStatusStrip name={crawler.name} level={crawler.level} hpBoxes={crawler.hp_boxes_filled} conEnhanced={crawler.con_enhanced} mana={crawler.mana_current} manaMax={crawler.mana_max} />
       <main className="space-y-4 p-4 pb-24">
         <GlassPanel title="Habilidades" subtitle="Avance cada 2h / 4h de juego">
           {skills.length === 0 ? (

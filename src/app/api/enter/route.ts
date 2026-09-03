@@ -105,7 +105,7 @@ export async function POST(request: Request) {
       );
 
       await signInAs(admin, email);
-      return NextResponse.json({ ok: true, redirect: "/crawler" });
+      return NextResponse.json({ ok: true, redirect: "/crawler/table" });
     }
 
     const { data: existingDm } = await admin.from("profiles").select("id").eq("role", "dm").limit(1).maybeSingle();

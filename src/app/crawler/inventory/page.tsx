@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { GlassPanel } from "@/components/ui/GlassPanel";
 import { Button } from "@/components/ui/Button";
-import { CrawlerStatusStrip } from "@/components/layout/Nav";
 import { InventorySlot } from "@/components/hud/InventorySlot";
 import type { Crawler, ItemInstance, Resource } from "@/lib/types";
 import { RARITY_LABEL } from "@/lib/copy";
@@ -35,7 +34,6 @@ export default function CrawlerInventoryPage() {
 
   return (
     <>
-      <CrawlerStatusStrip name={crawler.name} level={crawler.level} hpBoxes={crawler.hp_boxes_filled} conEnhanced={crawler.con_enhanced} mana={crawler.mana_current} manaMax={crawler.mana_max} />
       <main className="space-y-4 p-4 pb-24">
         <GlassPanel title="Acceso rápido" subtitle="Hotlist">
           <div className="grid grid-cols-5 gap-2">

@@ -23,16 +23,16 @@ import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 import { BRAND, SCENE_LABEL } from "@/lib/copy";
 
 const dmNav = [
-  { href: "/dm", icon: Home, label: "Sesión", glow: "var(--glow-purple)" },
+  { href: "/dm", icon: Home, label: "Sesión", glow: "var(--glow-purple)", disabled: true },
   { href: "/dm/crawlers", icon: Users, label: "Crawlers", glow: "var(--glow-magenta)" },
   { href: "/dm/skills", icon: Sparkles, label: "Skills", glow: "var(--glow-gold)" },
   { href: "/dm/resources", icon: Database, label: "Recursos", glow: "var(--glow-cyan)" },
   { href: "/dm/world", icon: Map, label: "Mundo", glow: "var(--glow-gold)" },
   { href: "/dm/table", icon: LayoutGrid, label: SCENE_LABEL, glow: "var(--glow-cyan)" },
-  { href: "/dm/dice", icon: Dices, label: "Dados", glow: "var(--glow-orange)" },
-  { href: "/dm/notifications", icon: Bell, label: "Sistema", glow: "var(--glow-orange)" },
-  { href: "/dm/log", icon: ScrollText, label: "Registro", glow: "var(--glow-cyan)" },
-  { href: "/dm/settings", icon: Settings, label: "Ajustes", glow: "var(--glow-purple)" },
+  { href: "/dm/dice", icon: Dices, label: "Dados", glow: "var(--glow-orange)", disabled: true },
+  { href: "/dm/notifications", icon: Bell, label: "Sistema", glow: "var(--glow-orange)", disabled: true },
+  { href: "/dm/log", icon: ScrollText, label: "Registro", glow: "var(--glow-cyan)", disabled: true },
+  { href: "/dm/settings", icon: Settings, label: "Ajustes", glow: "var(--glow-purple)", disabled: true },
 ];
 
 export function DMNavRail({ unread = 0 }: { unread?: number }) {
@@ -58,8 +58,25 @@ export function DMNavRail({ unread = 0 }: { unread?: number }) {
             / CONTROL
           </span>
         </p>
-        {dmNav.map(({ href, icon: Icon, label, glow }) => {
+        {dmNav.map(({ href, icon: Icon, label, glow, disabled }) => {
           const active = pathname === href || (href !== "/dm" && pathname.startsWith(href));
+          if (disabled) {
+            return (
+              <span
+                key={href}
+                title={`${label} — no disponible`}
+                aria-disabled="true"
+                className="relative mx-2 flex h-10 cursor-default items-center gap-3 overflow-hidden rounded-[14px] px-2 text-[var(--text-4)] opacity-35 hover:cursor-default"
+              >
+                <span className="relative flex h-6 w-6 shrink-0 items-center justify-center">
+                  <Icon size={16} strokeWidth={1.75} />
+                </span>
+                <span className="dm-nav-label whitespace-nowrap text-[12px] font-medium tracking-wide">
+                  {label}
+                </span>
+              </span>
+            );
+          }
           return (
             <Link
               key={href}
@@ -148,40 +165,3 @@ export function DMTopBar({ sessionCode, sessionName }: { sessionCode?: string; s
   );
 }
 
-export function CrawlerStatusStrip({
-  name,
-  level,
-  hpBoxes,
-  conEnhanced,
-  mana,
-  manaMax,
-}: {
-  name: string;
-  level: number;
-  hpBoxes: number;
-  conEnhanced: number;
-  mana: number;
-  manaMax: number;
-}) {
-  const boxesRemaining = 10 - hpBoxes;
-  return (
-    <div className="sticky top-0 z-[var(--z-nav)] border-b border-[var(--stroke-glass)] bg-[rgba(5,6,13,0.9)] px-4 py-2 pr-44 backdrop-blur-md">
-      <div className="flex items-center justify-between text-xs">
-        <span className="font-display text-sm text-[var(--text-1)]">{name}</span>
-        <span className="text-[var(--gold-400)]">LV {level}</span>
-      </div>
-      <div className="mt-2 grid grid-cols-2 gap-2">
-        <div>
-          <span className="text-label">Casillas HP</span>
-          <div className="font-stat text-[var(--hp)]">{boxesRemaining}/10</div>
-        </div>
-        <div>
-          <span className="text-label">Maná</span>
-          <div className="font-stat text-[var(--mana)]">
-            {mana}/{manaMax}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}

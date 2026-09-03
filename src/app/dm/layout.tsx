@@ -17,7 +17,7 @@ export default async function DMLayout({ children }: { children: React.ReactNode
     .eq("id", user.id)
     .single();
 
-  if (profile?.role !== "dm") redirect("/crawler");
+  if (profile?.role !== "dm") redirect("/crawler/table");
 
   const { data: member } = await supabase
     .from("session_members")
@@ -34,7 +34,7 @@ export default async function DMLayout({ children }: { children: React.ReactNode
       <DMNavRail />
       <div className="flex min-h-screen flex-1 flex-col">
         <DMTopBar sessionCode={session?.code} sessionName={session?.name} />
-        <main className="flex-1 overflow-auto p-6">{children}</main>
+        <main className="flex-1 overflow-auto px-10 py-8 pl-16">{children}</main>
       </div>
       <FloatingUtilityMenu />
     </div>

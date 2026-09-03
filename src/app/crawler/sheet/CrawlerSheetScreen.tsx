@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { CrawlerStatusStrip } from "@/components/layout/Nav";
 import { CharacterSheet } from "@/components/hud/CharacterSheet";
 import type { Crawler, Skill, Effect, ItemInstance, Resource } from "@/lib/types";
 
@@ -70,18 +69,8 @@ export function CrawlerSheetScreen({ crawlerId }: { crawlerId?: string }) {
   if (!crawler) return <p className="p-4 text-[var(--text-3)]">Cargando hoja...</p>;
 
   return (
-    <>
-      <CrawlerStatusStrip
-        name={crawler.name}
-        level={crawler.level}
-        hpBoxes={crawler.hp_boxes_filled}
-        conEnhanced={crawler.con_enhanced}
-        mana={crawler.mana_current}
-        manaMax={crawler.mana_max}
-      />
-      <main className="p-3 pb-24 lg:p-4">
-        <CharacterSheet crawler={crawler} skills={skills} effects={effects} items={items} />
-      </main>
-    </>
+    <main className="p-3 pb-24 lg:p-4">
+      <CharacterSheet crawler={crawler} skills={skills} effects={effects} items={items} />
+    </main>
   );
 }

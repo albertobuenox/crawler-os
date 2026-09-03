@@ -5,7 +5,6 @@ import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { GlassPanel } from "@/components/ui/GlassPanel";
 import { Button } from "@/components/ui/Button";
-import { CrawlerStatusStrip } from "@/components/layout/Nav";
 import { EventLogList } from "@/components/hud/EventLog";
 import { CinematicOverlay } from "@/components/hud/CinematicOverlay";
 import { DiceOverlay } from "@/components/hud/DiceOverlay";
@@ -118,7 +117,7 @@ export default function CrawlerHomePage() {
 
   if (!crawler) {
     return (
-      <main className="flex min-h-screen items-center justify-center p-4">
+      <main className="flex h-full items-center justify-center p-4">
         <GlassPanel title="Sin crawler asignado">
           <p className="mb-4 text-sm">Vuelve al lobby y elige un participante de la mazmorra.</p>
           <Link href="/login"><Button variant="energy">Volver al lobby</Button></Link>
@@ -129,14 +128,6 @@ export default function CrawlerHomePage() {
 
   return (
     <>
-      <CrawlerStatusStrip
-        name={crawler.name}
-        level={crawler.level}
-        hpBoxes={crawler.hp_boxes_filled}
-        conEnhanced={crawler.con_enhanced}
-        mana={crawler.mana_current}
-        manaMax={crawler.mana_max}
-      />
       <main className="space-y-4 p-4">
         {crawler.status === "downed" && (
           <div className="rounded-xl border border-[var(--stroke-danger)] bg-[var(--glass-danger)] p-3 text-center font-display text-sm text-[var(--danger)]">

@@ -1,123 +1,15 @@
-"use client";
-
-import { useEffect, useState, useCallback } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { GlassPanel } from "@/components/ui/GlassPanel";
-import { Button } from "@/components/ui/Button";
-import { Select, Input } from "@/components/ui/Input";
-import type { Crawler, DiceRequest, GameSession } from "@/lib/types";
-import { castSession } from "@/lib/utils";
-import { computeDc } from "@/lib/rules";
-import type { DiceRollKind } from "@/lib/types";
-import { useRealtimeTable, useSessionBroadcast } from "@/hooks/useSession";
-import { DICE_STATUS_LABEL } from "@/lib/copy";
+import { Dices } from "lucide-react";
 
 export default function DMDicePage() {
-  const supabase = createClient();
-  const [session, setSession] = useState<GameSession | null>(null);
-  const [crawlers, setCrawlers] = useState<Crawler[]>([]);
-  const [requests, setRequests] = useState<DiceRequest[]>([]);
-  const [crawlerId, setCrawlerId] = useState("");
-  const [label, setLabel] = useState("Prueba de característica");
-  const [rollKind, setRollKind] = useState<DiceRollKind>("stat_check");
-  const [advantage, setAdvantage] = useState(false);
-  const [mobAdvantage, setMobAdvantage] = useState(false);
-
-  const load = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const { data: member } = await supabase.from("session_members").select("sessions(*)").eq("user_id", user.id).limit(1).maybeSingle();
-    const sess = castSession(member?.sessions);
-    setSession(sess ?? null);
-    if (sess) {
-      const [{ data: cr }, { data: dr }] = await Promise.all([
-        supabase.from("crawlers").select("*").eq("session_id", sess.id),
-        supabase.from("dice_requests").select("*").eq("session_id", sess.id).order("created_at", { ascending: false }).limit(10),
-      ]);
-      setCrawlers((cr as Crawler[]) ?? []);
-      setRequests((dr as DiceRequest[]) ?? []);
-    }
-  }, [supabase]);
-
-  const { broadcast } = useSessionBroadcast(session?.id, useCallback(() => {
-    load();
-  }, [load]));
-
-  useRealtimeTable(
-    "dice_requests",
-    session ? `session_id=eq.${session.id}` : "session_id=eq.none",
-    () => load()
-  );
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  async function requestRoll() {
-    if (!session) return;
-    const dc = computeDc(rollKind, session.floor_number);
-    const { data } = await supabase.from("dice_requests").insert({
-      session_id: session.id,
-      crawler_id: crawlerId || null,
-      requested_by: (await supabase.auth.getUser()).data.user?.id,
-      roll_kind: rollKind,
-      label,
-      dc,
-      advantage,
-      mob_advantage: mobAdvantage,
-    }).select().single();
-    await broadcast("dice_anim", { requestId: data?.id, label, dc });
-    load();
-  }
-
   return (
-    <div className="space-y-6">
-      <GlassPanel title="Pedir tirada" subtitle="El Dungeon Master decide quién tira">
-        <div className="grid gap-4 sm:grid-cols-2 max-w-2xl">
-          <Select
-            label="Crawler"
-            value={crawlerId}
-            onChange={(e) => setCrawlerId(e.target.value)}
-            options={[{ value: "", label: "Cualquiera / tira el Dungeon Master" }, ...crawlers.map((c) => ({ value: c.id, label: c.name }))]}
-          />
-          <Select
-            label="Tipo de tirada"
-            value={rollKind}
-            onChange={(e) => setRollKind(e.target.value as DiceRollKind)}
-            options={[
-              { value: "stat_check", label: "Prueba de característica (10+FN)" },
-              { value: "opposed", label: "Enfrentada (10+mod+FN)" },
-              { value: "unopposed", label: "Sin oposición (10+FN×2)" },
-              { value: "attack", label: "Ataque" },
-            ]}
-          />
-          <Input label="Etiqueta" value={label} onChange={(e) => setLabel(e.target.value)} />
-          {session && (
-            <p className="self-end text-sm text-[var(--text-cyan)]">
-              Vista previa DC: {computeDc(rollKind, session.floor_number)}
-            </p>
-          )}
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={advantage} onChange={(e) => setAdvantage(e.target.checked)} />
-            Ventaja
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={mobAdvantage} onChange={(e) => setMobAdvantage(e.target.checked)} />
-            Ventaja de mob (+5 DC)
-          </label>
-          <Button variant="energy" onClick={requestRoll}>Pedir tirada</Button>
-        </div>
-      </GlassPanel>
-
-      <GlassPanel title="Peticiones recientes">
-        <ul className="space-y-2 font-mono-system text-xs">
-          {requests.map((r) => (
-            <li key={r.id} className="well px-3 py-2">
-              {r.label} — DC {r.dc} — {DICE_STATUS_LABEL[r.status] ?? r.status}
-            </li>
-          ))}
-        </ul>
-      </GlassPanel>
-    </div>
+    <GlassPanel title="Dados" subtitle="No disponible">
+      <div className="flex flex-col items-center gap-3 py-10 text-center opacity-50">
+        <Dices size={36} className="text-[var(--text-4)]" />
+        <p className="text-sm text-[var(--text-3)]">
+          Las tiradas no están disponibles para el Dungeon Master de momento.
+        </p>
+      </div>
+    </GlassPanel>
   );
 }

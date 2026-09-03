@@ -244,12 +244,19 @@ function StatsTab({ crawler, effects }: { crawler: Crawler; effects: Effect[] })
       </div>
       <HealthBoxes boxesFilled={crawler.hp_boxes_filled} conEnhanced={crawler.con_enhanced} />
       <ResourceBar label="Maná" current={crawler.mana_current} max={crawler.mana_max} />
+      {/* 
       <div className="grid grid-cols-3 gap-2 text-center">
         <MiniStat label="Evadir" value={crawler.evade_total} />
         <MiniStat label="Move" value={crawler.move} />
         <MiniStat label="Step" value={crawler.step} />
       </div>
-      <p className="text-xs text-[var(--gold-400)]">Favor del Sistema: {crawler.ai_favor_remaining} restante</p>
+      */}
+ 
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-[var(--text-3)]">Favor de la IA:</span>
+        <span className="font-stat text-lg text-[var(--gold-400)]">{crawler.ai_favor_remaining}</span>
+        <span className="text-xs text-[var(--text-3)]">restante</span>
+      </div>
       <div>
         <p className="text-label mb-2">Efectos activos</p>
         {effects.length === 0 ? (

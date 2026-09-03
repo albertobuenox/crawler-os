@@ -16,5 +16,5 @@ export default async function HomePage() {
     .single();
 
   if (profile?.role === "dm") redirect("/dm");
-  redirect("/crawler");
+  redirect("/crawler/table");
 }

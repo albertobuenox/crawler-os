@@ -62,6 +62,40 @@ export function healthPercent(boxesFilled: number): number {
   return ((10 - boxesFilled) / 10) * 100;
 }
 
+/** Life boxes (0–10) → bar color: blue (full) → yellow → pink → red (critical) */
+const HEALTH_COLOR_STOPS: { at: number; hex: string }[] = [
+  { at: 10, hex: "#3b82f6" }, // blue (--mana)
+  { at: 7, hex: "#22d3ee" },  // cyan transition
+  { at: 5, hex: "#fbbf24" },  // yellow (--gold-400)
+  { at: 3, hex: "#ec4899" },  // pink (--pink-500)
+  { at: 1, hex: "#ff3b5c" },  // red (--hp)
+  { at: 0, hex: "#ff3b5c" },
+];
+
+function lerpHex(a: string, b: string, t: number): string {
+  const parse = (h: string) =>
+    [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  const [r1, g1, b1] = parse(a);
+  const [r2, g2, b2] = parse(b);
+  const mix = (x: number, y: number) => Math.round(x + (y - x) * t);
+  const toHex = (n: number) => n.toString(16).padStart(2, "0");
+  return `#${toHex(mix(r1, r2))}${toHex(mix(g1, g2))}${toHex(mix(b1, b2))}`;
+}
+
+export function healthBarColor(lifeBoxes: number): string {
+  const clamped = Math.min(Math.max(lifeBoxes, 0), 10);
+  for (let i = 0; i < HEALTH_COLOR_STOPS.length - 1; i++) {
+    const hi = HEALTH_COLOR_STOPS[i];
+    const lo = HEALTH_COLOR_STOPS[i + 1];
+    if (clamped >= lo.at) {
+      const range = hi.at - lo.at || 1;
+      const t = (clamped - lo.at) / range;
+      return lerpHex(lo.hex, hi.hex, t);
+    }
+  }
+  return HEALTH_COLOR_STOPS[HEALTH_COLOR_STOPS.length - 1].hex;
+}
+
 export function rollD20(advantage = false, disadvantage = false): { rolls: number[]; result: number } {
   const d1 = Math.floor(Math.random() * 20) + 1;
   if (!advantage && !disadvantage) return { rolls: [d1], result: d1 };

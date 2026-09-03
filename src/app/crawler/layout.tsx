@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { CrawlerBottomNav } from "@/components/layout/Nav";
-import { FloatingUtilityMenu } from "@/components/layout/FloatingUtilityMenu";
+import { CrawlerHeader } from "@/components/layout/CrawlerHeader";
 
 export default async function CrawlerLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -19,9 +19,11 @@ export default async function CrawlerLayout({ children }: { children: React.Reac
   if (profile?.role === "dm") redirect("/dm");
 
   return (
-    <div className="relative z-[var(--z-shell)] min-h-screen pb-[72px] lg:pb-0">
-      {children}
-      <FloatingUtilityMenu />
+    <div className="relative z-[var(--z-shell)] flex h-dvh flex-col pb-[72px] lg:pb-0">
+      <CrawlerHeader />
+      <div className="relative min-h-0 flex-1">
+        <div className="absolute inset-0 overflow-auto">{children}</div>
+      </div>
       <CrawlerBottomNav />
     </div>
   );

@@ -56,15 +56,15 @@ export default function CrawlerTablePage() {
   }, [load]));
 
   return (
-    <main className="fixed inset-x-0 top-0 bottom-[72px] z-[var(--z-shell)] bg-[var(--void-950)] lg:bottom-0">
-      <div className="flex h-full min-h-0 gap-2 p-2 pt-3">
+    <main className="relative h-full min-h-0 overflow-hidden bg-[var(--void-950)]">
+      <div className="flex h-full min-h-0 gap-2 p-2">
         <PartyAvatarRail members={party} />
         <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
-          <p className="pr-36 text-center font-display text-xs tracking-widest text-[var(--cyan-400)] sm:pr-40">ESCENA</p>
+          <p className="text-center font-display text-xs tracking-widest text-[var(--cyan-400)]">ESCENA</p>
           <TableCanvas tableState={tableState} resource={resource} pins={pins} className="min-h-0 flex-1" />
-          <SceneChat />
         </div>
       </div>
+      <SceneChat />
     </main>
   );
 }
