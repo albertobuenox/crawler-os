@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutGrid, LogOut, Mail, User } from "lucide-react";
+import { Castle, LayoutGrid, LogOut, Mail, User } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 import { NotificationInbox } from "@/components/hud/NotificationInbox";
@@ -12,10 +12,7 @@ import { cn } from "@/lib/utils";
 import { SCENE_LABEL } from "@/lib/copy";
 import type { Crawler } from "@/lib/types";
 
-type HeaderCrawler = Pick<
-  Crawler,
-  "id" | "name" | "level" | "hp_boxes_filled" | "mana_current" | "mana_max"
->;
+type HeaderCrawler = Pick<Crawler, "id" | "name" | "level" | "mana_current" | "mana_max">;
 
 const iconBtn =
   "flex h-8 w-8 items-center justify-center rounded-full transition-colors duration-[var(--t-ui)]";
@@ -48,7 +45,7 @@ export function CrawlerHeader() {
 
     let query = supabase
       .from("crawlers")
-      .select("id, name, level, hp_boxes_filled, mana_current, mana_max");
+      .select("id, name, level, mana_current, mana_max");
 
     if (member?.crawler_id) {
       query = query.eq("id", member.crawler_id);
@@ -82,13 +79,32 @@ export function CrawlerHeader() {
     }
   }
 
-  const hpLeft = crawler ? 10 - crawler.hp_boxes_filled : 0;
-
   return (
     <>
       <NotificationInbox open={inboxOpen} onOpenChange={setInboxOpen} mailRef={mailRef} />
       <header className="sticky top-0 z-[var(--z-nav)] shrink-0 border-b border-[var(--stroke-glass)] bg-[rgba(5,6,13,0.92)] px-4 py-2 backdrop-blur-md">
         <div className="flex items-center gap-3 sm:gap-6">
+          <Link
+            href="/crawler/table"
+            aria-label="ir a la mazmorra"
+            className={cn(
+              "group/mazmorra grid h-9 shrink-0 grid-cols-[2.25rem_0fr] items-center overflow-hidden rounded-[10px] border border-[var(--stroke-cyan)] bg-[rgba(5,6,13,0.88)]",
+              "text-[var(--cyan-400)] shadow-[var(--shadow-glass)]",
+              "transition-[grid-template-columns,border-color,box-shadow,color,background-color] duration-[var(--t-panel)] ease-[var(--ease-hologram)]",
+              "hover:grid-cols-[2.25rem_1fr] hover:border-[var(--stroke-cyan-hot)] hover:bg-[rgba(0,212,255,0.14)] hover:text-[var(--cyan-300)] hover:shadow-[var(--glow-cyan)]",
+              "focus-visible:grid-cols-[2.25rem_1fr] focus-visible:border-[var(--stroke-cyan-hot)] focus-visible:shadow-[var(--glow-cyan)]",
+              sceneActive && "border-[var(--stroke-cyan-hot)] text-[var(--cyan-300)] shadow-[var(--glow-cyan)]"
+            )}
+          >
+            <span className="flex h-9 w-9 items-center justify-center">
+              <Castle size={16} strokeWidth={1.75} />
+            </span>
+            <span className="min-w-0 overflow-hidden">
+              <span className="block whitespace-nowrap pr-3 font-display text-[10px] font-medium uppercase tracking-[0.16em] opacity-0 transition-opacity duration-[var(--t-ui)] delay-75 ease-[var(--ease-hologram)] group-hover/mazmorra:opacity-100 group-focus-visible/mazmorra:opacity-100">
+                ir a la mazmorra
+              </span>
+            </span>
+          </Link>
           <Link
             href="/crawler/table"
             className="min-w-0 shrink-0 rounded-md outline-offset-4"
@@ -97,11 +113,6 @@ export function CrawlerHeader() {
             <span className="block truncate font-display text-sm text-[var(--text-1)] transition-colors duration-[var(--t-ui)] hover:text-[var(--cyan-300)]">
               {crawler?.name ?? "Crawler"}
             </span>
-            {crawler && (
-              <span className="text-label block text-[var(--hp)]">
-                Casillas HP {hpLeft}/10
-              </span>
-            )}
           </Link>
 
           {crawler && (

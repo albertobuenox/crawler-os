@@ -12,6 +12,7 @@ import { STAT_LABELS } from "@/lib/types";
 import { castSession } from "@/lib/utils";
 import { assignStartingStat, formatStat, STARTING_STAT_VALUES, STAT_KEYS } from "@/lib/rules";
 import { crawlerClassLabel, STATUS_LABEL } from "@/lib/copy";
+import { crawlerAvatarUrl, crawlerInitials } from "@/lib/crawler-art";
 import { Copy, Gift, Trash2, Pencil, UserPlus, X } from "lucide-react";
 
 /* ── Context-menu mini-modal ── */
@@ -152,6 +153,25 @@ function AssignUserModal({
         </form>
       </div>
     </div>
+  );
+}
+
+function CrawlerCardAvatar({ crawler }: { crawler: Crawler }) {
+  const src = crawlerAvatarUrl(crawler.name, crawler.portrait_url);
+  if (!src) {
+    return (
+      <div className="flex h-20 w-20 items-center justify-center rounded-2xl well font-display text-base tracking-widest text-[var(--cyan-400)] lg:h-24 lg:w-24">
+        {crawlerInitials(crawler.name)}
+      </div>
+    );
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt=""
+      className="h-20 w-20 rounded-2xl object-cover ring-1 ring-[var(--stroke-magenta)] lg:h-24 lg:w-24"
+    />
   );
 }
 
@@ -308,7 +328,7 @@ export default function DMCrawlersPage() {
           >
             <GlassPanel variant="identity" className="pointer-events-none">
               <div className="flex gap-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl well text-2xl">👤</div>
+                <CrawlerCardAvatar crawler={c} />
                 <div>
                   <h3 className="font-display text-lg">{c.name}</h3>
                   <p className="text-xs text-[var(--text-cyan)]">

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Eye } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import type { CrawlerStatus } from "@/lib/types";
+import { crawlerAvatarUrl, crawlerInitials } from "@/lib/crawler-art";
 import { cn } from "@/lib/utils";
 import { HudTooltip } from "@/components/hud/HudTooltip";
 
@@ -36,13 +37,6 @@ const statusPip: Record<CrawlerStatus, string> = {
   afk: "bg-[var(--offline)]",
 };
 
-function initials(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "?";
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
-}
-
 function AvatarFrame({
   member,
   open,
@@ -57,11 +51,13 @@ function AvatarFrame({
   if (!member) {
     return (
       <div
-        className="aspect-square w-full rounded-[14px] border border-dashed border-[var(--stroke-glass)] bg-[rgba(16,19,31,0.55)]"
+        className="aspect-square w-full rounded-[16px] border border-dashed border-[var(--stroke-glass)] bg-[rgba(16,19,31,0.55)]"
         aria-hidden="true"
       />
     );
   }
+
+  const avatarSrc = crawlerAvatarUrl(member.name, member.portrait_url);
 
   return (
     <div className="flex flex-col" data-party-slot={member.id} data-open={open ? "" : undefined}>
@@ -72,25 +68,29 @@ function AvatarFrame({
         aria-expanded={open}
         aria-controls={`sheet-action-${member.id}`}
         className={cn(
-          "relative aspect-square w-full cursor-pointer rounded-[14px] border-2 bg-[rgba(16,19,31,0.82)] transition-[border-color,box-shadow,filter] duration-[var(--t-ui)] ease-[var(--ease-hologram)]",
+          "relative aspect-square w-full cursor-pointer rounded-[16px] border-2 bg-[rgba(16,19,31,0.82)] transition-[border-color,box-shadow,filter] duration-[var(--t-ui)] ease-[var(--ease-hologram)]",
           statusRing[member.status],
           "hover:border-[var(--stroke-cyan-hot)] hover:shadow-[var(--glow-cyan)] hover:brightness-110",
           open && "border-[var(--stroke-cyan-hot)] shadow-[var(--glow-cyan)]"
         )}
       >
-        <span className="absolute inset-0 overflow-hidden rounded-[12px]">
-          {member.portrait_url ? (
+        <span className="absolute inset-0 overflow-hidden rounded-[14px]">
+          {avatarSrc ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={member.portrait_url} alt="" className="h-full w-full object-cover" />
+            <img
+              src={avatarSrc}
+              alt=""
+              className="h-full w-full object-cover"
+            />
           ) : (
-            <span className="flex h-full w-full items-center justify-center font-display text-[11px] tracking-widest text-[var(--cyan-400)]">
-              {initials(member.name)}
+            <span className="flex h-full w-full items-center justify-center font-display text-sm tracking-widest text-[var(--cyan-400)] sm:text-base">
+              {crawlerInitials(member.name)}
             </span>
           )}
         </span>
         <span
           className={cn(
-            "absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border border-[var(--void-950)]",
+            "absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border border-[var(--void-950)]",
             statusPip[member.status]
           )}
           aria-hidden="true"
@@ -174,7 +174,7 @@ export function PartyAvatarRail({ members }: { members: PartyAvatar[] }) {
   return (
     <aside
       aria-label="Personajes de la party"
-      className="flex w-14 shrink-0 flex-col gap-2 overflow-visible sm:w-16"
+      className="flex w-20 shrink-0 flex-col gap-2.5 overflow-visible sm:w-24 lg:w-28"
     >
       {Array.from({ length: slots }, (_, i) => {
         const member = members[i];

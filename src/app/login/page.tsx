@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import { GlassPanel } from "@/components/ui/GlassPanel";
 import { cn } from "@/lib/utils";
 import { STATUS_LABEL, BRAND } from "@/lib/copy";
+import { crawlerAvatarUrl, crawlerInitials } from "@/lib/crawler-art";
 import type { CrawlerStatus, UserRole } from "@/lib/types";
 import { Cpu, User } from "lucide-react";
+import { LoginBackdrop } from "./LoginBackdrop";
 
 type LobbyCrawler = {
   id: string;
@@ -70,16 +72,20 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center p-4">
-      <GlassPanel className="relative z-10 w-full max-w-[480px]" title={BRAND} subtitle="CRAWLER OS">
-        <p className="mb-4 text-center text-sm text-[var(--text-3)]">¿Quién entra al dungeon?</p>
+    <main className="relative isolate flex min-h-screen items-center justify-center overflow-hidden p-4">
+      <LoginBackdrop />
+      <div className="hud-frame relative z-10 w-full max-w-[480px]">
+      <GlassPanel className="hud-panel w-full" variant="system" title={BRAND} subtitle="CRAWLER OS">
+        <p className="mb-4 text-center text-sm text-[var(--cyan-400)] [text-shadow:0_0_12px_rgba(0,212,255,0.55)]">
+          ¿Quién entra al dungeon?
+        </p>
         <div className="mb-6 grid grid-cols-2 gap-2">
           {(
             [
-              { r: "dm" as const, label: "Dungeon Master", icon: Cpu, glow: "var(--glow-cyan)" },
-              { r: "crawler" as const, label: "Crawler", icon: User, glow: "var(--glow-magenta)" },
+              { r: "dm" as const, label: "Dungeon Master", icon: Cpu, accent: "cyan" as const },
+              { r: "crawler" as const, label: "Crawler", icon: User, accent: "magenta" as const },
             ] as const
-          ).map(({ r, label, icon: Icon, glow }) => (
+          ).map(({ r, label, icon: Icon, accent }) => (
             <button
               key={r}
               type="button"
@@ -90,12 +96,15 @@ export default function LoginPage() {
                 if (r === "dm") void enter({ role: "dm" });
               }}
               className={cn(
-                "well flex flex-col items-center gap-2 rounded-xl p-4 transition-all",
-                role === r && "border-[var(--stroke-cyan-hot)]"
+                "well hud-tile flex flex-col items-center gap-2 p-4",
+                accent === "magenta" && "hud-tile--magenta",
+                role === r && "is-live"
               )}
-              style={role === r ? { boxShadow: glow } : undefined}
             >
-              <Icon size={24} className={role === r ? "text-[var(--cyan-400)]" : "text-[var(--text-3)]"} />
+              <Icon
+                size={24}
+                className={role === r ? (accent === "magenta" ? "text-[var(--magenta-400)]" : "text-[var(--cyan-400)]") : "text-[var(--text-3)]"}
+              />
               <span className="text-sm font-semibold">{label}</span>
             </button>
           ))}
@@ -112,35 +121,53 @@ export default function LoginPage() {
               <p className="text-center text-sm text-[var(--text-3)]">{BRAND} está cargando…</p>
             )}
             {!loadingList && crawlers.length === 0 && !error && (
-              <p className="well rounded-xl p-4 text-center text-sm text-[var(--text-2)]">
+              <p className="well hud-tile hud-tile--magenta p-4 text-center text-sm text-[var(--text-2)]">
                 Aún no hay participantes de la mazmorra creados
               </p>
             )}
             {!loadingList &&
-              crawlers.map((c) => (
-                <button
-                  key={c.id}
-                  type="button"
-                  disabled={entering}
-                  onClick={() => enter({ crawlerId: c.id })}
-                  className="well flex w-full items-center justify-between rounded-xl px-4 py-3 text-left transition-all hover:border-[var(--stroke-magenta)]"
-                >
-                  <span>
-                    <span className="block font-display text-sm text-[var(--text-1)]">{c.name}</span>
-                    <span className="text-xs text-[var(--text-cyan)]">
-                      LV {c.level} · {c.class_name || c.race || "Sin clase"}
+              crawlers.map((c) => {
+                const avatarSrc = crawlerAvatarUrl(c.name);
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    disabled={entering}
+                    onClick={() => enter({ crawlerId: c.id })}
+                    className="well hud-tile hud-tile--magenta flex w-full items-center justify-between px-4 py-3 text-left"
+                  >
+                    <span className="flex min-w-0 items-center gap-3">
+                      {avatarSrc ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={avatarSrc}
+                          alt=""
+                          className="h-14 w-14 shrink-0 rounded-xl object-cover ring-1 ring-[var(--stroke-magenta)] sm:h-16 sm:w-16"
+                        />
+                      ) : (
+                        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[rgba(16,19,31,0.82)] font-display text-xs tracking-widest text-[var(--cyan-400)] sm:h-16 sm:w-16">
+                          {crawlerInitials(c.name)}
+                        </span>
+                      )}
+                      <span className="min-w-0">
+                        <span className="block font-display text-sm text-[var(--text-1)]">{c.name}</span>
+                        <span className="text-xs text-[var(--text-cyan)]">
+                          LV {c.level} · {c.class_name || c.race || "Sin clase"}
+                        </span>
+                      </span>
                     </span>
-                  </span>
-                  <span className="text-[10px] uppercase tracking-wider text-[var(--text-3)]">
-                    {STATUS_LABEL[c.status] ?? c.status}
-                  </span>
-                </button>
-              ))}
+                    <span className="text-[10px] uppercase tracking-wider text-[var(--text-3)]">
+                      {STATUS_LABEL[c.status] ?? c.status}
+                    </span>
+                  </button>
+                );
+              })}
           </div>
         )}
 
         {error && <p className="mt-4 text-center text-sm text-[var(--danger)]">{error}</p>}
       </GlassPanel>
+      </div>
     </main>
   );
 }

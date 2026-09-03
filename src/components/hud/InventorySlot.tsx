@@ -13,7 +13,7 @@ interface InventorySlotProps {
   empty?: boolean;
   iconUrl?: string | null;
   detail?: string;
-  size?: "md" | "lg";
+  size?: "sm" | "md" | "lg";
   showTooltip?: boolean;
   onClick?: () => void;
 }
@@ -42,7 +42,8 @@ export function InventorySlot({
       aria-label={empty ? "Hueco vacío" : name}
       className={cn(
         "group relative flex aspect-square w-full flex-col items-center justify-center rounded-xl border p-1 transition-[border-color,box-shadow,filter] duration-[var(--t-ui)]",
-        size === "lg" ? "min-h-[72px] sm:min-h-[80px]" : "",
+        size === "lg" && "min-h-[72px] sm:min-h-[80px]",
+        size === "sm" && "min-h-[48px] rounded-lg p-0.5",
         empty
           ? "cursor-default border-dashed border-[rgba(255,255,255,0.12)] bg-transparent disabled:opacity-100"
           : "well cursor-pointer hover:brightness-110",
@@ -61,9 +62,21 @@ export function InventorySlot({
         <>
           {iconUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={iconUrl} alt="" className="mb-0.5 h-8 w-8 object-contain sm:h-10 sm:w-10" />
+            <img
+              src={iconUrl}
+              alt=""
+              className={cn(
+                "mb-0.5 object-contain",
+                size === "sm" ? "h-5 w-5" : "h-8 w-8 sm:h-10 sm:w-10"
+              )}
+            />
           ) : null}
-          <span className="line-clamp-2 text-center text-[10px] font-medium text-[var(--text-2)]">
+          <span
+            className={cn(
+              "line-clamp-2 text-center font-medium text-[var(--text-2)]",
+              size === "sm" ? "text-[8px]" : "text-[10px]"
+            )}
+          >
             {name}
           </span>
           {quantity !== undefined && quantity > 1 && (

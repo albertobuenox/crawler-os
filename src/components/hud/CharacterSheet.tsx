@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Sparkles, ScrollText, User, Shield } from "lucide-react";
 import { GlassPanel } from "@/components/ui/GlassPanel";
 import { HealthBoxes, ResourceBar } from "@/components/hud/HealthBoxes";
 import { InventorySlot } from "@/components/hud/InventorySlot";
 import { cn } from "@/lib/utils";
+import { crawlerFullBodyUrl } from "@/lib/crawler-art";
 import { formatStat, statModifier } from "@/lib/rules";
 import { crawlerClassLabel, SKILL_TYPE_LABEL, EFFECT_KIND_LABEL, BRAND } from "@/lib/copy";
 import { skillRollLabel } from "@/lib/skills";
@@ -39,15 +40,14 @@ const LEFT_SLOTS = [
 ] as const;
 
 const RIGHT_SLOTS = [
-  { id: "amulet", label: "Amuleto" },
-  { id: "ring_1", label: "Anillo" },
-  { id: "ring_2", label: "Anillo" },
+  { id: "hand_right", label: "Mano derecha" },
+  { id: "hand_left", label: "Mano izquierda" },
 ] as const;
 
-const WEAPON_SLOTS = [
-  { id: "melee_main", label: "C. a cuerpo" },
-  { id: "melee_off", label: "Off-hand" },
-  { id: "ranged", label: "A distancia" },
+const ACCESSORY_SLOTS = [
+  { id: "accessory_1", label: "Accesorio 1" },
+  { id: "accessory_2", label: "Accesorio 2" },
+  { id: "accessory_3", label: "Accesorio 3" },
 ] as const;
 
 const INVENTORY_SLOTS = 12;
@@ -72,7 +72,7 @@ function loreText(value: unknown, empty: string) {
 
 function StandingTemplate() {
   return (
-    <svg viewBox="0 0 80 160" className="h-full w-full" aria-hidden="true">
+    <svg viewBox="0 0 80 160" className="h-full w-full p-3" aria-hidden="true">
       <g fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="40" cy="18" r="12" />
         <path d="M40 30 V78" />
@@ -82,6 +82,42 @@ function StandingTemplate() {
         <path d="M40 78 L58 148" />
       </g>
     </svg>
+  );
+}
+
+function FullBodyFrame({ name }: { name: string }) {
+  const src = crawlerFullBodyUrl(name);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    setFailed(false);
+  }, [src]);
+
+  const showArt = Boolean(src && !failed);
+
+  return (
+    <div
+      className={cn(
+        "relative mx-auto flex aspect-[9/16] max-h-[360px] w-full max-w-[180px] items-center justify-center overflow-hidden rounded-[16px] border lg:max-h-[560px] lg:max-w-[300px] xl:max-h-[720px] xl:max-w-[420px]",
+        showArt
+          ? "border-[var(--stroke-magenta)] bg-[rgba(8,10,18,0.88)] shadow-[var(--glow-magenta)]"
+          : "border-[var(--stroke-magenta)] bg-[rgba(232,121,249,0.05)] text-[var(--magenta-500)]"
+      )}
+    >
+      {showArt ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={src!}
+          alt={`${name}, cuerpo entero`}
+          className="h-full w-full object-contain object-center"
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <div className="flex h-full w-full flex-col items-center justify-center opacity-40">
+          <StandingTemplate />
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -102,7 +138,7 @@ export function CharacterSheet({
 
   return (
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-12 lg:items-start">
-      <GlassPanel variant="identity" className="lg:col-span-4" title={crawler.name} subtitle={`${crawler.race ?? "—"} · ${crawlerClassLabel(crawler.class_name)} · LV ${crawler.level}`}>
+      <GlassPanel variant="identity" className="lg:col-span-4 xl:col-span-3" title={crawler.name} subtitle={`${crawler.race ?? "—"} · ${crawlerClassLabel(crawler.class_name)} · LV ${crawler.level}`}>
         <div className="mb-4 flex gap-1">
           {TABS.map(({ id, label, icon: Icon, glow, color }) => {
             const active = tab === id;
@@ -143,16 +179,14 @@ export function CharacterSheet({
         </AnimatePresence>
       </GlassPanel>
 
-      <GlassPanel className="lg:col-span-4" title="Equipamiento" subtitle="Plantilla de zonas — se afinará después">
-        <div className="grid grid-cols-[4.5rem_minmax(0,1fr)_4.5rem] items-start gap-2 sm:grid-cols-[5.5rem_minmax(0,1fr)_5.5rem]">
+      <GlassPanel className="lg:col-span-5 xl:col-span-6" title="Equipamiento" subtitle="Cuerpo entero y zonas de equipo">
+        <div className="grid grid-cols-[4.5rem_minmax(0,1fr)_4.5rem] items-start gap-2 sm:grid-cols-[5.5rem_minmax(0,1fr)_5.5rem] lg:grid-cols-[5rem_minmax(0,1fr)_5rem]">
           <div className="flex flex-col gap-2">
             {LEFT_SLOTS.map((slot) => (
               <EquipCell key={slot.id} slot={slot} item={itemForSlot(items, slot.id)} />
             ))}
           </div>
-          <div className="relative mx-auto flex aspect-[1/2] max-h-[340px] w-full max-w-[160px] items-center justify-center text-[var(--magenta-500)] opacity-40">
-            <StandingTemplate />
-          </div>
+          <FullBodyFrame name={crawler.name} />
           <div className="flex flex-col gap-2">
             {RIGHT_SLOTS.map((slot) => (
               <EquipCell key={slot.id} slot={slot} item={itemForSlot(items, slot.id)} />
@@ -164,14 +198,14 @@ export function CharacterSheet({
             </div>
           </div>
         </div>
-        <div className="mt-3 grid grid-cols-3 gap-2">
-          {WEAPON_SLOTS.map((slot) => (
-            <EquipCell key={slot.id} slot={slot} item={itemForSlot(items, slot.id)} wide />
+        <div className="mt-3 flex justify-center gap-2">
+          {ACCESSORY_SLOTS.map((slot) => (
+            <EquipCell key={slot.id} slot={slot} item={itemForSlot(items, slot.id)} compact />
           ))}
         </div>
       </GlassPanel>
 
-      <GlassPanel className="lg:col-span-4" title="Inventario" subtitle="Pasa el cursor para inspeccionar">
+      <GlassPanel className="lg:col-span-3" title="Inventario" subtitle="Pasa el cursor para inspeccionar">
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
           {Array.from({ length: bagSlots }, (_, i) => {
             const item = bag[i];
@@ -200,25 +234,25 @@ export function CharacterSheet({
 function EquipCell({
   slot,
   item,
-  wide,
+  compact,
 }: {
   slot: { id: string; label: string };
   item: SheetItem | null;
-  wide?: boolean;
+  compact?: boolean;
 }) {
   return (
-    <div className={cn("flex flex-col items-center gap-1", wide && "min-w-0")}>
+    <div className={cn("flex flex-col items-center gap-1", compact ? "w-12 sm:w-14" : "min-w-0")}>
       <InventorySlot
         name={item?.resource.name}
         rarity={item?.resource.rarity}
         iconUrl={item?.resource.icon_url}
         detail={item ? (item.resource.system_copy ?? item.resource.description ?? undefined) : undefined}
         empty={!item}
-        size="lg"
+        size={compact ? "sm" : "lg"}
         showTooltip={!!item}
         equipped={!!item}
       />
-      <span className="text-[8px] uppercase tracking-[0.14em] text-[var(--text-4)]">{slot.label}</span>
+      <span className="text-center text-[8px] uppercase tracking-[0.14em] text-[var(--text-4)]">{slot.label}</span>
     </div>
   );
 }
