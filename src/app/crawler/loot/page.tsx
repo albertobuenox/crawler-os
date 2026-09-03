@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { GlassPanel } from "@/components/ui/GlassPanel";
 import { Button } from "@/components/ui/Button";
-import { Input, Select } from "@/components/ui/Input";
 import { CinematicOverlay } from "@/components/hud/CinematicOverlay";
 import type { LootBox, Resource } from "@/lib/types";
 
@@ -13,11 +12,7 @@ export default function CrawlerLootPage() {
   const [boxes, setBoxes] = useState<(LootBox & { resource: Resource })[]>([]);
   const [opening, setOpening] = useState<(LootBox & { resource: Resource }) | null>(null);
 
-  useEffect(() => {
-    load();
-  }, []);
-
-  async function load() {
+  const load = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const { data: c } = await supabase.from("crawlers").select("id, session_id").eq("owner_user_id", user.id).maybeSingle();
@@ -29,7 +24,16 @@ export default function CrawlerLootPage() {
       .or(`assigned_crawler_id.eq.${c.id},assigned_crawler_id.is.null`)
       .eq("status", "sealed");
     setBoxes((data as (LootBox & { resource: Resource })[]) ?? []);
-  }
+  }, [supabase]);
+
+  useEffect(() => {
+    load();
+    const ch = supabase
+      .channel("crawler-loot")
+      .on("postgres_changes", { event: "*", schema: "public", table: "loot_boxes" }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [load, supabase]);
 
   async function openBox(box: LootBox & { resource: Resource }) {
     setOpening(box);

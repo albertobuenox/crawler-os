@@ -71,7 +71,7 @@ export default function CrawlerInventoryPage() {
           <GlassPanel title={selected.resource.name}>
             <p className="text-[var(--text-cyan)]">{RARITY_LABEL[selected.resource.rarity]}</p>
             <p className="mt-2 text-sm">{selected.resource.system_copy ?? selected.resource.description}</p>
-            <Button variant="neon" className="mt-4" size="sm">Usar (avisar a La IA)</Button>
+            <Button variant="neon" className="mt-4" size="sm">Usar (avisar al Dungeon Master)</Button>
           </GlassPanel>
         )}
       </main>

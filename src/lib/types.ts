@@ -1,4 +1,4 @@
-export type UserRole = "ia" | "crawler";
+export type UserRole = "dm" | "crawler";
 
 export type StatKey = "str" | "int" | "con" | "dex" | "cha";
 

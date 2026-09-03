@@ -35,12 +35,19 @@ export default function TableTVPage() {
 
   useEffect(() => {
     load();
-    const interval = setInterval(load, 2000);
-    return () => clearInterval(interval);
-  }, [load]);
+    const channel = supabase
+      .channel(`tv:${code}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "table_state" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "map_pins" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "sessions" }, () => load())
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [load, supabase, code]);
 
   useSessionBroadcast(session?.id, useCallback((event) => {
-    if (event === "table_update") load();
+    if (event === "table_update" || event === "dice_anim" || event === "cinematic") load();
   }, [load]));
 
   return (

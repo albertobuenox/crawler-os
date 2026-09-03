@@ -51,7 +51,7 @@ export default function CrawlerSheetPage() {
             <HealthBoxes boxesFilled={crawler.hp_boxes_filled} conEnhanced={crawler.con_enhanced} />
             <ResourceBar label="Maná" current={crawler.mana_current} max={crawler.mana_max} />
           </div>
-          <p className="mt-4 text-xs text-[var(--text-3)]">Favor de IA: {crawler.ai_favor_remaining} restante</p>
+          <p className="mt-4 text-xs text-[var(--text-3)]">Favor del Sistema: {crawler.ai_favor_remaining} restante</p>
         </GlassPanel>
 
         {crawler.past_trauma && (

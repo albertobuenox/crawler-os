@@ -3,7 +3,7 @@
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- Enums
-CREATE TYPE user_role AS ENUM ('ia', 'crawler');
+CREATE TYPE user_role AS ENUM ('dm', 'crawler');
 CREATE TYPE session_phase AS ENUM (
   'exploration', 'combat_1', 'combat_2', 'combat_3', 'combat_4', 'combat_5', 'rest', 'paused'
 );
@@ -148,7 +148,7 @@ CREATE TABLE attacks (
   UNIQUE(crawler_id, slot)
 );
 
--- Resource catalog (La IA creates anything)
+-- Resource catalog (Dungeon Master creates anything)
 CREATE TABLE resources (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   session_id UUID NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
@@ -476,7 +476,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Create session (La IA)
+-- Create session (Dungeon Master)
 CREATE OR REPLACE FUNCTION create_game_session(p_name TEXT DEFAULT 'New Floor')
 RETURNS JSONB AS $$
 DECLARE
@@ -485,6 +485,9 @@ DECLARE
   v_user_id UUID := auth.uid();
 BEGIN
   IF v_user_id IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
+  IF NOT EXISTS (SELECT 1 FROM profiles WHERE id = v_user_id AND role = 'dm') THEN
+    RAISE EXCEPTION 'Only Dungeon Master can create a session';
+  END IF;
 
   LOOP
     v_code := generate_session_code();
@@ -502,12 +505,13 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Join session by code
+-- Join session by code (claims first unowned crawler)
 CREATE OR REPLACE FUNCTION join_session_by_code(p_code TEXT)
 RETURNS JSONB AS $$
 DECLARE
   v_session sessions%ROWTYPE;
   v_user_id UUID := auth.uid();
+  v_crawler_id UUID;
 BEGIN
   IF v_user_id IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
 
@@ -518,7 +522,32 @@ BEGIN
   VALUES (v_session.id, v_user_id)
   ON CONFLICT (session_id, user_id) DO NOTHING;
 
-  RETURN jsonb_build_object('session_id', v_session.id, 'code', v_session.code);
+  SELECT id INTO v_crawler_id FROM crawlers
+    WHERE session_id = v_session.id AND owner_user_id = v_user_id
+    LIMIT 1;
+
+  IF v_crawler_id IS NULL THEN
+    SELECT id INTO v_crawler_id FROM crawlers
+      WHERE session_id = v_session.id AND owner_user_id IS NULL
+      ORDER BY created_at
+      LIMIT 1
+      FOR UPDATE SKIP LOCKED;
+
+    IF v_crawler_id IS NOT NULL THEN
+      UPDATE crawlers SET owner_user_id = v_user_id WHERE id = v_crawler_id;
+    END IF;
+  END IF;
+
+  IF v_crawler_id IS NOT NULL THEN
+    UPDATE session_members SET crawler_id = v_crawler_id
+      WHERE session_id = v_session.id AND user_id = v_user_id;
+  END IF;
+
+  RETURN jsonb_build_object(
+    'session_id', v_session.id,
+    'code', v_session.code,
+    'crawler_id', v_crawler_id
+  );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
@@ -621,6 +650,14 @@ BEGIN
     req.label || ': rolled ' || total || COALESCE(' vs DC ' || req.dc, ''),
     jsonb_build_object('request_id', p_request_id, 'total', total, 'raw', raw));
 
+  INSERT INTO notifications (session_id, user_id, notification_type, title, body, payload)
+  SELECT req.session_id, c.owner_user_id, 'roll',
+    'TIRADA',
+    req.label || ': ' || total::text,
+    jsonb_build_object('request_id', p_request_id, 'total', total, 'raw', raw)
+  FROM crawlers c
+  WHERE c.id = req.crawler_id AND c.owner_user_id IS NOT NULL;
+
   RETURN jsonb_build_object('total', total, 'raw', raw, 'success',
     CASE WHEN req.dc IS NULL THEN NULL ELSE total >= req.dc END);
 END;
@@ -665,15 +702,26 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Auto-create profile on signup
+-- Auto-create profile on signup (never block Auth if this fails)
 CREATE OR REPLACE FUNCTION handle_new_user()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
   INSERT INTO profiles (id, role, display_name)
-  VALUES (NEW.id, 'crawler', COALESCE(NEW.raw_user_meta_data->>'display_name', NEW.email));
+  VALUES (
+    NEW.id,
+    'crawler',
+    COALESCE(NEW.raw_user_meta_data->>'display_name', NEW.email)
+  )
+  ON CONFLICT (id) DO NOTHING;
+  RETURN NEW;
+EXCEPTION WHEN OTHERS THEN
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
@@ -709,13 +757,13 @@ RETURNS BOOLEAN AS $$
   );
 $$ LANGUAGE sql SECURITY DEFINER STABLE;
 
--- Helper: is IA of session
-CREATE OR REPLACE FUNCTION is_session_ia(p_session_id UUID)
+-- Helper: is Dungeon Master of session
+CREATE OR REPLACE FUNCTION is_session_dm(p_session_id UUID)
 RETURNS BOOLEAN AS $$
   SELECT EXISTS (
     SELECT 1 FROM sessions s
     JOIN profiles p ON p.id = auth.uid()
-    WHERE s.id = p_session_id AND s.created_by = auth.uid() AND p.role = 'ia'
+    WHERE s.id = p_session_id AND s.created_by = auth.uid() AND p.role = 'dm'
   );
 $$ LANGUAGE sql SECURITY DEFINER STABLE;
 
@@ -726,7 +774,7 @@ CREATE POLICY profiles_update ON profiles FOR UPDATE USING (id = auth.uid());
 -- Sessions
 CREATE POLICY sessions_select ON sessions FOR SELECT USING (is_session_member(id));
 CREATE POLICY sessions_insert ON sessions FOR INSERT WITH CHECK (created_by = auth.uid());
-CREATE POLICY sessions_update ON sessions FOR UPDATE USING (is_session_ia(id));
+CREATE POLICY sessions_update ON sessions FOR UPDATE USING (is_session_dm(id));
 
 -- Session members
 CREATE POLICY session_members_select ON session_members FOR SELECT USING (is_session_member(session_id));
@@ -734,18 +782,18 @@ CREATE POLICY session_members_insert ON session_members FOR INSERT WITH CHECK (u
 
 -- Crawlers
 CREATE POLICY crawlers_select ON crawlers FOR SELECT USING (is_session_member(session_id));
-CREATE POLICY crawlers_ia_all ON crawlers FOR ALL USING (is_session_ia(session_id));
+CREATE POLICY crawlers_dm_all ON crawlers FOR ALL USING (is_session_dm(session_id));
 
 -- Resources
 CREATE POLICY resources_select ON resources FOR SELECT USING (is_session_member(session_id));
-CREATE POLICY resources_ia_all ON resources FOR ALL USING (is_session_ia(session_id));
+CREATE POLICY resources_dm_all ON resources FOR ALL USING (is_session_dm(session_id));
 
 -- Item instances
 CREATE POLICY items_select ON item_instances FOR SELECT USING (
   EXISTS (SELECT 1 FROM crawlers c WHERE c.id = crawler_id AND is_session_member(c.session_id))
 );
-CREATE POLICY items_ia_all ON item_instances FOR ALL USING (
-  EXISTS (SELECT 1 FROM crawlers c WHERE c.id = crawler_id AND is_session_ia(c.session_id))
+CREATE POLICY items_dm_all ON item_instances FOR ALL USING (
+  EXISTS (SELECT 1 FROM crawlers c WHERE c.id = crawler_id AND is_session_dm(c.session_id))
 );
 CREATE POLICY items_crawler_update ON item_instances FOR UPDATE USING (
   EXISTS (SELECT 1 FROM crawlers c WHERE c.id = crawler_id AND c.owner_user_id = auth.uid())
@@ -766,33 +814,78 @@ CREATE POLICY effects_access ON effects FOR ALL USING (
 );
 
 CREATE POLICY table_state_select ON table_state FOR SELECT USING (is_session_member(session_id));
-CREATE POLICY table_state_ia ON table_state FOR ALL USING (is_session_ia(session_id));
+CREATE POLICY table_state_dm ON table_state FOR ALL USING (is_session_dm(session_id));
 
 CREATE POLICY map_pins_select ON map_pins FOR SELECT USING (is_session_member(session_id));
-CREATE POLICY map_pins_ia ON map_pins FOR ALL USING (is_session_ia(session_id));
+CREATE POLICY map_pins_dm ON map_pins FOR ALL USING (is_session_dm(session_id));
 
 CREATE POLICY dice_requests_select ON dice_requests FOR SELECT USING (is_session_member(session_id));
-CREATE POLICY dice_requests_ia ON dice_requests FOR INSERT WITH CHECK (is_session_ia(session_id));
+CREATE POLICY dice_requests_dm ON dice_requests FOR INSERT WITH CHECK (is_session_dm(session_id));
 CREATE POLICY dice_rolls_select ON dice_rolls FOR SELECT USING (
   EXISTS (SELECT 1 FROM dice_requests dr WHERE dr.id = request_id AND is_session_member(dr.session_id))
 );
 
-CREATE POLICY combat_ia ON combat_rounds FOR ALL USING (is_session_ia(session_id));
+CREATE POLICY combat_dm ON combat_rounds FOR ALL USING (is_session_dm(session_id));
 CREATE POLICY combat_select ON combat_rounds FOR SELECT USING (is_session_member(session_id));
 
 CREATE POLICY achievements_select ON achievements_unlocked FOR SELECT USING (is_session_member(session_id));
-CREATE POLICY achievements_ia ON achievements_unlocked FOR ALL USING (is_session_ia(session_id));
+CREATE POLICY achievements_dm ON achievements_unlocked FOR ALL USING (is_session_dm(session_id));
 
 CREATE POLICY loot_boxes_select ON loot_boxes FOR SELECT USING (is_session_member(session_id));
-CREATE POLICY loot_boxes_ia ON loot_boxes FOR ALL USING (is_session_ia(session_id));
+CREATE POLICY loot_boxes_dm ON loot_boxes FOR ALL USING (is_session_dm(session_id));
 
 CREATE POLICY event_log_select ON event_log FOR SELECT USING (is_session_member(session_id));
-CREATE POLICY event_log_ia ON event_log FOR INSERT WITH CHECK (is_session_ia(session_id));
+CREATE POLICY event_log_dm ON event_log FOR INSERT WITH CHECK (is_session_dm(session_id));
 
 CREATE POLICY notifications_own ON notifications FOR ALL USING (user_id = auth.uid());
 
 CREATE POLICY rests_select ON rests FOR SELECT USING (is_session_member(session_id));
-CREATE POLICY rests_ia ON rests FOR INSERT WITH CHECK (is_session_ia(session_id));
+CREATE POLICY rests_dm ON rests FOR INSERT WITH CHECK (is_session_dm(session_id));
 
--- Realtime publication (run manually in dashboard if needed)
--- ALTER PUBLICATION supabase_realtime ADD TABLE sessions, crawlers, table_state, event_log, notifications, dice_requests, combat_rounds, map_pins;
+-- Crawler claim / self-update (join flow + HUD)
+CREATE POLICY crawlers_claim ON crawlers FOR UPDATE
+  USING (is_session_member(session_id) AND (owner_user_id IS NULL OR owner_user_id = auth.uid()))
+  WITH CHECK (is_session_member(session_id) AND owner_user_id = auth.uid());
+
+CREATE POLICY session_members_update ON session_members FOR UPDATE
+  USING (user_id = auth.uid() OR is_session_dm(session_id));
+
+CREATE POLICY loot_boxes_crawler_open ON loot_boxes FOR UPDATE
+  USING (
+    assigned_crawler_id IS NULL
+    OR EXISTS (
+      SELECT 1 FROM crawlers c
+      WHERE c.id = assigned_crawler_id AND c.owner_user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY notifications_dm_insert ON notifications FOR INSERT
+  WITH CHECK (is_session_dm(session_id));
+
+-- Mesa TV: lectura pública de sesiones activas (el código es el secreto)
+CREATE POLICY sessions_select_active ON sessions FOR SELECT USING (is_active = true);
+CREATE POLICY table_state_public ON table_state FOR SELECT USING (
+  EXISTS (SELECT 1 FROM sessions s WHERE s.id = session_id AND s.is_active)
+);
+CREATE POLICY map_pins_public ON map_pins FOR SELECT USING (
+  EXISTS (SELECT 1 FROM sessions s WHERE s.id = session_id AND s.is_active)
+);
+CREATE POLICY resources_public ON resources FOR SELECT USING (
+  EXISTS (SELECT 1 FROM sessions s WHERE s.id = session_id AND s.is_active)
+);
+
+-- Realtime (payloads completos en UPDATE)
+ALTER TABLE sessions REPLICA IDENTITY FULL;
+ALTER TABLE crawlers REPLICA IDENTITY FULL;
+ALTER TABLE table_state REPLICA IDENTITY FULL;
+ALTER TABLE event_log REPLICA IDENTITY FULL;
+ALTER TABLE notifications REPLICA IDENTITY FULL;
+ALTER TABLE dice_requests REPLICA IDENTITY FULL;
+ALTER TABLE combat_rounds REPLICA IDENTITY FULL;
+ALTER TABLE map_pins REPLICA IDENTITY FULL;
+ALTER TABLE loot_boxes REPLICA IDENTITY FULL;
+ALTER TABLE session_members REPLICA IDENTITY FULL;
+
+ALTER PUBLICATION supabase_realtime ADD TABLE
+  sessions, crawlers, table_state, event_log, notifications,
+  dice_requests, combat_rounds, map_pins, loot_boxes, session_members;

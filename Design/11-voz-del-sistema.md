@@ -16,7 +16,7 @@ No mezclar tono meme en labels de formulario (“Tu super-contraseña épica”)
 | Concepto | Copy |
 |---|---|
 | Usuario jugador | Crawler |
-| GM | Master |
+| GM | Dungeon Master |
 | Item otorgado | Reward / Loot |
 | Castigo | Penalty / Fine |
 | Piso | Floor |

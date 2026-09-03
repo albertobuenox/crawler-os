@@ -2,14 +2,20 @@
   "name": "crawler-os",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "db:push": "supabase db push",
-    "db:reset": "supabase db reset",
-    "db:types": "supabase gen types typescript --local > src/lib/database.types.ts"
+    "setup:local": "node scripts/setup-local.mjs",
+    "db:start": "npx supabase start",
+    "db:stop": "npx supabase stop",
+    "db:push": "npx supabase db push",
+    "db:reset": "npx supabase db reset",
+    "db:types": "npx supabase gen types typescript --local > src/lib/database.types.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.6.1",
@@ -29,6 +35,7 @@
     "@types/react-dom": "^19.1.5",
     "eslint": "^9.28.0",
     "eslint-config-next": "^15.3.3",
+    "supabase": "^2.116.0",
     "tailwindcss": "^4.1.8",
     "typescript": "^5.8.3"
   }

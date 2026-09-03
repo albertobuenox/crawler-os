@@ -12,7 +12,7 @@
 [![Crawler HUD](https://img.shields.io/badge/Crawler_HUD-E879F9?style=for-the-badge&labelColor=05060D)](#roles)
 [![Reward](https://img.shields.io/badge/Loot-F97316?style=for-the-badge&labelColor=05060D)](#roles)
 
-La IA dirige la mesa. Los crawlers viven el HUD. La TV muestra el dungeon.
+El Dungeon Master dirige la mesa. Los crawlers viven el HUD. La TV muestra el dungeon.
 
 </div>
 
@@ -22,11 +22,11 @@ La IA dirige la mesa. Los crawlers viven el HUD. La TV muestra el dungeon.
 
 | | Ruta | Qué ve |
 |---|---|---|
-| **La IA** | `/ia` | Control total. Recursos, crawlers, dados, loot, penalizaciones. Acento **cian**. |
+| **Dungeon Master** | `/dm` | Control total. Recursos, crawlers, dados, loot, penalizaciones. Acento **cian**. |
 | **Crawler** | `/crawler` | Su visor. Hoja, inventario, notificaciones, log personal. Acento **magenta**. |
 | **Mesa TV** | `/table/[code]` | Vista compartida, sin nav. El dungeon en la tele. |
 
-El crawler no ve controles de Master. Ni deshabilitados.
+El crawler no ve controles de Dungeon Master. Ni deshabilitados.
 
 ## Stack
 
@@ -34,40 +34,44 @@ Next.js 15 · TypeScript · Tailwind · **Supabase** (Auth, Postgres, Realtime) 
 
 Void `#05060D` · Sistema `#00D4FF` · Crawler `#E879F9` · Loot `#F97316` · Penalty `#FF3B5C`
 
-## Jack In
+## Jack In (local)
+
+Guía paso a paso (si no programas a diario): **[docs/guia-local.md](docs/guia-local.md)**.
+
+Necesitas **Node 20+** y **Docker Desktop** en marcha.
 
 ```bash
+cd crawler-os
 npm install
-```
-
-Crea `.env.local` (no lo subas a git):
-
-```
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-```
-
-```bash
+npm run setup:local   # arranca Supabase, aplica migraciones + seed, escribe .env.local
 npm run dev
 ```
 
-### Supabase
+Abre `http://localhost:3000` en **varios navegadores** (o uno en incógnito):
 
-1. Proyecto en [supabase.com](https://supabase.com)
-2. SQL Editor: `supabase/migrations/20260302120000_initial_schema.sql` (una vez)
-3. Realtime en `sessions`, `crawlers`, `table_state`, `event_log`, `notifications`, `dice_requests`, `combat_rounds`, `map_pins`
-4. Auth → Email: desactivar confirmación para testear
-5. Auth → URL Configuration: Site URL + redirects
+| Cliente | Cuenta | Contraseña | Ruta |
+|---|---|---|---|
+| Dungeon Master | `dm@crawler.local` | `crawleros` | `/dm` |
+| Crawler 1 | `crawler1@crawler.local` | `crawleros` | `/join` → `FLOOR-TEST` |
+| Crawler 2 | `crawler2@crawler.local` | `crawleros` | `/join` → `FLOOR-TEST` |
+| Mesa TV | (sin login) | — | `/table/FLOOR-TEST` |
+
+En `/login` salen atajos de esas cuentas. Studio: `http://127.0.0.1:54323`.
+
+`.env.example` es la plantilla. `.env.local` no se sube a git.
+
+### Sin Docker (Supabase hosted)
+
+Copia `.env.example` a `.env.local` y pega URL + anon key del dashboard. En SQL Editor ejecuta `supabase/migrations/20260302120000_initial_schema.sql`. Auth → Email: sin confirmación. Site URL `http://localhost:3000`. Luego `npm run dev`.
 
 ### Scripts
 
 | Comando | |
 |---|---|
-| `npm run dev` | desarrollo |
-| `npm run build` | producción |
-| `npm run db:push` | aplicar migraciones |
+| `npm run setup:local` | Docker + Supabase local + `.env.local` |
+| `npm run dev` | Next en `localhost:3000` |
+| `npm run db:start` / `db:stop` | encender / apagar Supabase |
+| `npm run db:reset` | recrear BD y seed |
 | `npm run db:types` | tipos TS |
 
 ## Deploy

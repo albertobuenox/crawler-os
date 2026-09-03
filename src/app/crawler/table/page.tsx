@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { TableCanvas } from "@/components/hud/TableCanvas";
-import type { TableState, MapPin, Resource, Crawler } from "@/lib/types";
+import type { TableState, MapPin, Resource } from "@/lib/types";
 import { useSessionBroadcast } from "@/hooks/useSession";
 
 export default function CrawlerTablePage() {
@@ -33,7 +33,11 @@ export default function CrawlerTablePage() {
 
   useEffect(() => {
     load();
-    const ch = supabase.channel("table").on("postgres_changes", { event: "*", schema: "public", table: "table_state" }, () => load()).subscribe();
+    const ch = supabase
+      .channel("crawler-table")
+      .on("postgres_changes", { event: "*", schema: "public", table: "table_state" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "map_pins" }, () => load())
+      .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [load, supabase]);
 

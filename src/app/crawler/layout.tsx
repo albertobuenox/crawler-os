@@ -15,7 +15,7 @@ export default async function CrawlerLayout({ children }: { children: React.Reac
     .eq("id", user.id)
     .single();
 
-  if (profile?.role === "ia") redirect("/ia");
+  if (profile?.role === "dm") redirect("/dm");
 
   const { count } = await supabase
     .from("notifications")

@@ -3,7 +3,7 @@ import "@/styles/globals.css";
 
 export const metadata: Metadata = {
   title: "Crawler OS — HUD de The System",
-  description: "Herramienta de sesión CarlRPG en tiempo real para La IA y los Crawlers",
+  description: "Herramienta de sesión CarlRPG en tiempo real para el Dungeon Master y los Crawlers",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

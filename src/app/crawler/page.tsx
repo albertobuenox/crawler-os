@@ -79,7 +79,9 @@ export default function CrawlerHomePage() {
     const channel = supabase
       .channel("crawler-home")
       .on("postgres_changes", { event: "*", schema: "public", table: "crawlers" }, () => load())
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "notifications" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "dice_requests" }, () => load())
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "event_log" }, () => load())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [load, supabase]);

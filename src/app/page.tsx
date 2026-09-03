@@ -15,6 +15,6 @@ export default async function HomePage() {
     .eq("id", user.id)
     .single();
 
-  if (profile?.role === "ia") redirect("/ia");
+  if (profile?.role === "dm") redirect("/dm");
   redirect("/crawler");
 }

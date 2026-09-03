@@ -32,7 +32,7 @@ export function TableCanvas({
           className
         )}
       >
-        The System espera a que La IA muestre algo.
+        The System espera a que el Dungeon Master muestre algo.
       </div>
     );
   }

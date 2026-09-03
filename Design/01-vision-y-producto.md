@@ -2,13 +2,13 @@
 
 ## Qué es la app
 
-App de sesión para **Dungeon Crawler Carl**: login de **Master** y **Jugadores**, registro de partida y juego en vivo.
+App de sesión para **Dungeon Crawler Carl**: login de **Dungeon Master** y **Jugadores**, registro de partida y juego en vivo.
 
-El Master administra el dungeon. Los crawlers (jugadores) viven dentro de The System: hoja de personaje, inventario, recompensas, penalizaciones y log de eventos.
+El Dungeon Master administra el dungeon. Los crawlers (jugadores) viven dentro de The System: hoja de personaje, inventario, recompensas, penalizaciones y log de eventos.
 
 ## Roles
 
-### Master (Dungeon Admin)
+### Dungeon Master (DM)
 
 Operador del Sistema. Ve más que los jugadores. Crea, edita, asigna y dispara eventos.
 
@@ -29,10 +29,10 @@ Ve su HUD personal. No crea recursos. Recibe lo que el Sistema le empuja.
 Capacidades:
 
 - Login y selección de crawler.
-- Hoja de personaje (lectura; algunos campos pueden pedir al Master).
+- Hoja de personaje (lectura; algunos campos pueden pedir al Dungeon Master).
 - Inventario y equipo.
 - Centro de notificaciones.
-- Log personal (su punto de vista, no el omnisciente del Master).
+- Log personal (su punto de vista, no el omnisciente del Dungeon Master).
 - Objetivos activos del piso.
 - Party (si hay grupo).
 

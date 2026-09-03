@@ -6,11 +6,12 @@ import { createClient } from "@/lib/supabase/client";
 import { GlassPanel } from "@/components/ui/GlassPanel";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { DEV_LOGIN, DEV_SESSION_CODE } from "@/lib/dev";
 
 export default function JoinSessionPage() {
   const router = useRouter();
   const supabase = createClient();
-  const [code, setCode] = useState("");
+  const [code, setCode] = useState(DEV_LOGIN ? DEV_SESSION_CODE : "");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -20,7 +21,7 @@ export default function JoinSessionPage() {
     setLoading(true);
 
     try {
-      const { data, error: rpcError } = await supabase.rpc("join_session_by_code", {
+      const { error: rpcError } = await supabase.rpc("join_session_by_code", {
         p_code: code.toUpperCase(),
       });
       if (rpcError) {
@@ -28,33 +29,6 @@ export default function JoinSessionPage() {
         if (msg.includes("session not found")) throw new Error("Sesión no encontrada");
         if (msg.includes("not authenticated")) throw new Error("No autenticado");
         throw rpcError;
-      }
-
-      const sessionId = (data as { session_id: string }).session_id;
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (user) {
-        const { data: crawler } = await supabase
-          .from("crawlers")
-          .select("id")
-          .eq("session_id", sessionId)
-          .is("owner_user_id", null)
-          .limit(1)
-          .maybeSingle();
-
-        if (crawler) {
-          await supabase
-            .from("crawlers")
-            .update({ owner_user_id: user.id })
-            .eq("id", crawler.id);
-          await supabase
-            .from("session_members")
-            .update({ crawler_id: crawler.id })
-            .eq("session_id", sessionId)
-            .eq("user_id", user.id);
-        }
       }
 
       router.push("/crawler");
@@ -68,7 +42,7 @@ export default function JoinSessionPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center p-4">
-      <GlassPanel className="w-full max-w-md" title="CÓDIGO DE PISO" subtitle="Introduce la sesión que creó La IA">
+      <GlassPanel className="w-full max-w-md" title="CÓDIGO DE PISO" subtitle="Introduce la sesión que creó el Dungeon Master">
         <form onSubmit={handleJoin} className="space-y-4">
           <Input
             label="Código de sesión"

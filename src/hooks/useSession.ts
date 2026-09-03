@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 
 export function useRealtimeTable<T = Record<string, unknown>>(
@@ -44,6 +45,7 @@ export function useSessionBroadcast(
   onMessage: (event: string, payload: unknown) => void
 ) {
   const supabase = createClient();
+  const channelRef = useRef<RealtimeChannel | null>(null);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -51,6 +53,7 @@ export function useSessionBroadcast(
     const channel = supabase.channel(`session:${sessionId}`, {
       config: { broadcast: { self: true } },
     });
+    channelRef.current = channel;
 
     channel
       .on("broadcast", { event: "cinematic" }, ({ payload }) =>
@@ -68,6 +71,7 @@ export function useSessionBroadcast(
       .subscribe();
 
     return () => {
+      channelRef.current = null;
       supabase.removeChannel(channel);
     };
   }, [sessionId, supabase, onMessage]);
@@ -75,10 +79,15 @@ export function useSessionBroadcast(
   const broadcast = useCallback(
     async (event: string, payload: unknown) => {
       if (!sessionId) return;
-      const channel = supabase.channel(`session:${sessionId}`);
-      await channel.send({ type: "broadcast", event, payload: payload as Record<string, unknown> });
+      const channel = channelRef.current;
+      if (!channel) return;
+      await channel.send({
+        type: "broadcast",
+        event,
+        payload: payload as Record<string, unknown>,
+      });
     },
-    [sessionId, supabase]
+    [sessionId]
   );
 
   return { broadcast };

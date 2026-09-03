@@ -1,5 +1,5 @@
 ---
-description: Contexto del producto Crawler OS — Dungeon Crawler Carl (Master vs Jugador)
+description: Contexto del producto Crawler OS — Dungeon Crawler Carl (Dungeon Master vs Jugador)
 alwaysApply: true
 ---
 
@@ -9,14 +9,14 @@ App de sesión para Dungeon Crawler Carl. Estética HUD holográfica (SAO / isek
 
 ## Roles
 
-- **Master:** crea y administra recursos, asigna loot/penalizaciones, edita hojas e inventarios, dispara notificaciones, ve el log global. Desktop-first, denso, acento cian.
-- **Crawler:** hoja, inventario, notificaciones, log personal, HUD. Móvil-first, inmersivo. No ve controles de Master.
+- **Dungeon Master (DM):** crea y administra recursos, asigna loot/penalizaciones, edita hojas e inventarios, dispara notificaciones, ve el log global. Desktop-first, denso, acento cian.
+- **Crawler:** hoja, inventario, notificaciones, log personal, HUD. Móvil-first, inmersivo. No ve controles de Dungeon Master.
 
 Si el rol no puede, el control no se renderiza (no disabled “solo admin”).
 
 ## Vocabulario
 
-Crawlers no Users. Master no Admin. Character Sheet no Profile. Event Log no Feed. The System no Inbox. Floor no Level-de-app. Reward / Penalty no success/error genéricos.
+Crawlers no Users. Dungeon Master no Admin ni IA. Character Sheet no Profile. Event Log no Feed. The System no Inbox. Floor no Level-de-app. Reward / Penalty no success/error genéricos.
 
 ## Al implementar
 
