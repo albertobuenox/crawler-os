@@ -8,7 +8,7 @@ import { Select } from "@/components/ui/Input";
 import type { Crawler, CombatRound, GameSession } from "@/lib/types";
 import { castSession } from "@/lib/utils";
 import { COMBAT_PHASES } from "@/lib/rules";
-import { PHASE_LABEL } from "@/lib/copy";
+import { PHASE_LABEL, BRAND, SCENE_LABEL } from "@/lib/copy";
 
 export default function DMWorldPage() {
   const supabase = createClient();
@@ -81,7 +81,7 @@ export default function DMWorldPage() {
       kind: "box",
       name: "Caja misteriosa",
       rarity: "legendary",
-      system_copy: "The System se siente generoso. Probablemente.",
+      system_copy: `${BRAND} se siente generoso. Probablemente.`,
       payload: { contents: [] },
     }).select().single();
     if (boxRes) {
@@ -157,8 +157,8 @@ export default function DMWorldPage() {
         <Button variant="energy" onClick={createLootBox}>Crear caja de loot</Button>
       </GlassPanel>
 
-      <GlassPanel title="Chinchetas del mapa" subtitle="Se gestionan en Mesa">
-        <p className="text-sm text-[var(--text-3)]">Usa la pantalla Mesa para colocar chinchetas en los mapas.</p>
+      <GlassPanel title="Chinchetas del mapa" subtitle={`Se gestionan en ${SCENE_LABEL}`}>
+        <p className="text-sm text-[var(--text-3)]">Usa la pantalla {SCENE_LABEL} para colocar chinchetas en los mapas.</p>
       </GlassPanel>
     </div>
   );

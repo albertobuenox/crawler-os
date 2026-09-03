@@ -1,7 +1,7 @@
 {
   "name": "Crawler OS",
   "short_name": "Crawler OS",
-  "description": "HUD de The System para sesiones CarlRPG",
+  "description": "HUD de BORANT CORP para sesiones CarlRPG",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#05060D",
@@ -9,9 +9,15 @@
   "orientation": "any",
   "icons": [
     {
-      "src": "/icons/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any"
     }
   ]

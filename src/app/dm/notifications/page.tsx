@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { GlassPanel } from "@/components/ui/GlassPanel";
 import { Button } from "@/components/ui/Button";
 import type { Notification } from "@/lib/types";
+import { BRAND } from "@/lib/copy";
 
 export default function DMNotificationsPage() {
   const supabase = createClient();
@@ -22,7 +23,7 @@ export default function DMNotificationsPage() {
   }
 
   return (
-    <GlassPanel title="The System" subtitle="Historial de notificaciones">
+    <GlassPanel title={BRAND} subtitle="Historial de notificaciones">
       <ul className="space-y-2">
         {notifications.map((n) => (
           <li key={n.id} className={`well p-3 ${!n.is_read ? "border-[var(--stroke-cyan)]" : ""}`}>
@@ -31,7 +32,7 @@ export default function DMNotificationsPage() {
           </li>
         ))}
         {notifications.length === 0 && (
-          <p className="text-sm text-[var(--text-3)]">Nada de The System todavía.</p>
+          <p className="text-sm text-[var(--text-3)]">Nada de {BRAND} todavía.</p>
         )}
       </ul>
     </GlassPanel>

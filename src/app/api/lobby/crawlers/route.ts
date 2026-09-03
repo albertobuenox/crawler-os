@@ -6,7 +6,7 @@ export async function GET() {
     const admin = createAdminClient();
     const { data: sessions, error: sessionError } = await admin
       .from("sessions")
-      .select("id, code")
+      .select("id")
       .eq("is_active", true)
       .order("created_at", { ascending: false });
 
@@ -24,13 +24,7 @@ export async function GET() {
 
     if (error) throw error;
 
-    const codeBySession = Object.fromEntries((sessions ?? []).map((s) => [s.id, s.code]));
-    const crawlers = (data ?? []).map((c) => ({
-      ...c,
-      session_code: codeBySession[c.session_id] ?? null,
-    }));
-
-    return NextResponse.json({ crawlers });
+    return NextResponse.json({ crawlers: data ?? [] });
   } catch (err) {
     const message = err instanceof Error ? err.message : "No se pudieron cargar los crawlers";
     return NextResponse.json({ error: message, crawlers: [] }, { status: 500 });

@@ -37,7 +37,7 @@ export function Button({
   return (
     <button
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-[var(--r-md)] font-medium transition-all duration-[var(--t-ui)] disabled:cursor-not-allowed disabled:opacity-45",
+        "inline-flex cursor-pointer items-center justify-center gap-2 rounded-[var(--r-md)] font-medium transition-all duration-[var(--t-ui)] disabled:cursor-not-allowed disabled:opacity-45",
         variantClass[variant],
         sizeClass[size],
         variant === "energy" || variant === "session" ? "rounded-[var(--r-pill)]" : "",

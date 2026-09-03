@@ -1,5 +1,28 @@
 import type { DiceRollKind, StatKey } from "./types";
 
+export const STAT_KEYS = ["str", "int", "con", "dex", "cha"] as const;
+
+/** Starting array: assign each value once. Stats go up later. */
+export const STARTING_STAT_VALUES = [2, 3, 4, 5, 6] as const;
+
+export function formatStat(value: number): string {
+  return String(value).padStart(2, "0");
+}
+
+/** If `next` is already on another stat, swap so the array stays unique. */
+export function assignStartingStat<T extends Record<`${StatKey}_base`, number>>(
+  stats: T,
+  key: StatKey,
+  next: number
+): T {
+  const field = `${key}_base` as const;
+  const previous = stats[field];
+  const takenBy = STAT_KEYS.find((k) => k !== key && stats[`${k}_base`] === next);
+  const updated = { ...stats, [field]: next };
+  if (takenBy) updated[`${takenBy}_base`] = previous;
+  return updated;
+}
+
 /** CarlRPG stat modifier: floor((stat - 10) / 2) */
 export function statModifier(stat: number): number {
   return Math.floor((stat - 10) / 2);

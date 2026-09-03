@@ -6,6 +6,7 @@ import { GlassPanel } from "@/components/ui/GlassPanel";
 import { Button } from "@/components/ui/Button";
 import { CinematicOverlay } from "@/components/hud/CinematicOverlay";
 import type { LootBox, Resource } from "@/lib/types";
+import { BRAND } from "@/lib/copy";
 
 export default function CrawlerLootPage() {
   const supabase = createClient();
@@ -44,7 +45,7 @@ export default function CrawlerLootPage() {
     <main className="p-4 pb-24">
       <GlassPanel title="Cajas de loot">
         {boxes.length === 0 ? (
-          <p className="text-sm text-[var(--text-3)]">Ninguna caja sellada. The System acapara.</p>
+          <p className="text-sm text-[var(--text-3)]">Ninguna caja sellada. {BRAND} acapara.</p>
         ) : (
           boxes.map((b) => (
             <div key={b.id} className="well mb-2 flex items-center justify-between p-3">
@@ -59,7 +60,7 @@ export default function CrawlerLootPage() {
         open={!!opening}
         type="loot_box"
         title="LOOT BOX"
-        body="The System ha decidido que te mereces un premio."
+        body={`${BRAND} ha decidido que te mereces un premio.`}
         itemName={opening?.resource.name}
         rarity={opening?.resource.rarity}
         onClose={() => { setOpening(null); load(); }}

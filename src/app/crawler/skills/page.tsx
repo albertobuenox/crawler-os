@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/Button";
 import { CrawlerStatusStrip } from "@/components/layout/Nav";
 import type { Crawler, Skill } from "@/lib/types";
 import { statModifier } from "@/lib/rules";
-import { SKILL_TYPE_LABEL } from "@/lib/copy";
+import { SKILL_TYPE_LABEL, BRAND } from "@/lib/copy";
+import { skillRollLabel } from "@/lib/skills";
 
 export default function CrawlerSkillsPage() {
   const supabase = createClient();
@@ -21,7 +22,10 @@ export default function CrawlerSkillsPage() {
       const { data: c } = await supabase.from("crawlers").select("*").eq("owner_user_id", user.id).maybeSingle();
       if (!c) return;
       setCrawler(c as Crawler);
-      const { data: sk } = await supabase.from("skills").select("*").eq("crawler_id", c.id);
+      const { data: sk } = await supabase
+        .from("skills")
+        .select("*, skill_catalog(*)")
+        .eq("crawler_id", c.id);
       setSkills((sk as Skill[]) ?? []);
     })();
   }, [supabase]);
@@ -34,7 +38,7 @@ export default function CrawlerSkillsPage() {
       <main className="space-y-4 p-4 pb-24">
         <GlassPanel title="Habilidades" subtitle="Avance cada 2h / 4h de juego">
           {skills.length === 0 ? (
-            <p className="text-sm text-[var(--text-3)]">Aún no hay habilidades. The System las asignará.</p>
+            <p className="text-sm text-[var(--text-3)]">Aún no hay habilidades. {BRAND} las asignará.</p>
           ) : (
             <ul className="space-y-2">
               {skills.map((s) => (
@@ -42,6 +46,14 @@ export default function CrawlerSkillsPage() {
                   <div>
                     <span className="font-semibold text-[var(--text-1)]">{s.name}</span>
                     <span className="ml-2 text-[var(--text-3)]">{SKILL_TYPE_LABEL[s.skill_type] ?? s.skill_type}</span>
+                    {s.skill_catalog?.animal_only && (
+                      <span className="ml-2 text-[10px] uppercase tracking-wider text-[var(--text-4)]">solo animal</span>
+                    )}
+                    {s.skill_catalog && (
+                      <p className="text-[10px] uppercase tracking-wider text-[var(--text-4)]">
+                        d100 {skillRollLabel(s.skill_catalog.roll_min, s.skill_catalog.roll_max)} · pág. {s.skill_catalog.page_ref}
+                      </p>
+                    )}
                   </div>
                   <div className="text-right">
                     <span className="font-stat text-[var(--cyan-400)]">Rango {s.rank}</span>

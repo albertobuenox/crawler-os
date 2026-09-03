@@ -12,6 +12,7 @@ import { DiceOverlay } from "@/components/hud/DiceOverlay";
 import type { Crawler, EventLogEntry, Notification, DiceRequest } from "@/lib/types";
 import { useSessionBroadcast } from "@/hooks/useSession";
 import { statModifier } from "@/lib/rules";
+import { BRAND, SCENE_LABEL } from "@/lib/copy";
 import type { Rarity } from "@/lib/types";
 
 export default function CrawlerHomePage() {
@@ -119,8 +120,8 @@ export default function CrawlerHomePage() {
     return (
       <main className="flex min-h-screen items-center justify-center p-4">
         <GlassPanel title="Sin crawler asignado">
-          <p className="mb-4 text-sm">Únete a una sesión con un código de piso.</p>
-          <Link href="/join"><Button variant="energy">Introducir código</Button></Link>
+          <p className="mb-4 text-sm">Vuelve al lobby y elige un participante de la mazmorra.</p>
+          <Link href="/login"><Button variant="energy">Volver al lobby</Button></Link>
         </GlassPanel>
       </main>
     );
@@ -149,10 +150,10 @@ export default function CrawlerHomePage() {
         )}
 
         <GlassPanel title="Objetivo actual" subtitle={`Piso ${crawler.floor}`}>
-          <p className="text-sm text-[var(--text-2)]">Sobrevive. The System te está mirando.</p>
+          <p className="text-sm text-[var(--text-2)]">Sobrevive. {BRAND} te está mirando.</p>
         </GlassPanel>
 
-        <GlassPanel title="Mensajes recientes de The System">
+        <GlassPanel title={`Mensajes recientes de ${BRAND}`}>
           {notifications.length === 0 ? (
             <p className="text-sm text-[var(--text-3)]">Todo en calma. Sospechosamente en calma.</p>
           ) : (
@@ -171,7 +172,7 @@ export default function CrawlerHomePage() {
 
         <div className="grid grid-cols-2 gap-2">
           <Link href="/crawler/inventory"><Button variant="neon" className="w-full">Inventario</Button></Link>
-          <Link href="/crawler/table"><Button variant="neon" className="w-full">Mesa</Button></Link>
+          <Link href="/crawler/table"><Button variant="neon" className="w-full">{SCENE_LABEL}</Button></Link>
         </div>
       </main>
 

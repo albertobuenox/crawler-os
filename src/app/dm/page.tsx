@@ -8,7 +8,7 @@ import { StatKPI } from "@/components/hud/StatKPI";
 import { EventLogList } from "@/components/hud/EventLog";
 import type { Crawler, EventLogEntry, GameSession } from "@/lib/types";
 import { castSession } from "@/lib/utils";
-import { PHASE_LABEL, STATUS_LABEL } from "@/lib/copy";
+import { PHASE_LABEL, STATUS_LABEL, BRAND } from "@/lib/copy";
 import { useRealtimeTable } from "@/hooks/useSession";
 import Link from "next/link";
 
@@ -84,7 +84,7 @@ export default function DMDashboardPage() {
   }
 
   if (loading) {
-    return <div className="text-[var(--text-3)]">The System está cargando...</div>;
+    return <div className="text-[var(--text-3)]">{BRAND} está cargando...</div>;
   }
 
   if (!session) {

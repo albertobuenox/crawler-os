@@ -1,7 +1,7 @@
 "use client";
 
 import type { TableState, MapPin, Resource } from "@/lib/types";
-import { KIND_LABEL, RARITY_LABEL } from "@/lib/copy";
+import { KIND_LABEL, RARITY_LABEL, EMPTY_SCENE_COPY, BRAND } from "@/lib/copy";
 import { cn } from "@/lib/utils";
 
 interface TableCanvasProps {
@@ -28,11 +28,11 @@ export function TableCanvas({
     return (
       <div
         className={cn(
-          "well flex min-h-[280px] items-center justify-center text-sm text-[var(--text-3)]",
+          "well flex min-h-0 items-center justify-center text-sm text-[var(--text-3)]",
           className
         )}
       >
-        The System espera a que el Dungeon Master muestre algo.
+        {EMPTY_SCENE_COPY}
       </div>
     );
   }
@@ -40,7 +40,7 @@ export function TableCanvas({
   return (
     <div
       className={cn(
-        "well relative min-h-[280px] overflow-hidden",
+        "well relative min-h-0 overflow-hidden",
         grid && "bg-[length:40px_40px] bg-[linear-gradient(rgba(0,212,255,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(0,212,255,0.06)_1px,transparent_1px)]",
         className
       )}
@@ -52,7 +52,7 @@ export function TableCanvas({
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={tableState.image_url}
-          alt={tableState.title ?? "Pantalla de mesa"}
+          alt={tableState.title ?? "Pantalla de escena"}
           className="h-full w-full object-contain"
         />
       )}
@@ -60,7 +60,7 @@ export function TableCanvas({
       {shown === "text" && (
         <div className="p-6">
           <p className="font-display text-xs tracking-[var(--ls-system)] text-[var(--cyan-400)]">
-            SYSTEM MESSAGE
+            {BRAND}
           </p>
           {tableState.title && (
             <h3 className="mt-2 text-xl font-semibold text-[var(--text-1)]">{tableState.title}</h3>

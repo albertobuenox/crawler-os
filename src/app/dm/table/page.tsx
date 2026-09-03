@@ -9,6 +9,7 @@ import { TableCanvas } from "@/components/hud/TableCanvas";
 import type { GameSession, TableState, MapPin, Resource } from "@/lib/types";
 import { castSession } from "@/lib/utils";
 import { useSessionBroadcast } from "@/hooks/useSession";
+import { SCENE_LABEL } from "@/lib/copy";
 
 export default function DMTablePage() {
   const supabase = createClient();
@@ -75,8 +76,8 @@ export default function DMTablePage() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-3">
-      <GlassPanel className="lg:col-span-2" title="Mesa" subtitle="Se muestra a todos los crawlers en tiempo real">
-        <TableCanvas tableState={tableState} resource={shownResource} pins={pins} />
+      <GlassPanel className="lg:col-span-2" title={SCENE_LABEL} subtitle="Se muestra a todos los crawlers en tiempo real">
+        <TableCanvas tableState={tableState} resource={shownResource} pins={pins} className="min-h-[280px]" />
         <div className="mt-4 flex flex-wrap gap-2">
           <Button variant="neon" size="sm" onClick={() => showOnTable("text")}>Mostrar texto</Button>
           <Button variant="neon" size="sm" onClick={() => showOnTable("item")}>Mostrar objeto</Button>

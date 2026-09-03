@@ -1,5 +1,15 @@
 import type { CrawlerStatus, ResourceKind, Rarity, SessionPhase } from "./types";
 
+export const BRAND = "BORANT CORP";
+export const SCENE_LABEL = "Escena";
+export const EMPTY_SCENE_COPY = "No se ve una mierda";
+
+export const NO_CLASS_LABEL = "Sin clase";
+
+export function crawlerClassLabel(className: string | null | undefined): string {
+  return className?.trim() || NO_CLASS_LABEL;
+}
+
 export const STATUS_LABEL: Record<CrawlerStatus, string> = {
   exploring: "Explorando",
   combat: "Combate",
@@ -78,10 +88,10 @@ export function authErrorEs(message: string): string {
     return "Este crawler ya está registrado. Entra.";
   }
   if (m.includes("invalid login") || m.includes("invalid credentials")) {
-    return "Acceso denegado. The System no reconoce a este crawler.";
+    return `Acceso denegado. ${BRAND} no reconoce a este crawler.`;
   }
   if (m.includes("password")) {
-    return "La contraseña no cumple los requisitos de The System.";
+    return `La contraseña no cumple los requisitos de ${BRAND}.`;
   }
   return message;
 }

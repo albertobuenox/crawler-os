@@ -53,8 +53,8 @@ export default function TableTVPage() {
   return (
     <div className="canvas-bokeh flex min-h-screen flex-col bg-[var(--void-950)] p-4">
       <header className="mb-4 text-center">
-        <p className="font-display text-xs tracking-[0.3em] text-[var(--cyan-400)]">CRAWLER OS — MESA</p>
-        <p className="font-mono-system text-sm text-[var(--text-3)]">{code}</p>
+        <p className="font-display text-xs tracking-[0.3em] text-[var(--cyan-400)]">CRAWLER OS — ESCENA</p>
+        {session?.name && <p className="text-sm text-[var(--text-3)]">{session.name}</p>}
       </header>
       <TableCanvas tableState={tableState} resource={resource} pins={pins} className="min-h-[70vh] flex-1" />
     </div>

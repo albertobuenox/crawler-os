@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DMNavRail, DMTopBar } from "@/components/layout/Nav";
+import { FloatingUtilityMenu } from "@/components/layout/FloatingUtilityMenu";
 import { castSession } from "@/lib/utils";
 
 export default async function DMLayout({ children }: { children: React.ReactNode }) {
@@ -35,6 +36,7 @@ export default async function DMLayout({ children }: { children: React.ReactNode
         <DMTopBar sessionCode={session?.code} sessionName={session?.name} />
         <main className="flex-1 overflow-auto p-6">{children}</main>
       </div>
+      <FloatingUtilityMenu />
     </div>
   );
 }

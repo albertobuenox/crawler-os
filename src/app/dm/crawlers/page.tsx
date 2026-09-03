@@ -5,12 +5,13 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { GlassPanel } from "@/components/ui/GlassPanel";
 import { Button } from "@/components/ui/Button";
-import { Input, Textarea, Select } from "@/components/ui/Input";
+import { Input, Select } from "@/components/ui/Input";
 import { ResourceBar, HealthBoxes } from "@/components/hud/HealthBoxes";
-import type { Crawler, GameSession } from "@/lib/types";
+import type { Crawler, GameSession, StatKey } from "@/lib/types";
+import { STAT_LABELS } from "@/lib/types";
 import { castSession } from "@/lib/utils";
-import { statModifier } from "@/lib/rules";
-import { STATUS_LABEL } from "@/lib/copy";
+import { assignStartingStat, formatStat, STARTING_STAT_VALUES, STAT_KEYS } from "@/lib/rules";
+import { crawlerClassLabel, STATUS_LABEL } from "@/lib/copy";
 
 export default function DMCrawlersPage() {
   const supabase = createClient();
@@ -20,14 +21,16 @@ export default function DMCrawlersPage() {
   const [form, setForm] = useState({
     name: "",
     race: "",
-    class_name: "",
-    level: 1,
-    str_base: 10,
-    int_base: 10,
-    con_base: 10,
-    dex_base: 10,
-    cha_base: 10,
+    str_base: 6,
+    int_base: 3,
+    con_base: 5,
+    dex_base: 4,
+    cha_base: 2,
   });
+
+  function setStartingStat(key: StatKey, next: number) {
+    setForm((current) => assignStartingStat(current, key, next));
+  }
 
   useEffect(() => {
     (async () => {
@@ -53,13 +56,12 @@ export default function DMCrawlersPage() {
   async function createCrawler(e: React.FormEvent) {
     e.preventDefault();
     if (!session) return;
-    const conMod = statModifier(form.con_base);
     await supabase.from("crawlers").insert({
       session_id: session.id,
       name: form.name,
-      race: form.race,
-      class_name: form.class_name,
-      level: form.level,
+      race: form.race || null,
+      class_name: null,
+      level: 1,
       str_base: form.str_base,
       int_base: form.int_base,
       con_base: form.con_base,
@@ -74,6 +76,15 @@ export default function DMCrawlersPage() {
       mana_current: form.int_base,
     });
     setShowForm(false);
+    setForm({
+      name: "",
+      race: "",
+      str_base: 6,
+      int_base: 3,
+      con_base: 5,
+      dex_base: 4,
+      cha_base: 2,
+    });
     const { data } = await supabase.from("crawlers").select("*").eq("session_id", session.id);
     setCrawlers((data as Crawler[]) ?? []);
   }
@@ -92,15 +103,19 @@ export default function DMCrawlersPage() {
           <form onSubmit={createCrawler} className="grid gap-4 sm:grid-cols-2">
             <Input label="Nombre" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
             <Input label="Raza" value={form.race} onChange={(e) => setForm({ ...form, race: e.target.value })} />
-            <Input label="Clase" value={form.class_name} onChange={(e) => setForm({ ...form, class_name: e.target.value })} />
-            <Input label="Nivel" type="number" value={form.level} onChange={(e) => setForm({ ...form, level: +e.target.value })} />
-            {(["str", "int", "con", "dex", "cha"] as const).map((s) => (
-              <Input
+            <p className="sm:col-span-2 text-xs text-[var(--text-3)]">
+              Asigna 02, 03, 04, 05 y 06. Cada valor una vez. Subirán más adelante. La clase se adquiere después.
+            </p>
+            {STAT_KEYS.map((s) => (
+              <Select
                 key={s}
-                label={s.toUpperCase()}
-                type="number"
-                value={form[`${s}_base`]}
-                onChange={(e) => setForm({ ...form, [`${s}_base`]: +e.target.value })}
+                label={STAT_LABELS[s]}
+                value={String(form[`${s}_base`])}
+                onChange={(e) => setStartingStat(s, Number(e.target.value))}
+                options={STARTING_STAT_VALUES.map((n) => ({
+                  value: String(n),
+                  label: formatStat(n),
+                }))}
               />
             ))}
             <div className="sm:col-span-2">
@@ -118,7 +133,7 @@ export default function DMCrawlersPage() {
               <div>
                 <h3 className="font-display text-lg">{c.name}</h3>
                 <p className="text-xs text-[var(--text-cyan)]">
-                  LV {c.level} · {c.class_name ?? "—"}
+                  LV {c.level} · {crawlerClassLabel(c.class_name)}
                 </p>
                 <p className="text-xs text-[var(--text-3)]">{STATUS_LABEL[c.status]}</p>
               </div>

@@ -26,7 +26,7 @@ export default function DMCrawlerSheetPage() {
     (async () => {
       const [{ data: c }, { data: sk }, { data: ef }] = await Promise.all([
         supabase.from("crawlers").select("*").eq("id", id).single(),
-        supabase.from("skills").select("*").eq("crawler_id", id),
+        supabase.from("skills").select("*, skill_catalog(*)").eq("crawler_id", id),
         supabase.from("effects").select("*").eq("crawler_id", id),
       ]);
       setCrawler(c as Crawler);
@@ -55,6 +55,8 @@ export default function DMCrawlerSheetPage() {
       mana_current: crawler.mana_current,
       dr_total: crawler.dr_total,
       ai_favor_remaining: crawler.ai_favor_remaining,
+      race: crawler.race,
+      class_name: crawler.class_name || null,
       notes: crawler.notes,
       past_trauma: crawler.past_trauma,
       personal_space: crawler.personal_space,
@@ -94,7 +96,12 @@ export default function DMCrawlerSheetPage() {
             <Input label="Nombre" value={crawler.name} onChange={(e) => setCrawler({ ...crawler, name: e.target.value })} />
             <Input label="Nivel" type="number" value={crawler.level} onChange={(e) => setCrawler({ ...crawler, level: +e.target.value })} />
             <Input label="Raza" value={crawler.race ?? ""} onChange={(e) => setCrawler({ ...crawler, race: e.target.value })} />
-            <Input label="Clase" value={crawler.class_name ?? ""} onChange={(e) => setCrawler({ ...crawler, class_name: e.target.value })} />
+            <Input
+              label="Clase"
+              placeholder="La adquiere más adelante"
+              value={crawler.class_name ?? ""}
+              onChange={(e) => setCrawler({ ...crawler, class_name: e.target.value || null })}
+            />
           </div>
           <div className="mt-6">
             <StatGrid stats={stats} />
@@ -126,11 +133,16 @@ export default function DMCrawlerSheetPage() {
             )}
           </GlassPanel>
           <GlassPanel title="Habilidades">
-            {skills.map((s) => (
-              <div key={s.id} className="well mb-2 px-2 py-1 text-sm">
-                {s.name} — rango {s.rank} ({SKILL_TYPE_LABEL[s.skill_type] ?? s.skill_type})
-              </div>
-            ))}
+            {skills.length === 0 ? (
+              <p className="text-sm text-[var(--text-3)]">Sin habilidades todavía.</p>
+            ) : (
+              skills.map((s) => (
+                <div key={s.id} className="well mb-2 px-2 py-1 text-sm">
+                  {s.name} — rango {s.rank} ({SKILL_TYPE_LABEL[s.skill_type] ?? s.skill_type})
+                  {s.skill_catalog?.animal_only ? " · solo animal" : ""}
+                </div>
+              ))
+            )}
           </GlassPanel>
         </div>
       </div>

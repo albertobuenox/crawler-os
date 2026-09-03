@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { formatStat } from "@/lib/rules";
 
 interface StatKPIProps {
   label: string;
@@ -27,7 +28,7 @@ export function StatGrid({ stats }: StatGridProps) {
       {stats.map((s) => (
         <div key={s.key} className="well p-3 text-center">
           <div className="text-label">{s.key}</div>
-          <div className="font-stat text-2xl text-[var(--cyan-400)]">{s.value}</div>
+          <div className="font-stat text-2xl text-[var(--cyan-400)]">{formatStat(s.value)}</div>
           {s.mod !== undefined && (
             <div className="text-xs text-[var(--text-3)]">
               {s.mod >= 0 ? "+" : ""}

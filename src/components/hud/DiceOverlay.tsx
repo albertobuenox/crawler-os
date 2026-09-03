@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";
+import { BRAND } from "@/lib/copy";
 
 interface DiceOverlayProps {
   open: boolean;
@@ -41,7 +42,7 @@ export function DiceOverlay({
             className="glass w-full max-w-sm p-6 text-center"
           >
             <p className="font-display text-xs tracking-[var(--ls-system)] text-[var(--cyan-400)]">
-              SYSTEM MESSAGE
+              {BRAND}
             </p>
             <h3 className="mt-2 text-lg font-semibold text-[var(--text-1)]">{label}</h3>
             <div className="mt-4 flex justify-center gap-4 text-xs text-[var(--text-3)]">

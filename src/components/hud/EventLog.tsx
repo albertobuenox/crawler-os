@@ -2,6 +2,7 @@
 
 import type { EventLogEntry } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { BRAND } from "@/lib/copy";
 
 const eventColors: Record<string, string> = {
   REWARD: "text-[var(--orange-400)]",
@@ -43,7 +44,7 @@ export function EventLogList({ entries, compact, className }: EventLogListProps)
             })}
           </span>{" "}
           <span className={cn("font-semibold", eventColors[e.event_type] ?? "")}>
-            [{e.event_type}]
+            [{e.event_type === "SYSTEM" ? BRAND : e.event_type}]
           </span>{" "}
           <span className="text-[var(--text-2)]">{e.message}</span>
         </li>

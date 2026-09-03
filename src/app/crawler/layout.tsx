@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { CrawlerBottomNav } from "@/components/layout/Nav";
+import { FloatingUtilityMenu } from "@/components/layout/FloatingUtilityMenu";
 
 export default async function CrawlerLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -17,16 +18,11 @@ export default async function CrawlerLayout({ children }: { children: React.Reac
 
   if (profile?.role === "dm") redirect("/dm");
 
-  const { count } = await supabase
-    .from("notifications")
-    .select("*", { count: "exact", head: true })
-    .eq("user_id", user.id)
-    .eq("is_read", false);
-
   return (
     <div className="relative z-[var(--z-shell)] min-h-screen pb-[72px] lg:pb-0">
       {children}
-      <CrawlerBottomNav unread={count ?? 0} />
+      <FloatingUtilityMenu />
+      <CrawlerBottomNav />
     </div>
   );
 }

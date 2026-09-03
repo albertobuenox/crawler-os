@@ -153,15 +153,27 @@ export interface ItemInstance {
   resource?: Resource;
 }
 
+export interface SkillCatalogEntry {
+  id: string;
+  slug: string;
+  name: string;
+  roll_min: number;
+  roll_max: number;
+  page_ref: number;
+  animal_only: boolean;
+}
+
 export interface Skill {
   id: string;
   crawler_id: string;
+  catalog_id: string | null;
   name: string;
   skill_type: "attack" | "spell" | "utility" | "passive";
   rank: number;
   linked_stat: StatKey;
   check_marks: number;
   notes: string | null;
+  skill_catalog?: SkillCatalogEntry | null;
 }
 
 export interface TableState {

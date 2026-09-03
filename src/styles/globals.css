@@ -20,6 +20,19 @@
   h3 {
     color: var(--text-1);
   }
+
+  button:not(:disabled),
+  [type="button"]:not(:disabled),
+  [type="submit"]:not(:disabled),
+  [type="reset"]:not(:disabled),
+  a[href],
+  select:not(:disabled),
+  summary,
+  label,
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled) {
+    cursor: pointer;
+  }
 }
 
 @layer utilities {
@@ -70,6 +83,58 @@
     background: var(--cyan-500);
   }
 }
+
+.dm-nav-rail {
+  width: 56px;
+  background: rgba(5, 6, 13, 0.72);
+  transition:
+    width var(--t-panel) var(--ease-hologram) 80ms,
+    box-shadow var(--t-panel) var(--ease-hologram) 80ms,
+    background-color var(--t-panel) var(--ease-hologram) 80ms;
+}
+
+.dm-nav-rail:hover,
+.dm-nav-rail:has(:focus-visible) {
+  width: 212px;
+  background: rgba(5, 6, 13, 0.94);
+  box-shadow:
+    12px 0 40px rgba(0, 0, 0, 0.45),
+    4px 0 28px rgba(0, 212, 255, 0.08);
+  transition-delay: 0ms;
+}
+
+.dm-nav-label {
+  opacity: 0;
+  transform: translateX(-10px);
+  transition:
+    opacity var(--t-panel) var(--ease-hologram),
+    transform var(--t-panel) var(--ease-hologram);
+}
+
+.dm-nav-rail:hover .dm-nav-label,
+.dm-nav-rail:has(:focus-visible) .dm-nav-label {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.dm-nav-rail:hover a:nth-child(2) .dm-nav-label,
+.dm-nav-rail:has(:focus-visible) a:nth-child(2) .dm-nav-label { transition-delay: 40ms; }
+.dm-nav-rail:hover a:nth-child(3) .dm-nav-label,
+.dm-nav-rail:has(:focus-visible) a:nth-child(3) .dm-nav-label { transition-delay: 55ms; }
+.dm-nav-rail:hover a:nth-child(4) .dm-nav-label,
+.dm-nav-rail:has(:focus-visible) a:nth-child(4) .dm-nav-label { transition-delay: 70ms; }
+.dm-nav-rail:hover a:nth-child(5) .dm-nav-label,
+.dm-nav-rail:has(:focus-visible) a:nth-child(5) .dm-nav-label { transition-delay: 85ms; }
+.dm-nav-rail:hover a:nth-child(6) .dm-nav-label,
+.dm-nav-rail:has(:focus-visible) a:nth-child(6) .dm-nav-label { transition-delay: 100ms; }
+.dm-nav-rail:hover a:nth-child(7) .dm-nav-label,
+.dm-nav-rail:has(:focus-visible) a:nth-child(7) .dm-nav-label { transition-delay: 115ms; }
+.dm-nav-rail:hover a:nth-child(8) .dm-nav-label,
+.dm-nav-rail:has(:focus-visible) a:nth-child(8) .dm-nav-label { transition-delay: 130ms; }
+.dm-nav-rail:hover a:nth-child(9) .dm-nav-label,
+.dm-nav-rail:has(:focus-visible) a:nth-child(9) .dm-nav-label { transition-delay: 145ms; }
+.dm-nav-rail:hover a:nth-child(10) .dm-nav-label,
+.dm-nav-rail:has(:focus-visible) a:nth-child(10) .dm-nav-label { transition-delay: 160ms; }
 
 @media (prefers-reduced-motion: reduce) {
   *,

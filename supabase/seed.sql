@@ -152,11 +152,11 @@ INSERT INTO crawlers (
     '44444444-4444-4444-4444-444444444444',
     'Carl',
     'Humano',
-    'Crawler',
+    NULL,
     1,
-    14, 10, 13, 12, 8,
-    14, 10, 13, 12, 8,
-    10, 10,
+    6, 3, 5, 4, 2,
+    6, 3, 5, 4, 2,
+    3, 3,
     'exploring'
   ),
   (
@@ -164,11 +164,11 @@ INSERT INTO crawlers (
     '44444444-4444-4444-4444-444444444444',
     'Donut',
     'Gato',
-    'Princesa',
+    NULL,
     1,
-    8, 14, 10, 16, 18,
-    8, 14, 10, 16, 18,
-    14, 14,
+    2, 5, 3, 4, 6,
+    2, 5, 3, 4, 6,
+    5, 5,
     'exploring'
   )
 ON CONFLICT (id) DO NOTHING;
@@ -182,7 +182,7 @@ VALUES
     'Medkit de pasillo',
     'uncommon',
     'Cura una caja de salud. Sabe a plástico y esperanza.',
-    'The System te concede atención médica. No te acostumbres.'
+    'BORANT CORP te concede atención médica. No te acostumbres.'
   ),
   (
     '99999999-9999-9999-9999-999999999999',
@@ -191,6 +191,6 @@ VALUES
     'Croquis del primer piso',
     'common',
     'Un plano sucio del dungeon.',
-    'Esto es un mapa. Úsalo o muere perdido. The System no insiste.'
+    'Esto es un mapa. Úsalo o muere perdido. BORANT CORP no insiste.'
   )
 ON CONFLICT (id) DO NOTHING;

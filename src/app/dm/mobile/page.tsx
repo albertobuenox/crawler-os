@@ -32,10 +32,10 @@ export default function DMMobilePage() {
 
   return (
     <main className="space-y-4 p-4 lg:hidden">
-      <GlassPanel title="Dungeon Master — mando móvil" subtitle={session?.code}>
+      <GlassPanel title="Dungeon Master — mando móvil" subtitle={session?.name}>
         <div className="grid grid-cols-2 gap-2">
           <Link href="/dm/dice"><Button variant="energy" className="w-full" size="sm">Pedir tirada</Button></Link>
-          <Link href="/dm/table"><Button variant="neon" className="w-full" size="sm">Mostrar en Mesa</Button></Link>
+          <Link href="/dm/table"><Button variant="neon" className="w-full" size="sm">Mostrar en Escena</Button></Link>
           <Link href="/dm/world"><Button variant="neon" className="w-full" size="sm">Fase de combate</Button></Link>
           <Link href="/dm/crawlers"><Button variant="session" className="w-full" size="sm">Otorgar loot</Button></Link>
         </div>

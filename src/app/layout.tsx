@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "@/styles/globals.css";
 
 export const metadata: Metadata = {
-  title: "Crawler OS — HUD de The System",
+  title: "Crawler OS — HUD de BORANT CORP",
   description: "Herramienta de sesión CarlRPG en tiempo real para el Dungeon Master y los Crawlers",
   manifest: "/manifest.json",
   appleWebApp: {

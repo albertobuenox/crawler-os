@@ -1,7 +1,5 @@
 export const DEV_LOGIN = process.env.NEXT_PUBLIC_DEV_LOGIN === "true";
 
-export const DEV_SESSION_CODE = "FLOOR-TEST";
-
 export const DEV_ACCOUNTS = [
   {
     role: "dm" as const,

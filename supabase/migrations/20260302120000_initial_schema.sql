@@ -584,7 +584,7 @@ BEGIN
       r.session_id,
       CASE p_mode WHEN 'penalty' THEN 'PENALTY'::event_type ELSE 'REWARD'::event_type END,
       v_user, cid,
-      COALESCE(p_system_message, 'The System has granted: ' || r.name),
+      COALESCE(p_system_message, 'BORANT CORP has granted: ' || r.name),
       jsonb_build_object('resource_id', p_resource_id, 'mode', p_mode)
     )
     RETURNING id INTO v_event_id;

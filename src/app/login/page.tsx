@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { GlassPanel } from "@/components/ui/GlassPanel";
 import { cn } from "@/lib/utils";
-import { STATUS_LABEL } from "@/lib/copy";
+import { STATUS_LABEL, BRAND } from "@/lib/copy";
 import type { CrawlerStatus, UserRole } from "@/lib/types";
 import { Cpu, User } from "lucide-react";
 
@@ -15,7 +15,6 @@ type LobbyCrawler = {
   class_name: string | null;
   level: number;
   status: CrawlerStatus;
-  session_code: string | null;
 };
 
 export default function LoginPage() {
@@ -72,7 +71,7 @@ export default function LoginPage() {
 
   return (
     <main className="relative flex min-h-screen items-center justify-center p-4">
-      <GlassPanel className="relative z-10 w-full max-w-[480px]" title="THE SYSTEM" subtitle="CRAWLER OS">
+      <GlassPanel className="relative z-10 w-full max-w-[480px]" title={BRAND} subtitle="CRAWLER OS">
         <p className="mb-4 text-center text-sm text-[var(--text-3)]">¿Quién entra al dungeon?</p>
         <div className="mb-6 grid grid-cols-2 gap-2">
           {(
@@ -110,7 +109,7 @@ export default function LoginPage() {
           <div className="space-y-3">
             <p className="text-label text-center">Participantes de la mazmorra</p>
             {loadingList && (
-              <p className="text-center text-sm text-[var(--text-3)]">The System está cargando…</p>
+              <p className="text-center text-sm text-[var(--text-3)]">{BRAND} está cargando…</p>
             )}
             {!loadingList && crawlers.length === 0 && !error && (
               <p className="well rounded-xl p-4 text-center text-sm text-[var(--text-2)]">
@@ -129,7 +128,7 @@ export default function LoginPage() {
                   <span>
                     <span className="block font-display text-sm text-[var(--text-1)]">{c.name}</span>
                     <span className="text-xs text-[var(--text-cyan)]">
-                      LV {c.level} · {c.class_name || c.race || "Crawler"}
+                      LV {c.level} · {c.class_name || c.race || "Sin clase"}
                     </span>
                   </span>
                   <span className="text-[10px] uppercase tracking-wider text-[var(--text-3)]">

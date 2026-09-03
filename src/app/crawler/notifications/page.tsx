@@ -6,6 +6,7 @@ import { GlassPanel } from "@/components/ui/GlassPanel";
 import { Button } from "@/components/ui/Button";
 import { CinematicOverlay } from "@/components/hud/CinematicOverlay";
 import type { Notification, Rarity } from "@/lib/types";
+import { BRAND } from "@/lib/copy";
 
 export default function CrawlerNotificationsPage() {
   const supabase = createClient();
@@ -30,9 +31,9 @@ export default function CrawlerNotificationsPage() {
 
   return (
     <main className="space-y-4 p-4 pb-24">
-      <GlassPanel title="The System">
+      <GlassPanel title={BRAND}>
         {notifications.length === 0 && (
-          <p className="text-sm text-[var(--text-3)]">Nada de The System todavía. El dungeon observa.</p>
+          <p className="text-sm text-[var(--text-3)]">Nada de {BRAND} todavía. El dungeon observa.</p>
         )}
         {notifications.map((n) => (
           <div

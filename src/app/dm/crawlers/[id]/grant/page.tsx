@@ -7,7 +7,7 @@ import { GlassPanel } from "@/components/ui/GlassPanel";
 import { Button } from "@/components/ui/Button";
 import { Select, Textarea } from "@/components/ui/Input";
 import type { Crawler, Resource } from "@/lib/types";
-import { KIND_LABEL, RARITY_LABEL } from "@/lib/copy";
+import { KIND_LABEL, RARITY_LABEL, BRAND } from "@/lib/copy";
 import { useSessionBroadcast } from "@/hooks/useSession";
 
 export default function GrantPage() {
@@ -83,7 +83,7 @@ export default function GrantPage() {
         />
         <Textarea
           label="Mensaje del Sistema"
-          placeholder="The System ha decidido que te mereces un premio. Probablemente por accidente."
+          placeholder={`${BRAND} ha decidido que te mereces un premio. Probablemente por accidente.`}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
         />
