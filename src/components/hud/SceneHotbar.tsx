@@ -620,12 +620,12 @@ function HotbarSlot({
   const Icon = skill ? (skillIcon[skill.skill_type] ?? Sparkles) : Sparkles;
   const skillArt = useSkillArt(skill ? skillArtSlug(skill) : null);
   const holdRef = useRef(false);
-  const timerRef = useRef<ReturnType<typeof window.setTimeout> | 0>(0);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function clearHoldTimer() {
-    if (timerRef.current) {
-      window.clearTimeout(timerRef.current);
-      timerRef.current = 0;
+    if (timerRef.current != null) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
     }
   }
 
@@ -681,7 +681,7 @@ function HotbarSlot({
           onPointerDown={(e) => {
             if (e.button !== 0) return;
             clearHoldTimer();
-            timerRef.current = window.setTimeout(() => {
+            timerRef.current = setTimeout(() => {
               holdRef.current = true;
               if (filled) onOpenMenu();
               else onAssign();

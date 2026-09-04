@@ -79,7 +79,7 @@ export default function CrawlerSkillsPage() {
                   canCheck={!advancementOpen}
                   canAdjustRank={advancementOpen && s.check_marks > 0 && s.skill_type !== "passive"}
                   onToggleCheck={onToggleSkillCheck}
-                  onAdjustSkillRank={onAdjustSkillRank}
+                  onAdjustRank={onAdjustSkillRank}
                 />
               ))}
             </ul>
