@@ -22,6 +22,20 @@ export default function DMWorldPage() {
     load();
   }, []);
 
+  useEffect(() => {
+    function scrollToHash() {
+      const id = window.location.hash.replace("#", "");
+      if (!id) return;
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    const timer = window.setTimeout(scrollToHash, 80);
+    window.addEventListener("hashchange", scrollToHash);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("hashchange", scrollToHash);
+    };
+  }, [session]);
+
   async function load() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -108,7 +122,7 @@ export default function DMWorldPage() {
         </div>
       </GlassPanel>
 
-      <GlassPanel title="Combate — 5 fases">
+      <GlassPanel id="combat" className="scroll-mt-8" title="Combate — 5 fases">
         {!combat ? (
           <Button variant="energy" onClick={startCombat}>Iniciar ronda de combate</Button>
         ) : (
@@ -127,7 +141,7 @@ export default function DMWorldPage() {
         )}
       </GlassPanel>
 
-      <GlassPanel title="Descansos">
+      <GlassPanel id="rest" className="scroll-mt-8" title="Descansos">
         <div className="mb-4 flex flex-wrap gap-2">
           {crawlers.map((c) => (
             <label key={c.id} className="flex items-center gap-1 text-sm">
@@ -153,7 +167,7 @@ export default function DMWorldPage() {
         </div>
       </GlassPanel>
 
-      <GlassPanel title="Cajas de loot">
+      <GlassPanel id="loot" className="scroll-mt-8" title="Cajas de loot">
         <Button variant="energy" onClick={createLootBox}>Crear caja de loot</Button>
       </GlassPanel>
 

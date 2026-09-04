@@ -2,13 +2,17 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ArrowLeftRight, GripHorizontal, Locate, Minus, Plus, Sparkles, Sword, Trash2, Wand, Wrench, X, Zap } from "lucide-react";
+import { ArrowLeftRight, GripHorizontal, Locate, Minus, Plus, Scaling, Sparkles, Sword, Trash2, Wand, Wrench, X, Zap } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import {
+  clampHotbarScale,
   emptyHotbar,
   formatHotbarQty,
   hydrateHotbar,
   HOTBAR_KEYS,
+  HOTBAR_SCALE_DEFAULT,
+  HOTBAR_SCALE_MAX,
+  HOTBAR_SCALE_MIN,
   HOTBAR_SIZE,
   keyToSlotIndex,
   readHotbar,
@@ -115,10 +119,16 @@ export function SceneHotbar({
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [minimized, setMinimized] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [scaling, setScaling] = useState(false);
+  const [scale, setScale] = useState(HOTBAR_SCALE_DEFAULT);
   const [slotBox, setSlotBox] = useState({ width: 0, height: 0 });
   const boundsRef = useRef<HTMLDivElement>(null);
   const barRef = useRef<HTMLDivElement>(null);
   const slotsMeasureRef = useRef<HTMLDivElement>(null);
+  const scaleRef = useRef(scale);
+  scaleRef.current = scale;
+  const minimizedRef = useRef(minimized);
+  minimizedRef.current = minimized;
   const dragRef = useRef({
     active: false,
     moved: false,
@@ -126,6 +136,12 @@ export function SceneHotbar({
     startY: 0,
     originX: 0,
     originY: 0,
+  });
+  const scaleDragRef = useRef({
+    active: false,
+    startX: 0,
+    startWidth: 1,
+    originScale: HOTBAR_SCALE_DEFAULT,
   });
 
   const activeSkills = useMemo(
@@ -141,6 +157,7 @@ export function SceneHotbar({
     const chrome = readHotbarChrome(crawlerId);
     setOffset({ x: chrome.offsetX, y: chrome.offsetY });
     setMinimized(chrome.minimized);
+    setScale(chrome.scale);
   }, [crawlerId]);
 
   useEffect(() => {
@@ -164,14 +181,15 @@ export function SceneHotbar({
     const ro = new ResizeObserver(update);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [slots]);
+  }, [slots, scale]);
 
   const persistChrome = useCallback(
-    (next: { x: number; y: number }, mini: boolean) => {
+    (next: { x: number; y: number }, mini: boolean, nextScale = scaleRef.current) => {
       writeHotbarChrome(crawlerId, {
         offsetX: next.x,
         offsetY: next.y,
         minimized: mini,
+        scale: clampHotbarScale(nextScale),
       });
     },
     [crawlerId]
@@ -190,6 +208,19 @@ export function SceneHotbar({
     const top = Math.min(Math.max(0, defaultTop + y), Math.max(0, pr.height - bh));
     return { x: left - defaultLeft, y: top - defaultTop };
   }, []);
+
+  useLayoutEffect(() => {
+    setOffset((current) => clampOffset(current.x, current.y));
+  }, [clampOffset, minimized, scale]);
+
+  useEffect(() => {
+    if (!scaling) return;
+    const previous = document.body.style.cursor;
+    document.body.style.cursor = "nwse-resize";
+    return () => {
+      document.body.style.cursor = previous;
+    };
+  }, [scaling]);
 
   const persist = useCallback(
     async (next: HotbarSlots) => {
@@ -351,6 +382,69 @@ export function SceneHotbar({
     persistChrome({ x: 0, y: 0 }, minimized);
   }
 
+  function onScalePointerDown(event: React.PointerEvent) {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const measured = slotsMeasureRef.current?.offsetWidth ?? barRef.current?.offsetWidth;
+    scaleDragRef.current = {
+      active: true,
+      startX: event.clientX,
+      startWidth: Math.max(1, measured ?? 1),
+      originScale: scaleRef.current,
+    };
+    setScaling(true);
+
+    function onMove(moveEvent: PointerEvent) {
+      if (!scaleDragRef.current.active) return;
+      const { startX, startWidth, originScale } = scaleDragRef.current;
+      const dx = moveEvent.clientX - startX;
+      setScale(clampHotbarScale(originScale * ((startWidth + dx * 2) / startWidth)));
+    }
+
+    function onUp() {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+      if (!scaleDragRef.current.active) return;
+      scaleDragRef.current.active = false;
+      setScaling(false);
+      setOffset((current) => {
+        const next = clampOffset(current.x, current.y);
+        persistChrome(next, minimizedRef.current, scaleRef.current);
+        return next;
+      });
+    }
+
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+  }
+
+  function onScaleKeyDown(event: React.KeyboardEvent) {
+    const step = event.shiftKey ? 0.1 : 0.05;
+    let delta = 0;
+    if (event.key === "ArrowRight" || event.key === "ArrowUp") delta = step;
+    else if (event.key === "ArrowLeft" || event.key === "ArrowDown") delta = -step;
+    else if (event.key === "Home") {
+      event.preventDefault();
+      setScale(HOTBAR_SCALE_MIN);
+      persistChrome(offset, minimized, HOTBAR_SCALE_MIN);
+      return;
+    } else if (event.key === "End") {
+      event.preventDefault();
+      setScale(HOTBAR_SCALE_MAX);
+      persistChrome(offset, minimized, HOTBAR_SCALE_MAX);
+      return;
+    } else {
+      return;
+    }
+    event.preventDefault();
+    const next = clampHotbarScale(scale + delta);
+    setScale(next);
+    persistChrome(offset, minimized, next);
+  }
+
   function toggleMinimized() {
     const next = !minimized;
     setMinimized(next);
@@ -373,7 +467,7 @@ export function SceneHotbar({
         <motion.div
           ref={barRef}
           animate={{ x: offset.x, y: offset.y }}
-          transition={dragging ? { duration: 0 } : motionSnap}
+          transition={dragging || scaling ? { duration: 0 } : motionSnap}
         >
         <div className="flex flex-col items-center">
           <AnimatePresence initial={false}>
@@ -472,7 +566,13 @@ export function SceneHotbar({
             </p>
           )}
 
-          <div className="rounded-[10px] border border-[var(--stroke-hotbar)] bg-[var(--hotbar-fill)] px-1.5 py-1 shadow-[var(--glow-hotbar)] backdrop-blur-md">
+          <div
+            className={cn(
+              "relative rounded-[10px] border border-[var(--stroke-hotbar)] bg-[var(--hotbar-fill)] px-1.5 py-1 shadow-[var(--glow-hotbar)] backdrop-blur-md",
+              !minimized && "pr-6"
+            )}
+            style={{ ["--hotbar-scale" as string]: String(scale) }}
+          >
             <div
               className="flex cursor-grab select-none items-center gap-1 active:cursor-grabbing"
               onPointerDown={onDragPointerDown}
@@ -522,7 +622,7 @@ export function SceneHotbar({
                     }
                   : undefined
               }
-              transition={motionFold}
+              transition={scaling || dragging ? { duration: 0 } : motionFold}
               className="overflow-hidden"
               style={{ originY: 0 }}
             >
@@ -530,7 +630,8 @@ export function SceneHotbar({
                 <div
                   role="toolbar"
                   aria-label="Hotbar. Teclas 1 a 0."
-                  className="flex items-end gap-0.5"
+                  className="flex items-end"
+                  style={{ gap: "calc(0.125rem * var(--hotbar-scale, 1.9))" }}
                 >
                   {Array.from({ length: HOTBAR_SIZE }, (_, i) => (
                     <HotbarSlot
@@ -569,6 +670,13 @@ export function SceneHotbar({
                 </div>
               </div>
             </motion.div>
+            {!minimized && (
+              <ScaleCorner
+                scale={scale}
+                onPointerDown={onScalePointerDown}
+                onKeyDown={onScaleKeyDown}
+              />
+            )}
           </div>
         </div>
         </motion.div>
@@ -630,11 +738,16 @@ function HotbarSlot({
   }
 
   return (
-    <div className="relative flex w-7 shrink-0 flex-col items-center">
+    <div
+      className="relative flex shrink-0 flex-col items-center"
+      style={{ width: "calc(1.75rem * var(--hotbar-scale, 1.9))" }}
+    >
       <span
         aria-hidden="true"
-        className="hotbar-slot-tab mb-px h-1 w-2.5 border border-b-0 bg-[var(--hotbar-fill)]"
+        className="hotbar-slot-tab mb-px border border-b-0 bg-[var(--hotbar-fill)]"
         style={{
+          height: "calc(0.25rem * var(--hotbar-scale, 1.9))",
+          width: "calc(0.625rem * var(--hotbar-scale, 1.9))",
           borderColor: selected ? "var(--gold-400)" : "var(--stroke-hotbar)",
           boxShadow: selected ? "0 0 6px var(--gold-400)" : "0 0 5px var(--hotbar)",
         }}
@@ -713,23 +826,44 @@ function HotbarSlot({
               onError={skillArt.markFailed}
             />
           ) : filled && skill ? (
-            <Icon size={12} className="text-[var(--hotbar-pink)]" />
+            <Icon
+              className="text-[var(--hotbar-pink)]"
+              style={{
+                width: "calc(12px * var(--hotbar-scale, 1.9))",
+                height: "calc(12px * var(--hotbar-scale, 1.9))",
+              }}
+            />
           ) : filled && item ? (
-            <span className="line-clamp-2 px-0.5 text-center font-display text-[6px] leading-tight text-[var(--hotbar-pink)]">
+            <span
+              className="line-clamp-2 px-0.5 text-center font-display leading-tight text-[var(--hotbar-pink)]"
+              style={{ fontSize: "calc(6px * var(--hotbar-scale, 1.9))" }}
+            >
               {item.resource.name}
             </span>
           ) : (
-            <span className="text-[9px] text-[rgba(255,45,106,0.28)]">+</span>
+            <span
+              className="text-[rgba(255,45,106,0.28)]"
+              style={{ fontSize: "calc(9px * var(--hotbar-scale, 1.9))" }}
+            >
+              +
+            </span>
           )}
           {qty && (
-            <span className="absolute bottom-px left-px font-stat text-[7px] leading-none text-[var(--hotbar)] drop-shadow-[0_0_4px_rgba(255,45,106,0.9)]">
+            <span
+              className="absolute bottom-px left-px font-stat leading-none text-[var(--hotbar)] drop-shadow-[0_0_4px_rgba(255,45,106,0.9)]"
+              style={{ fontSize: "calc(7px * var(--hotbar-scale, 1.9))" }}
+            >
               {qty}
             </span>
           )}
           {skill && isSkillChecked(skill) && (
             <span
               aria-hidden="true"
-              className="absolute right-px top-px h-1.5 w-1.5 rounded-full bg-[var(--gold-400)] shadow-[0_0_6px_rgba(251,191,36,0.9)]"
+              className="absolute right-px top-px rounded-full bg-[var(--gold-400)] shadow-[0_0_6px_rgba(251,191,36,0.9)]"
+              style={{
+                height: "calc(0.375rem * var(--hotbar-scale, 1.9))",
+                width: "calc(0.375rem * var(--hotbar-scale, 1.9))",
+              }}
             />
           )}
         </button>
@@ -771,14 +905,47 @@ function HotbarSlot({
       <span
         aria-hidden="true"
         className={cn(
-          "mt-0.5 flex h-3.5 w-3.5 items-center justify-center border bg-[rgba(18,4,10,0.92)] font-stat text-[8px]",
+          "mt-0.5 flex items-center justify-center border bg-[rgba(18,4,10,0.92)] font-stat",
           selected
             ? "border-[var(--gold-400)] text-[var(--gold-400)] shadow-[0_0_8px_rgba(251,191,36,0.55)]"
             : "border-[var(--stroke-hotbar)] text-[var(--hotbar)] shadow-[0_0_6px_rgba(255,45,106,0.4)]"
         )}
+        style={{
+          height: "calc(0.875rem * var(--hotbar-scale, 1.9))",
+          width: "calc(0.875rem * var(--hotbar-scale, 1.9))",
+          fontSize: "calc(8px * var(--hotbar-scale, 1.9))",
+        }}
       >
         {key}
       </span>
+    </div>
+  );
+}
+
+function ScaleCorner({
+  scale,
+  onPointerDown,
+  onKeyDown,
+}: {
+  scale: number;
+  onPointerDown: (event: React.PointerEvent) => void;
+  onKeyDown: (event: React.KeyboardEvent) => void;
+}) {
+  return (
+    <div
+      role="slider"
+      aria-label="Escala de la hotbar"
+      aria-valuemin={Math.round(HOTBAR_SCALE_MIN * 100)}
+      aria-valuemax={Math.round(HOTBAR_SCALE_MAX * 100)}
+      aria-valuenow={Math.round(scale * 100)}
+      aria-valuetext={`${Math.round((scale - 1) * 100)} por ciento más grande`}
+      title="Arrastra para escalar"
+      tabIndex={0}
+      onPointerDown={onPointerDown}
+      onKeyDown={onKeyDown}
+      className="absolute bottom-0.5 right-0.5 z-[1] flex h-5 w-5 cursor-nwse-resize touch-none items-center justify-center rounded-[4px] text-[var(--hotbar-pink)] transition-colors duration-[var(--t-ui)] hover:bg-[rgba(255,45,106,0.16)] hover:text-[var(--hotbar)]"
+    >
+      <Scaling size={13} strokeWidth={2.4} />
     </div>
   );
 }

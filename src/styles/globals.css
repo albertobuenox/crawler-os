@@ -451,7 +451,14 @@
 .dm-nav-rail:has(:focus-visible) a:nth-child(10) .dm-nav-label { transition-delay: 160ms; }
 
 .hotbar-slot {
-  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%);
+  --hotbar-chamfer: calc(8px * var(--hotbar-scale, 1.9));
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - var(--hotbar-chamfer)),
+    calc(100% - var(--hotbar-chamfer)) 100%,
+    0 100%
+  );
 }
 
 .hotbar-slot-tab {

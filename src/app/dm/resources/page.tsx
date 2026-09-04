@@ -1,15 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { GlassPanel } from "@/components/ui/GlassPanel";
 import { Button } from "@/components/ui/Button";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { Input, Textarea, Select } from "@/components/ui/Input";
 import type { GameSession, Resource, ResourceKind, Rarity } from "@/lib/types";
 import { castSession } from "@/lib/utils";
 import { RARITY_COLORS } from "@/lib/types";
 import { kindOptions, rarityOptions, KIND_LABEL, RARITY_LABEL } from "@/lib/copy";
+import { useCreateRequest } from "@/hooks/useDmDeepLink";
 
 const KINDS: ResourceKind[] = [
   "item", "achievement", "map", "monster", "npc", "box", "buff", "debuff", "quest", "floor", "skill_template",
@@ -23,6 +25,9 @@ export default function DMResourcesPage() {
   const [resources, setResources] = useState<Resource[]>([]);
   const [filter, setFilter] = useState<string>("all");
   const [showForm, setShowForm] = useState(false);
+  const [error, setError] = useState("");
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<Resource | null>(null);
   const [form, setForm] = useState({
     name: "",
     kind: "item" as ResourceKind,
@@ -30,6 +35,8 @@ export default function DMResourcesPage() {
     description: "",
     system_copy: "",
   });
+  const openCreate = useCallback(() => setShowForm(true), []);
+  useCreateRequest("resource", openCreate);
 
   useEffect(() => {
     load();
@@ -62,6 +69,20 @@ export default function DMResourcesPage() {
     load();
   }
 
+  async function deleteResource() {
+    if (!pendingDelete) return;
+    setError("");
+    setBusyId(pendingDelete.id);
+    const { error: deleteError } = await supabase.from("resources").delete().eq("id", pendingDelete.id);
+    setBusyId(null);
+    if (deleteError) {
+      setError(deleteError.message);
+      return;
+    }
+    setResources((current) => current.filter((item) => item.id !== pendingDelete.id));
+    setPendingDelete(null);
+  }
+
   const filtered = filter === "all" ? resources : resources.filter((r) => r.kind === filter);
 
   return (
@@ -72,6 +93,12 @@ export default function DMResourcesPage() {
           {showForm ? "Cancelar" : "Nuevo recurso"}
         </Button>
       </div>
+
+      {error && (
+        <p className="rounded-xl border border-[var(--stroke-danger)] bg-[var(--glass-danger)] px-3 py-2 text-sm text-[var(--danger)]">
+          {error}
+        </p>
+      )}
 
       {showForm && (
         <GlassPanel title="Editor de recursos">
@@ -110,15 +137,36 @@ export default function DMResourcesPage() {
                 <td className="p-3 text-[var(--text-3)]">{KIND_LABEL[r.kind]}</td>
                 <td className="p-3" style={{ color: RARITY_COLORS[r.rarity] }}>{RARITY_LABEL[r.rarity]}</td>
                 <td className="p-3">
-                  <Link href={`/dm/resources/${r.id}`}>
-                    <Button variant="ghost" size="sm">Editar</Button>
-                  </Link>
+                  <div className="flex flex-wrap gap-1">
+                    <Link href={`/dm/resources/${r.id}`}>
+                      <Button variant="ghost" size="sm">Editar</Button>
+                    </Link>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      loading={busyId === r.id}
+                      onClick={() => setPendingDelete(r)}
+                    >
+                      Borrar
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      <ConfirmModal
+        open={!!pendingDelete}
+        title={`¿Borrar ${pendingDelete?.name ?? "este recurso"}?`}
+        body="También se quitará de inventarios, cajas y logros que lo usen."
+        loading={busyId === pendingDelete?.id}
+        onCancel={() => {
+          if (!busyId) setPendingDelete(null);
+        }}
+        onConfirm={() => void deleteResource()}
+      />
     </div>
   );
 }

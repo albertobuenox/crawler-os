@@ -74,10 +74,29 @@ export function formatHotbarQty(n: number): string {
   return String(n);
 }
 
+/** Original slot size (scale = 1). The live default is 90% larger. */
+export const HOTBAR_SCALE_MIN = 1;
+export const HOTBAR_SCALE_DEFAULT = 1.9;
+/** 130% larger than the original squares. */
+export const HOTBAR_SCALE_MAX = 2.3;
+
+export function clampHotbarScale(value: number): number {
+  if (!Number.isFinite(value)) return HOTBAR_SCALE_DEFAULT;
+  return Math.min(HOTBAR_SCALE_MAX, Math.max(HOTBAR_SCALE_MIN, Math.round(value * 1000) / 1000));
+}
+
 export type HotbarChrome = {
   offsetX: number;
   offsetY: number;
   minimized: boolean;
+  scale: number;
+};
+
+const DEFAULT_CHROME: HotbarChrome = {
+  offsetX: 0,
+  offsetY: 0,
+  minimized: false,
+  scale: HOTBAR_SCALE_DEFAULT,
 };
 
 export function hotbarChromeKey(crawlerId: string) {
@@ -87,15 +106,17 @@ export function hotbarChromeKey(crawlerId: string) {
 export function readHotbarChrome(crawlerId: string): HotbarChrome {
   try {
     const raw = window.localStorage.getItem(hotbarChromeKey(crawlerId));
-    if (!raw) return { offsetX: 0, offsetY: 0, minimized: false };
+    if (!raw) return { ...DEFAULT_CHROME };
     const parsed = JSON.parse(raw) as Partial<HotbarChrome>;
     return {
       offsetX: typeof parsed.offsetX === "number" ? parsed.offsetX : 0,
       offsetY: typeof parsed.offsetY === "number" ? parsed.offsetY : 0,
       minimized: parsed.minimized === true,
+      scale:
+        typeof parsed.scale === "number" ? clampHotbarScale(parsed.scale) : HOTBAR_SCALE_DEFAULT,
     };
   } catch {
-    return { offsetX: 0, offsetY: 0, minimized: false };
+    return { ...DEFAULT_CHROME };
   }
 }
 

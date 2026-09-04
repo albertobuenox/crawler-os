@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { GlassPanel } from "@/components/ui/GlassPanel";
 import { Button } from "@/components/ui/Button";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { Input, Select } from "@/components/ui/Input";
 import type { Crawler, Skill, SkillCatalogEntry, StatKey } from "@/lib/types";
 import { STAT_LABELS } from "@/lib/types";
@@ -14,6 +15,7 @@ import {
   skillSlugFromName,
 } from "@/lib/skills";
 import { SkillThumb } from "@/components/hud/SkillThumb";
+import { useCreateRequest } from "@/hooks/useDmDeepLink";
 
 const STAT_OPTIONS = (["str", "int", "con", "dex", "cha"] as const).map((s) => ({
   value: s,
@@ -45,6 +47,7 @@ export default function DMSkillsPage() {
   const [linkedStat, setLinkedStat] = useState<StatKey>("str");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<SkillCatalogEntry | null>(null);
 
   const load = useCallback(async () => {
     const {
@@ -122,13 +125,14 @@ export default function DMSkillsPage() {
     return map;
   }, [assignments, crawlers]);
 
-  function openCreate() {
+  const openCreate = useCallback(() => {
     setEditing(null);
     setForm(emptyForm);
     setError("");
     setFormOpen(true);
     setAssigning(null);
-  }
+  }, []);
+  useCreateRequest("skill", openCreate);
 
   function openEdit(entry: SkillCatalogEntry) {
     setEditing(entry);
@@ -206,15 +210,9 @@ export default function DMSkillsPage() {
     await load();
   }
 
-  async function deleteSkill(entry: SkillCatalogEntry) {
-    const owners = ownersByCatalog.get(entry.id) ?? [];
-    const names = owners.map((o) => o.crawler.name).join(", ");
-    const ok = window.confirm(
-      owners.length
-        ? `¿Borrar ${entry.name}? Se quitará también de: ${names}.`
-        : `¿Borrar ${entry.name} del catálogo?`
-    );
-    if (!ok) return;
+  async function deleteSkill() {
+    if (!pendingDelete) return;
+    const owners = ownersByCatalog.get(pendingDelete.id) ?? [];
     setError("");
     setBusy(true);
     if (owners.length) {
@@ -231,7 +229,7 @@ export default function DMSkillsPage() {
         return;
       }
     }
-    const res = await fetch(`/api/dm/skill-catalog?id=${encodeURIComponent(entry.id)}`, {
+    const res = await fetch(`/api/dm/skill-catalog?id=${encodeURIComponent(pendingDelete.id)}`, {
       method: "DELETE",
     });
     const body = (await res.json()) as { error?: string };
@@ -240,11 +238,12 @@ export default function DMSkillsPage() {
       setError(body.error || "No se pudo borrar la skill.");
       return;
     }
-    if (editing?.id === entry.id) {
+    if (editing?.id === pendingDelete.id) {
       setFormOpen(false);
       setEditing(null);
     }
-    if (assigning?.id === entry.id) setAssigning(null);
+    if (assigning?.id === pendingDelete.id) setAssigning(null);
+    setPendingDelete(null);
     await load();
   }
 
@@ -514,7 +513,7 @@ export default function DMSkillsPage() {
                         <Button variant="neon" size="sm" onClick={() => openAssign(s)}>
                           Asignar
                         </Button>
-                        <Button variant="danger" size="sm" onClick={() => void deleteSkill(s)}>
+                        <Button variant="danger" size="sm" onClick={() => setPendingDelete(s)}>
                           Borrar
                         </Button>
                       </div>
@@ -533,6 +532,23 @@ export default function DMSkillsPage() {
           </table>
         </div>
       </GlassPanel>
+
+      <ConfirmModal
+        open={!!pendingDelete}
+        title={`¿Borrar ${pendingDelete?.name ?? "esta skill"}?`}
+        body={
+          pendingDelete && (ownersByCatalog.get(pendingDelete.id) ?? []).length
+            ? `Se quitará también de: ${(ownersByCatalog.get(pendingDelete.id) ?? [])
+                .map((o) => o.crawler.name)
+                .join(", ")}.`
+            : "Se eliminará del catálogo."
+        }
+        loading={busy}
+        onCancel={() => {
+          if (!busy) setPendingDelete(null);
+        }}
+        onConfirm={() => void deleteSkill()}
+      />
     </div>
   );
 }

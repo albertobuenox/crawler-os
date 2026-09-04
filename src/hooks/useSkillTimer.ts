@@ -8,7 +8,7 @@ import { castSession } from "@/lib/utils";
 
 function rpcErrorMessage(error: { message: string; code?: string }) {
   if (error.code === "PGRST202" || /schema cache|does not exist/i.test(error.message)) {
-    return "Falta aplicar el SQL del temporizador en Supabase. En el SQL Editor pega el archivo supabase/migrations/20260904180000_skill_advancement.sql y pulsa Run.";
+    return "Falta aplicar el SQL del temporizador en Supabase. En el SQL Editor pega supabase/migrations/20260904180000_skill_advancement.sql y 20260904190000_skill_timer_elapsed.sql y pulsa Run.";
   }
   return error.message;
 }
@@ -79,6 +79,31 @@ export function useSkillTimer(sessionId?: string | null) {
     [load, sessionId, supabase]
   );
 
+  const setElapsed = useCallback(
+    async (seconds: number, nextRunning?: boolean) => {
+      if (!sessionId) return;
+      setBusy(true);
+      setError("");
+      const { error: rpcError } = await supabase.rpc("set_skill_timer_elapsed", {
+        p_session_id: sessionId,
+        p_elapsed_seconds: Math.max(0, Math.floor(seconds)),
+        p_running: nextRunning ?? null,
+      });
+      setBusy(false);
+      if (rpcError) {
+        setError(rpcErrorMessage(rpcError));
+        return;
+      }
+      setNow(Date.now());
+      await load();
+    },
+    [load, sessionId, supabase]
+  );
+
+  const reset = useCallback(async () => {
+    await setElapsed(0, false);
+  }, [setElapsed]);
+
   const setOpen = useCallback(
     async (next: boolean) => {
       if (!sessionId) return;
@@ -108,6 +133,8 @@ export function useSkillTimer(sessionId?: string | null) {
     busy,
     error,
     setRunning,
+    setElapsed,
+    reset,
     setOpen,
     reload: load,
   };

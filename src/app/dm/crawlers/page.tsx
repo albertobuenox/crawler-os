@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { GlassPanel } from "@/components/ui/GlassPanel";
@@ -14,6 +14,7 @@ import { assignStartingStat, formatSigned, formatStat, STARTING_STAT_VALUES, STA
 import { crawlerClassLabel, STATUS_LABEL } from "@/lib/copy";
 import { crawlerAvatarUrl, crawlerInitials } from "@/lib/crawler-art";
 import { Copy, Gift, Trash2, Pencil, UserPlus, X } from "lucide-react";
+import { useCreateRequest } from "@/hooks/useDmDeepLink";
 
 /* ── Context-menu mini-modal ── */
 function CrawlerContextMenu({
@@ -193,6 +194,8 @@ export default function DMCrawlersPage() {
 
   const [contextMenu, setContextMenu] = useState<{ crawler: Crawler; x: number; y: number } | null>(null);
   const [assignTarget, setAssignTarget] = useState<Crawler | null>(null);
+  const openCreate = useCallback(() => setShowForm(true), []);
+  useCreateRequest("crawler", openCreate);
 
   function setStartingStat(key: StatKey, next: number) {
     setForm((current) => assignStartingStat(current, key, next));

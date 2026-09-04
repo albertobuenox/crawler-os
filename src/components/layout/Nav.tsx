@@ -22,9 +22,10 @@ import { NotificationBadge } from "@/components/hud/EventLog";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 import { BRAND, SCENE_LABEL } from "@/lib/copy";
 import { SkillTimerChip } from "@/components/hud/SkillTimerPanel";
+import { CommandPaletteTrigger } from "@/components/layout/CommandPalette";
 
 const dmNav = [
-  { href: "/dm", icon: Home, label: "Sesión", glow: "var(--glow-purple)", disabled: true },
+  { href: "/dm", icon: Home, label: "Sesión", glow: "var(--glow-purple)", disabled: false },
   { href: "/dm/crawlers", icon: Users, label: "Crawlers", glow: "var(--glow-magenta)" },
   { href: "/dm/skills", icon: Sparkles, label: "Skills", glow: "var(--glow-gold)" },
   { href: "/dm/resources", icon: Database, label: "Recursos", glow: "var(--glow-cyan)" },
@@ -153,9 +154,10 @@ export function DMTopBar({ sessionCode, sessionName }: { sessionCode?: string; s
         <p className="text-label text-[var(--text-cyan)]">{BRAND} / DUNGEON MASTER</p>
         <h1 className="font-display text-lg tracking-wide">{sessionName ?? "Control de sesión"}</h1>
       </div>
-      {sessionCode && (
-        <div className="flex items-center gap-3">
-          <SkillTimerChip />
+      <div className="flex items-center gap-3">
+        {sessionCode && <SkillTimerChip />}
+        <CommandPaletteTrigger />
+        {sessionCode && (
           <Link
             href={`/table/${sessionCode}`}
             target="_blank"
@@ -163,8 +165,8 @@ export function DMTopBar({ sessionCode, sessionName }: { sessionCode?: string; s
           >
             {SCENE_LABEL} TV
           </Link>
-        </div>
-      )}
+        )}
+      </div>
     </header>
   );
 }

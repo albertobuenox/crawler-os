@@ -21,9 +21,22 @@ export function skillTimerDue(elapsedSeconds: number): boolean {
 }
 
 export function formatSkillTimer(totalSeconds: number): string {
+  const { hours, minutes, seconds } = splitSkillTimer(totalSeconds);
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+export function splitSkillTimer(totalSeconds: number): { hours: number; minutes: number; seconds: number } {
   const s = Math.max(0, Math.floor(totalSeconds));
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const sec = s % 60;
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+  return {
+    hours: Math.floor(s / 3600),
+    minutes: Math.floor((s % 3600) / 60),
+    seconds: s % 60,
+  };
+}
+
+export function composeSkillTimer(hours: number, minutes: number, seconds: number): number {
+  const h = Number.isFinite(hours) ? Math.max(0, Math.floor(hours)) : 0;
+  const m = Number.isFinite(minutes) ? Math.min(59, Math.max(0, Math.floor(minutes))) : 0;
+  const sec = Number.isFinite(seconds) ? Math.min(59, Math.max(0, Math.floor(seconds))) : 0;
+  return h * 3600 + m * 60 + sec;
 }
