@@ -177,6 +177,7 @@ export interface Skill {
   linked_stat: StatKey;
   check_marks: number;
   notes: string | null;
+  created_at?: string;
   skill_catalog?: SkillCatalogEntry | null;
 }
 

@@ -7,11 +7,11 @@ import { createClient } from "@/lib/supabase/client";
 import { GlassPanel } from "@/components/ui/GlassPanel";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
-import { HealthBoxes, ResourceBar } from "@/components/hud/HealthBoxes";
+import { HealthBoxes, ResourceBar, useVitalPulse } from "@/components/hud/HealthBoxes";
 import type { Crawler, Skill, Effect, SkillCatalogEntry, StatKey, StatModifierRow, ItemInstance, Resource } from "@/lib/types";
-import { formatStat, collectStatBonusChips } from "@/lib/rules";
+import { formatStat, collectStatBonusChips, healthBarColor } from "@/lib/rules";
 import { SKILL_TYPE_LABEL } from "@/lib/copy";
-import { defaultSkillType, skillRollLabel } from "@/lib/skills";
+import { defaultSkillType, SKILL_RANK_MIN, skillRollLabel, sortSkillsStable } from "@/lib/skills";
 import { skillArtSlug } from "@/lib/skill-art";
 import { SkillThumb } from "@/components/hud/SkillThumb";
 import { Minus, Plus, X, Skull, ShieldAlert, Flame, Droplets, Zap, Check } from "lucide-react";
@@ -117,18 +117,19 @@ export default function DMCrawlerSheetPage() {
   const [showEffectPicker, setShowEffectPicker] = useState(false);
   const [showSkillPicker, setShowSkillPicker] = useState(false);
   const [catalog, setCatalog] = useState<SkillCatalogEntry[]>([]);
+  const { pulse, beat } = useVitalPulse();
   useEffect(() => {
     if (!id) return;
     (async () => {
       const [{ data: c }, { data: sk }, { data: ef }, { data: mods }, { data: it }] = await Promise.all([
         supabase.from("crawlers").select("*").eq("id", id).single(),
-        supabase.from("skills").select("*, skill_catalog(*)").eq("crawler_id", id),
+        supabase.from("skills").select("*, skill_catalog(*)").eq("crawler_id", id).order("created_at"),
         supabase.from("effects").select("*").eq("crawler_id", id),
         supabase.from("modifiers").select("*").eq("crawler_id", id),
         supabase.from("item_instances").select("*, resource:resources(*)").eq("crawler_id", id),
       ]);
       setCrawler(c as Crawler);
-      setSkills((sk as Skill[]) ?? []);
+      setSkills(sortSkillsStable((sk as Skill[]) ?? []));
       setEffects((ef as Effect[]) ?? []);
       setModifiers((mods as StatModifierRow[]) ?? []);
       setItems((it as SheetItem[]) ?? []);
@@ -142,7 +143,7 @@ export default function DMCrawlerSheetPage() {
 
   async function reloadSkills() {
     const { data } = await supabase.from("skills").select("*, skill_catalog(*)").eq("crawler_id", id).order("created_at");
-    setSkills((data as Skill[]) ?? []);
+    setSkills(sortSkillsStable((data as Skill[]) ?? []));
   }
 
   async function reloadEffects() {
@@ -227,7 +228,7 @@ export default function DMCrawlerSheetPage() {
       catalog_id: entry.id,
       name: entry.name,
       skill_type: defaultSkillType(entry),
-      rank: 0,
+      rank: SKILL_RANK_MIN,
       linked_stat: "str" as StatKey,
     });
     await reloadSkills();
@@ -249,7 +250,12 @@ export default function DMCrawlerSheetPage() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* ── Left column: character sheet ── */}
-        <GlassPanel className="!overflow-visible lg:col-span-2" title="Hoja de personaje">
+        <GlassPanel
+          className="!overflow-visible lg:col-span-2"
+          title="Hoja de personaje"
+          pulseKey={pulse.key}
+          pulseColor={pulse.color}
+        >
           <div className="grid gap-4 sm:grid-cols-2">
             <Input label="Nombre" value={crawler.name} onChange={(e) => setCrawler({ ...crawler, name: e.target.value })} />
             <Input label="Nivel" type="number" value={crawler.level} onChange={(e) => setCrawler({ ...crawler, level: +e.target.value })} />
@@ -293,9 +299,18 @@ export default function DMCrawlerSheetPage() {
               boxesFilled={crawler.hp_boxes_filled}
               conEnhanced={crawler.con_enhanced}
               interactive
-              onLifeChange={(life) => setCrawler({ ...crawler, hp_boxes_filled: 10 - life })}
+              onLifeChange={(life) => {
+                beat(healthBarColor(life));
+                setCrawler({ ...crawler, hp_boxes_filled: 10 - life });
+              }}
             />
-            <ResourceBar label="Maná" current={crawler.mana_current} max={crawler.mana_max} />
+            <ResourceBar
+              label="Maná"
+              current={crawler.mana_current}
+              max={crawler.mana_max}
+              interactive
+              onCurrentChange={(mana) => setCrawler({ ...crawler, mana_current: mana })}
+            />
           </div>
           <Textarea label="Notas" className="mt-4" value={crawler.notes ?? ""} onChange={(e) => setCrawler({ ...crawler, notes: e.target.value })} />
         </GlassPanel>

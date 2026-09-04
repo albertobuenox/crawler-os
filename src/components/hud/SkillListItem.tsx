@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { formatSigned, statModifier } from "@/lib/rules";
 import { SKILL_TYPE_LABEL } from "@/lib/copy";
 import { skillArtSlug } from "@/lib/skill-art";
-import { isActiveSkill, isSkillChecked, skillRollLabel } from "@/lib/skills";
+import { isActiveSkill, isSkillChecked, SKILL_RANK_MAX, SKILL_RANK_MIN, skillRollLabel } from "@/lib/skills";
 import type { Crawler, Skill } from "@/lib/types";
 
 export function SkillListItem({
@@ -66,7 +66,7 @@ export function SkillListItem({
               <button
                 type="button"
                 aria-label={`Bajar rango de ${skill.name}`}
-                disabled={skill.rank <= 0}
+                disabled={skill.rank <= SKILL_RANK_MIN}
                 onClick={() => onAdjustRank?.(skill, -1)}
                 className="flex h-7 w-7 items-center justify-center rounded-[6px] border border-[var(--stroke-glass)] text-[var(--text-2)] hover:border-[var(--cyan-400)] hover:text-[var(--cyan-400)] disabled:opacity-35"
               >
@@ -76,7 +76,7 @@ export function SkillListItem({
               <button
                 type="button"
                 aria-label={`Subir rango de ${skill.name}`}
-                disabled={skill.rank >= 20}
+                disabled={skill.rank >= SKILL_RANK_MAX}
                 onClick={() => onAdjustRank?.(skill, 1)}
                 className="flex h-7 w-7 items-center justify-center rounded-[6px] border border-[var(--stroke-glass)] text-[var(--text-2)] hover:border-[var(--cyan-400)] hover:text-[var(--cyan-400)] disabled:opacity-35"
               >

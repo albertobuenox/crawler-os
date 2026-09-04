@@ -10,7 +10,10 @@ import type { Crawler, Skill, SkillCatalogEntry, StatKey } from "@/lib/types";
 import { STAT_LABELS } from "@/lib/types";
 import { castSession } from "@/lib/utils";
 import {
+  clampSkillRank,
   defaultSkillType,
+  SKILL_RANK_MAX,
+  SKILL_RANK_MIN,
   skillRollLabel,
   skillSlugFromName,
 } from "@/lib/skills";
@@ -43,7 +46,7 @@ export default function DMSkillsPage() {
   const [form, setForm] = useState<CatalogForm>(emptyForm);
   const [assigning, setAssigning] = useState<SkillCatalogEntry | null>(null);
   const [assignIds, setAssignIds] = useState<string[]>([]);
-  const [rank, setRank] = useState(0);
+  const [rank, setRank] = useState(SKILL_RANK_MIN);
   const [linkedStat, setLinkedStat] = useState<StatKey>("str");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -151,7 +154,7 @@ export default function DMSkillsPage() {
   function openAssign(entry: SkillCatalogEntry) {
     setAssigning(entry);
     setAssignIds([]);
-    setRank(0);
+    setRank(SKILL_RANK_MIN);
     setLinkedStat("str");
     setError("");
     setFormOpen(false);
@@ -269,7 +272,7 @@ export default function DMSkillsPage() {
         catalog_id: assigning.id,
         name: assigning.name,
         skill_type: defaultSkillType(assigning),
-        rank,
+        rank: clampSkillRank(rank),
         linked_stat: linkedStat,
       }))
     );
@@ -426,9 +429,10 @@ export default function DMSkillsPage() {
                 id="assign-rank"
                 label="Rango"
                 type="number"
-                min={0}
+                min={SKILL_RANK_MIN}
+                max={SKILL_RANK_MAX}
                 value={rank}
-                onChange={(e) => setRank(+e.target.value)}
+                onChange={(e) => setRank(clampSkillRank(+e.target.value))}
               />
               <Select
                 id="assign-stat"

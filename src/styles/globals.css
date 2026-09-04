@@ -56,6 +56,11 @@
     color: var(--text-3);
   }
 
+  .vital-heartbeat-ring {
+    border: none;
+    animation: vital-heartbeat 1.8s linear both;
+  }
+
   .canvas-bokeh::before,
   .canvas-bokeh::after {
     content: "";
@@ -463,6 +468,23 @@
 
 .hotbar-slot-tab {
   clip-path: polygon(12% 100%, 88% 100%, 100% 0, 0 0);
+}
+
+@keyframes vital-heartbeat {
+  0% {
+    opacity: 0;
+    box-shadow: 0 0 0 0 transparent;
+  }
+  50% {
+    opacity: 0.22;
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--pulse-color) 16%, transparent),
+      0 0 18px color-mix(in srgb, var(--pulse-color) 18%, transparent);
+  }
+  100% {
+    opacity: 0;
+    box-shadow: 0 0 0 0 transparent;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

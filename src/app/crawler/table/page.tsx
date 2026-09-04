@@ -8,6 +8,9 @@ import { SceneChat } from "@/components/hud/SceneChat";
 import { SceneHotbar } from "@/components/hud/SceneHotbar";
 import type { ItemInstance, Resource, Skill, TableState, MapPin } from "@/lib/types";
 import { useSessionBroadcast } from "@/hooks/useSession";
+import { updateCrawlerVitals } from "@/lib/crawler-vitals";
+import { lifeToBoxesFilled } from "@/lib/rules";
+import { sortSkillsStable } from "@/lib/skills";
 
 type SheetItem = ItemInstance & { resource: Resource };
 
@@ -64,10 +67,10 @@ export default function CrawlerTablePage() {
     }
     if (mine) {
       const [{ data: sk }, { data: it }] = await Promise.all([
-        supabase.from("skills").select("*, skill_catalog(*)").eq("crawler_id", mine.id),
+        supabase.from("skills").select("*, skill_catalog(*)").eq("crawler_id", mine.id).order("created_at"),
         supabase.from("item_instances").select("*, resource:resources(*)").eq("crawler_id", mine.id),
       ]);
-      setSkills((sk as Skill[]) ?? []);
+      setSkills(sortSkillsStable((sk as Skill[]) ?? []));
       setItems((it as SheetItem[]) ?? []);
     } else {
       setSkills([]);
@@ -95,7 +98,31 @@ export default function CrawlerTablePage() {
   return (
     <main className="relative h-full min-h-0 overflow-hidden bg-[var(--void-950)]">
       <div className="flex h-full min-h-0 gap-2 overflow-visible p-2 pb-16">
-        <PartyAvatarRail members={party} selfId={selfId} />
+        <PartyAvatarRail
+          members={party}
+          selfId={selfId}
+          onSelfLifeChange={
+            selfId
+              ? (life) => {
+                  const hp_boxes_filled = lifeToBoxesFilled(life);
+                  setParty((prev) =>
+                    prev.map((m) => (m.id === selfId ? { ...m, hp_boxes_filled } : m))
+                  );
+                  void updateCrawlerVitals(selfId, { hp_boxes_filled });
+                }
+              : undefined
+          }
+          onSelfManaChange={
+            selfId
+              ? (mana_current) => {
+                  setParty((prev) =>
+                    prev.map((m) => (m.id === selfId ? { ...m, mana_current } : m))
+                  );
+                  void updateCrawlerVitals(selfId, { mana_current });
+                }
+              : undefined
+          }
+        />
         <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
           <p className="text-center font-display text-xs tracking-widest text-[var(--cyan-400)]">ESCENA</p>
           <TableCanvas tableState={tableState} resource={resource} pins={pins} className="min-h-0 flex-1" />

@@ -3,7 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { CharacterSheet } from "@/components/hud/CharacterSheet";
+import { updateCrawlerVitals } from "@/lib/crawler-vitals";
+import { clampMana, lifeToBoxesFilled } from "@/lib/rules";
 import type { Crawler, Skill, Effect, ItemInstance, Resource, StatModifierRow } from "@/lib/types";
+import { sortSkillsStable } from "@/lib/skills";
 import { useSkillTimer } from "@/hooks/useSkillTimer";
 
 type SheetItem = ItemInstance & { resource: Resource };
@@ -56,12 +59,12 @@ export function CrawlerSheetScreen({ crawlerId }: { crawlerId?: string }) {
     setMissing(false);
     setCrawler(target);
     const [{ data: sk }, { data: ef }, { data: it }, { data: mods }] = await Promise.all([
-      supabase.from("skills").select("*, skill_catalog(*)").eq("crawler_id", target.id),
+      supabase.from("skills").select("*, skill_catalog(*)").eq("crawler_id", target.id).order("created_at"),
       supabase.from("effects").select("*").eq("crawler_id", target.id),
       supabase.from("item_instances").select("*, resource:resources(*)").eq("crawler_id", target.id),
       supabase.from("modifiers").select("*").eq("crawler_id", target.id),
     ]);
-    setSkills((sk as Skill[]) ?? []);
+    setSkills(sortSkillsStable((sk as Skill[]) ?? []));
     setEffects((ef as Effect[]) ?? []);
     setItems((it as SheetItem[]) ?? []);
     setModifiers((mods as StatModifierRow[]) ?? []);
@@ -76,6 +79,7 @@ export function CrawlerSheetScreen({ crawlerId }: { crawlerId?: string }) {
     const channel = supabase
       .channel(`sheet-skills:${crawler.id}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "skills" }, () => void load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "crawlers" }, () => void load())
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
@@ -85,6 +89,14 @@ export function CrawlerSheetScreen({ crawlerId }: { crawlerId?: string }) {
   const { open: advancementOpen } = useSkillTimer(crawler?.session_id);
   const isOwnSheet = Boolean(crawler && userId && crawler.owner_user_id === userId);
   const canEditSkills = isOwnSheet;
+  const canEditVitals = isOwnSheet;
+
+  async function persistVitals(patch: { hp_boxes_filled?: number; mana_current?: number }) {
+    if (!crawler) return;
+    setCrawler((prev) => (prev ? { ...prev, ...patch } : prev));
+    const { error } = await updateCrawlerVitals(crawler.id, patch);
+    if (error) await load();
+  }
 
   async function onToggleSkillCheck(skill: Skill, checked: boolean) {
     await supabase.rpc("set_skill_checked", { p_skill_id: skill.id, p_checked: checked });
@@ -108,10 +120,13 @@ export function CrawlerSheetScreen({ crawlerId }: { crawlerId?: string }) {
         items={items}
         modifiers={modifiers}
         canEditSkills={canEditSkills}
+        canEditVitals={canEditVitals}
         canViewInventory={isOwnSheet}
         advancementOpen={advancementOpen}
         onToggleSkillCheck={onToggleSkillCheck}
         onAdjustSkillRank={onAdjustSkillRank}
+        onLifeChange={(life) => void persistVitals({ hp_boxes_filled: lifeToBoxesFilled(life) })}
+        onManaChange={(mana) => void persistVitals({ mana_current: clampMana(mana, crawler.mana_max) })}
       />
     </main>
   );

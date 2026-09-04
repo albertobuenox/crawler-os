@@ -8,7 +8,16 @@ import { Button } from "@/components/ui/Button";
 import { Input, Select } from "@/components/ui/Input";
 import type { Skill, SkillCatalogEntry, StatKey } from "@/lib/types";
 import { SKILL_TYPE_LABEL } from "@/lib/copy";
-import { catalogOptionLabel, defaultSkillType, pickSkillByRoll, skillRollLabel } from "@/lib/skills";
+import {
+  catalogOptionLabel,
+  clampSkillRank,
+  defaultSkillType,
+  pickSkillByRoll,
+  SKILL_RANK_MAX,
+  SKILL_RANK_MIN,
+  skillRollLabel,
+  sortSkillsStable,
+} from "@/lib/skills";
 import { skillArtSlug } from "@/lib/skill-art";
 import { SkillThumb } from "@/components/hud/SkillThumb";
 
@@ -23,7 +32,7 @@ export default function DMSkillsEditorPage() {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [catalog, setCatalog] = useState<SkillCatalogEntry[]>([]);
   const [catalogId, setCatalogId] = useState("");
-  const [rank, setRank] = useState(0);
+  const [rank, setRank] = useState(SKILL_RANK_MIN);
   const [linkedStat, setLinkedStat] = useState<StatKey>("str");
   const [lastRoll, setLastRoll] = useState<number | null>(null);
   const [error, setError] = useState("");
@@ -34,7 +43,7 @@ export default function DMSkillsEditorPage() {
       .select("*, skill_catalog(*)")
       .eq("crawler_id", id)
       .order("created_at");
-    setSkills((data as Skill[]) ?? []);
+    setSkills(sortSkillsStable((data as Skill[]) ?? []));
   }
 
   useEffect(() => {
@@ -78,7 +87,7 @@ export default function DMSkillsEditorPage() {
       catalog_id: selected.id,
       name: selected.name,
       skill_type: defaultSkillType(selected),
-      rank,
+      rank: clampSkillRank(rank),
       linked_stat: linkedStat,
     });
     if (insertError) {
@@ -126,7 +135,14 @@ export default function DMSkillsEditorPage() {
             </p>
           </div>
         )}
-        <Input label="Rango" type="number" value={rank} onChange={(e) => setRank(+e.target.value)} />
+        <Input
+          label="Rango"
+          type="number"
+          min={SKILL_RANK_MIN}
+          max={SKILL_RANK_MAX}
+          value={rank}
+          onChange={(e) => setRank(clampSkillRank(+e.target.value))}
+        />
         <Select
           label="Característica"
           value={linkedStat}

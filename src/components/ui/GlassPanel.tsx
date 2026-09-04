@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 
 type GlassVariant = "default" | "system" | "identity" | "nested" | "danger" | "reward";
@@ -16,6 +17,8 @@ interface GlassPanelProps extends React.HTMLAttributes<HTMLDivElement> {
   title?: string;
   subtitle?: string;
   action?: React.ReactNode;
+  pulseKey?: number;
+  pulseColor?: string;
 }
 
 export function GlassPanel({
@@ -25,6 +28,8 @@ export function GlassPanel({
   action,
   className,
   children,
+  pulseKey = 0,
+  pulseColor,
   ...props
 }: GlassPanelProps) {
   return (
@@ -33,10 +38,19 @@ export function GlassPanel({
         "glass relative overflow-hidden p-5",
         variant !== "nested" && variantClass[variant],
         variant === "nested" && variantClass.nested,
+        pulseKey > 0 && "!overflow-visible",
         className
       )}
       {...props}
     >
+      {pulseKey > 0 && pulseColor && (
+        <span
+          key={pulseKey}
+          aria-hidden="true"
+          className="vital-heartbeat-ring pointer-events-none absolute inset-0 z-20 rounded-[inherit]"
+          style={{ "--pulse-color": pulseColor } as CSSProperties}
+        />
+      )}
       {(title || action) && (
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>

@@ -8,6 +8,9 @@ import { createClient } from "@/lib/supabase/client";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 import { NotificationInbox } from "@/components/hud/NotificationInbox";
 import { HudTooltip } from "@/components/hud/HudTooltip";
+import { ResourceBar } from "@/components/hud/HealthBoxes";
+import { updateCrawlerVitals } from "@/lib/crawler-vitals";
+import { clampMana } from "@/lib/rules";
 import { cn } from "@/lib/utils";
 import { SCENE_LABEL } from "@/lib/copy";
 import type { Crawler } from "@/lib/types";
@@ -116,22 +119,39 @@ export function CrawlerHeader() {
           </Link>
 
           {crawler && (
-            <div className="hidden min-w-0 flex-1 text-center sm:block">
-              <span className="text-label">Maná</span>
-              <div className="font-stat text-[var(--mana)]">
-                {crawler.mana_current}/{crawler.mana_max}
-              </div>
+            <div className="hidden min-w-0 flex-1 sm:block">
+              <ResourceBar
+                className="mx-auto max-w-xs"
+                label="Maná"
+                current={crawler.mana_current}
+                max={crawler.mana_max}
+                compact
+                interactive
+                onCurrentChange={(mana) => {
+                  const next = clampMana(mana, crawler.mana_max);
+                  setCrawler((prev) => (prev ? { ...prev, mana_current: next } : prev));
+                  void updateCrawlerVitals(crawler.id, { mana_current: next });
+                }}
+              />
             </div>
           )}
 
           <div className="ml-auto flex items-center gap-3">
             {crawler && (
               <>
-                <div className="text-center sm:hidden">
-                  <span className="text-label">Maná</span>
-                  <div className="font-stat text-xs text-[var(--mana)]">
-                    {crawler.mana_current}/{crawler.mana_max}
-                  </div>
+                <div className="w-28 sm:hidden">
+                  <ResourceBar
+                    label="Maná"
+                    current={crawler.mana_current}
+                    max={crawler.mana_max}
+                    compact
+                    interactive
+                    onCurrentChange={(mana) => {
+                      const next = clampMana(mana, crawler.mana_max);
+                      setCrawler((prev) => (prev ? { ...prev, mana_current: next } : prev));
+                      void updateCrawlerVitals(crawler.id, { mana_current: next });
+                    }}
+                  />
                 </div>
                 <span className="font-stat text-sm text-[var(--gold-400)]">LV {crawler.level}</span>
               </>

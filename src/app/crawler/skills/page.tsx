@@ -6,6 +6,7 @@ import { GlassPanel } from "@/components/ui/GlassPanel";
 import type { Crawler, Skill } from "@/lib/types";
 import { BRAND } from "@/lib/copy";
 import { SkillListItem } from "@/components/hud/SkillListItem";
+import { sortSkillsStable } from "@/lib/skills";
 import { useSkillTimer } from "@/hooks/useSkillTimer";
 
 export default function CrawlerSkillsPage() {
@@ -22,8 +23,9 @@ export default function CrawlerSkillsPage() {
     const { data: sk } = await supabase
       .from("skills")
       .select("*, skill_catalog(*)")
-      .eq("crawler_id", c.id);
-    setSkills((sk as Skill[]) ?? []);
+      .eq("crawler_id", c.id)
+      .order("created_at");
+    setSkills(sortSkillsStable((sk as Skill[]) ?? []));
   }, [supabase]);
 
   useEffect(() => {
@@ -71,7 +73,7 @@ export default function CrawlerSkillsPage() {
             <p className="text-sm text-[var(--text-3)]">Aún no hay habilidades. {BRAND} las asignará.</p>
           ) : (
             <ul className="space-y-2">
-              {skills.map((s) => (
+              {sortSkillsStable(skills).map((s) => (
                 <SkillListItem
                   key={s.id}
                   crawler={crawler}

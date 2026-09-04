@@ -104,11 +104,11 @@ export function SkillTimerPanel({ sessionId }: { sessionId: string }) {
         <div className="flex flex-wrap items-center gap-2">
           {open ? (
             <Button type="button" variant="danger" size="sm" disabled={busy} onClick={() => void setOpen(false)}>
-              Cerrar subida
+              Volver a prohibir edición de habilidades
             </Button>
           ) : (
             <Button type="button" variant="energy" size="sm" disabled={busy} onClick={() => void setOpen(true)}>
-              Subir habilidades
+              Permitir Subir habilidades
             </Button>
           )}
         </div>

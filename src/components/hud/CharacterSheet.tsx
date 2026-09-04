@@ -4,13 +4,14 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Sparkles, ScrollText, User, Shield } from "lucide-react";
 import { GlassPanel } from "@/components/ui/GlassPanel";
-import { HealthBoxes, ResourceBar } from "@/components/hud/HealthBoxes";
+import { HealthBoxes, ResourceBar, useVitalPulse } from "@/components/hud/HealthBoxes";
 import { InventorySlot } from "@/components/hud/InventorySlot";
 import { cn } from "@/lib/utils";
 import { crawlerFullBodyUrl } from "@/lib/crawler-art";
-import { collectStatBonusChips } from "@/lib/rules";
+import { collectStatBonusChips, healthBarColor } from "@/lib/rules";
 import { crawlerClassLabel, EFFECT_KIND_LABEL, BRAND } from "@/lib/copy";
 import { SkillListItem } from "@/components/hud/SkillListItem";
+import { sortSkillsStable } from "@/lib/skills";
 import type { Crawler, Skill, Effect, ItemInstance, Resource, StatKey, StatModifierRow } from "@/lib/types";
 import { StatBlock } from "@/components/hud/StatBlock";
 
@@ -128,10 +129,13 @@ export function CharacterSheet({
   items,
   modifiers = [],
   canEditSkills = false,
+  canEditVitals = false,
   canViewInventory = true,
   advancementOpen = false,
   onToggleSkillCheck,
   onAdjustSkillRank,
+  onLifeChange,
+  onManaChange,
 }: {
   crawler: Crawler;
   skills: Skill[];
@@ -139,18 +143,34 @@ export function CharacterSheet({
   items: SheetItem[];
   modifiers?: StatModifierRow[];
   canEditSkills?: boolean;
+  canEditVitals?: boolean;
   canViewInventory?: boolean;
   advancementOpen?: boolean;
   onToggleSkillCheck?: (skill: Skill, checked: boolean) => void;
   onAdjustSkillRank?: (skill: Skill, delta: -1 | 1) => void;
+  onLifeChange?: (lifeBoxes: number) => void;
+  onManaChange?: (manaCurrent: number) => void;
 }) {
   const [tab, setTab] = useState<SheetTab>("stats");
+  const { pulse, beat } = useVitalPulse();
   const bag = items.filter((i) => !i.equipped_slot);
   const bagSlots = Math.max(INVENTORY_SLOTS, Math.ceil(bag.length / 4) * 4);
 
+  function handleLifeChange(life: number) {
+    beat(healthBarColor(life));
+    onLifeChange?.(life);
+  }
+
   return (
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-12 lg:items-start">
-      <GlassPanel variant="identity" className="!overflow-visible lg:col-span-4 xl:col-span-3" title={crawler.name} subtitle={`${crawler.race ?? "—"} · ${crawlerClassLabel(crawler.class_name)} · LV ${crawler.level}`}>
+      <GlassPanel
+        variant="identity"
+        className="!overflow-visible lg:col-span-4 xl:col-span-3"
+        title={crawler.name}
+        subtitle={`${crawler.race ?? "—"} · ${crawlerClassLabel(crawler.class_name)} · LV ${crawler.level}`}
+        pulseKey={pulse.key}
+        pulseColor={pulse.color}
+      >
         <div className="mb-4 flex gap-1">
           {TABS.map(({ id, label, icon: Icon, glow, color }) => {
             const active = tab === id;
@@ -185,7 +205,15 @@ export function CharacterSheet({
             transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
           >
             {tab === "stats" && (
-              <StatsTab crawler={crawler} effects={effects} items={items} modifiers={modifiers} />
+              <StatsTab
+                crawler={crawler}
+                effects={effects}
+                items={items}
+                modifiers={modifiers}
+                canEditVitals={canEditVitals}
+                onLifeChange={handleLifeChange}
+                onManaChange={onManaChange}
+              />
             )}
             {tab === "skills" && (
               <SkillsTab
@@ -300,11 +328,17 @@ function StatsTab({
   effects,
   items,
   modifiers,
+  canEditVitals,
+  onLifeChange,
+  onManaChange,
 }: {
   crawler: Crawler;
   effects: Effect[];
   items: SheetItem[];
   modifiers: StatModifierRow[];
+  canEditVitals?: boolean;
+  onLifeChange?: (lifeBoxes: number) => void;
+  onManaChange?: (manaCurrent: number) => void;
 }) {
   const named = [
     ...effects.map((e) => ({ id: e.id, name: e.name })),
@@ -327,8 +361,19 @@ function StatsTab({
           />
         ))}
       </div>
-      <HealthBoxes boxesFilled={crawler.hp_boxes_filled} conEnhanced={crawler.con_enhanced} />
-      <ResourceBar label="Maná" current={crawler.mana_current} max={crawler.mana_max} />
+      <HealthBoxes
+        boxesFilled={crawler.hp_boxes_filled}
+        conEnhanced={crawler.con_enhanced}
+        interactive={canEditVitals}
+        onLifeChange={onLifeChange}
+      />
+      <ResourceBar
+        label="Maná"
+        current={crawler.mana_current}
+        max={crawler.mana_max}
+        interactive={canEditVitals}
+        onCurrentChange={onManaChange}
+      />
       {/* 
       <div className="grid grid-cols-3 gap-2 text-center">
         <MiniStat label="Evadir" value={crawler.evade_total} />
@@ -396,7 +441,7 @@ function SkillsTab({
         </p>
       )}
       <ul className="space-y-2">
-        {skills.map((s) => (
+        {sortSkillsStable(skills).map((s) => (
           <SkillListItem
             key={s.id}
             crawler={crawler}

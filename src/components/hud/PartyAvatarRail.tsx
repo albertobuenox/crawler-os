@@ -14,7 +14,7 @@ import {
   writeStoredAvatarEmotions,
   type AvatarEmotion,
 } from "@/lib/crawler-art";
-import { healthBarColor, healthPercent } from "@/lib/rules";
+import { clampLifeBoxes, clampMana, healthBarColor, healthPercent, MANA_BAR_COLOR, manaPercent } from "@/lib/rules";
 import { cn } from "@/lib/utils";
 
 export type PartyAvatar = {
@@ -66,17 +66,35 @@ function MiniVitalBar({
   member,
   name,
   isSelf,
+  onLifeChange,
+  onManaChange,
 }: {
   member: PartyAvatar;
   name: string;
   isSelf: boolean;
+  onLifeChange?: (lifeBoxes: number) => void;
+  onManaChange?: (manaCurrent: number) => void;
 }) {
   const hpFilled = Math.min(Math.max(member.hp_boxes_filled, 0), 10);
   const lifeBoxes = 10 - hpFilled;
   const hpPct = healthPercent(hpFilled);
   const hpColor = healthBarColor(lifeBoxes);
   const manaMax = Math.max(member.mana_max, 0);
-  const manaPct = manaMax > 0 ? Math.min(Math.max((member.mana_current / manaMax) * 100, 0), 100) : 0;
+  const manaNow = clampMana(member.mana_current, manaMax);
+  const manaPct = manaPercent(manaNow, manaMax);
+
+  function setLife(index: number) {
+    if (!onLifeChange) return;
+    const clickedRemaining = index + 1;
+    onLifeChange(clampLifeBoxes(clickedRemaining === lifeBoxes ? lifeBoxes - 1 : clickedRemaining));
+  }
+
+  function setManaFromPointer(el: HTMLElement, clientX: number) {
+    if (!onManaChange) return;
+    const rect = el.getBoundingClientRect();
+    const ratio = rect.width <= 0 ? 0 : (clientX - rect.left) / rect.width;
+    onManaChange(clampMana(ratio * manaMax, manaMax));
+  }
 
   return (
     <div className="mb-1 w-full">
@@ -90,7 +108,7 @@ function MiniVitalBar({
       </p>
       <div
         className="flex h-[18px] w-full overflow-hidden border border-[rgba(186,210,230,0.4)] bg-black"
-        title={`NV ${member.level} · Vida ${lifeBoxes}/10 · Maná ${member.mana_current}/${member.mana_max}`}
+        title={`NV ${member.level} · Vida ${lifeBoxes}/10 · Maná ${manaNow}/${manaMax} · ${Math.round(manaPct)}%`}
         aria-label={`Nivel ${member.level}, vida ${Math.round(hpPct)} por ciento, maná ${Math.round(manaPct)} por ciento`}
       >
         <div className="flex aspect-square h-full shrink-0 items-center justify-center border-r border-[rgba(186,210,230,0.4)] font-stat text-[10px] leading-none text-white sm:text-[11px]">
@@ -98,18 +116,60 @@ function MiniVitalBar({
         </div>
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="flex min-h-0 flex-[2] gap-px bg-black p-px">
-            {Array.from({ length: 10 }, (_, i) => (
-              <span
-                key={i}
-                className="min-w-0 flex-1"
-                style={{ backgroundColor: i < lifeBoxes ? hpColor : "#111111" }}
-              />
-            ))}
+            {Array.from({ length: 10 }, (_, i) => {
+              const filled = i < lifeBoxes;
+              if (onLifeChange) {
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    aria-label={`${filled ? "Vida" : "Vacía"} ${i + 1} de 10`}
+                    onClick={() => setLife(i)}
+                    className="min-w-0 flex-1"
+                    style={{ backgroundColor: filled ? hpColor : "#111111" }}
+                  />
+                );
+              }
+              return (
+                <span
+                  key={i}
+                  className="min-w-0 flex-1"
+                  style={{ backgroundColor: filled ? hpColor : "#111111" }}
+                />
+              );
+            })}
           </div>
-          <div className="relative min-h-0 flex-1 bg-black">
+          <div
+            role={onManaChange ? "slider" : undefined}
+            aria-label="Maná"
+            aria-valuemin={onManaChange ? 0 : undefined}
+            aria-valuemax={onManaChange ? manaMax : undefined}
+            aria-valuenow={onManaChange ? manaNow : undefined}
+            tabIndex={onManaChange ? 0 : undefined}
+            onClick={onManaChange ? (e) => setManaFromPointer(e.currentTarget, e.clientX) : undefined}
+            onKeyDown={
+              onManaChange
+                ? (e) => {
+                    if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
+                      e.preventDefault();
+                      onManaChange(clampMana(manaNow - 1, manaMax));
+                    }
+                    if (e.key === "ArrowRight" || e.key === "ArrowUp") {
+                      e.preventDefault();
+                      onManaChange(clampMana(manaNow + 1, manaMax));
+                    }
+                  }
+                : undefined
+            }
+            className={cn("relative min-h-0 flex-1 bg-black", onManaChange && "cursor-pointer")}
+          >
             <div
-              className="absolute inset-y-0 left-0 bg-[var(--cyan-400)] transition-[width] duration-300"
-              style={{ width: `${manaPct}%` }}
+              className="absolute inset-y-0 left-0 transition-[width,background-color] duration-300"
+              style={{
+                width: `${manaPct}%`,
+                backgroundColor: MANA_BAR_COLOR,
+                boxShadow: manaPct > 0 ? `0 0 8px ${MANA_BAR_COLOR}` : undefined,
+              }}
             />
           </div>
         </div>
@@ -189,11 +249,15 @@ function AvatarFrame({
   isSelf = false,
   emotion,
   onEmotionChange,
+  onLifeChange,
+  onManaChange,
 }: {
   member?: PartyAvatar;
   isSelf?: boolean;
   emotion?: AvatarEmotion | null;
   onEmotionChange?: (emotion: AvatarEmotion | null) => void;
+  onLifeChange?: (lifeBoxes: number) => void;
+  onManaChange?: (manaCurrent: number) => void;
 }) {
   const reduceMotion = useReducedMotion();
   const [emotionsOpen, setEmotionsOpen] = useState(false);
@@ -225,6 +289,8 @@ function AvatarFrame({
         member={member}
         name={isSelf ? "Tu" : avatarBadgeName(member.name)}
         isSelf={isSelf}
+        onLifeChange={isSelf ? onLifeChange : undefined}
+        onManaChange={isSelf ? onManaChange : undefined}
       />
       <div className="relative">
         <Link
@@ -371,9 +437,13 @@ function AvatarFrame({
 export function PartyAvatarRail({
   members,
   selfId,
+  onSelfLifeChange,
+  onSelfManaChange,
 }: {
   members: PartyAvatar[];
   selfId?: string | null;
+  onSelfLifeChange?: (lifeBoxes: number) => void;
+  onSelfManaChange?: (manaCurrent: number) => void;
 }) {
   const [emotions, setEmotions] = useState<Partial<Record<string, AvatarEmotion>>>({});
 
@@ -415,6 +485,8 @@ export function PartyAvatarRail({
             onEmotionChange={
               member && member.id === selfId ? (next) => setMemberEmotion(member.id, next) : undefined
             }
+            onLifeChange={member && member.id === selfId ? onSelfLifeChange : undefined}
+            onManaChange={member && member.id === selfId ? onSelfManaChange : undefined}
           />
         );
       })}

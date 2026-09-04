@@ -1,5 +1,21 @@
 import type { Skill, SkillCatalogEntry } from "./types";
 
+export const SKILL_RANK_MIN = 1;
+export const SKILL_RANK_MAX = 30;
+
+export function clampSkillRank(rank: number): number {
+  if (!Number.isFinite(rank)) return SKILL_RANK_MIN;
+  return Math.min(SKILL_RANK_MAX, Math.max(SKILL_RANK_MIN, Math.trunc(rank)));
+}
+
+export function sortSkillsStable<T extends Pick<Skill, "id"> & { created_at?: string }>(skills: T[]): T[] {
+  return [...skills].sort((a, b) => {
+    const byDate = (a.created_at ?? "").localeCompare(b.created_at ?? "");
+    if (byDate !== 0) return byDate;
+    return a.id.localeCompare(b.id);
+  });
+}
+
 export function skillRollLabel(min: number, max: number): string {
   return min === max ? String(min) : `${min}–${max}`;
 }

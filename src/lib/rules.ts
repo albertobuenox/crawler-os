@@ -133,6 +133,27 @@ export function healthPercent(boxesFilled: number): number {
   return ((10 - boxesFilled) / 10) * 100;
 }
 
+export function clampLifeBoxes(n: number): number {
+  return Math.min(10, Math.max(0, Math.round(n)));
+}
+
+export function lifeToBoxesFilled(lifeBoxes: number): number {
+  return 10 - clampLifeBoxes(lifeBoxes);
+}
+
+/** Resolved hex — never append alpha to `var(--mana)` (invalid CSS, bar stays empty). */
+export const MANA_BAR_COLOR = "#3b82f6";
+
+export function manaPercent(current: number, max: number): number {
+  if (max <= 0) return 0;
+  return Math.min(Math.max((current / max) * 100, 0), 100);
+}
+
+export function clampMana(current: number, max: number): number {
+  const cap = Math.max(0, max);
+  return Math.min(cap, Math.max(0, Math.round(Number.isFinite(current) ? current : 0)));
+}
+
 /** Life boxes (0–10) → bar color: green (full) → olive → gold → orange → red (critical) */
 const HEALTH_COLOR_STOPS: { at: number; hex: string }[] = [
   { at: 10, hex: "#1faa3a" }, // 100% deep vibrant green
