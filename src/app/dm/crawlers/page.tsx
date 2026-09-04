@@ -10,7 +10,7 @@ import { ResourceBar, HealthBoxes } from "@/components/hud/HealthBoxes";
 import type { Crawler, GameSession, StatKey } from "@/lib/types";
 import { STAT_LABELS } from "@/lib/types";
 import { castSession } from "@/lib/utils";
-import { assignStartingStat, formatStat, STARTING_STAT_VALUES, STAT_KEYS } from "@/lib/rules";
+import { assignStartingStat, formatSigned, formatStat, STARTING_STAT_VALUES, STAT_KEYS, statModifier } from "@/lib/rules";
 import { crawlerClassLabel, STATUS_LABEL } from "@/lib/copy";
 import { crawlerAvatarUrl, crawlerInitials } from "@/lib/crawler-art";
 import { Copy, Gift, Trash2, Pencil, UserPlus, X } from "lucide-react";
@@ -298,17 +298,17 @@ export default function DMCrawlersPage() {
             <Input label="Nombre" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
             <Input label="Raza" value={form.race} onChange={(e) => setForm({ ...form, race: e.target.value })} />
             <p className="sm:col-span-2 text-xs text-[var(--text-3)]">
-              Asigna 02, 03, 04, 05 y 06. Cada valor una vez. Subirán más adelante. La clase se adquiere después.
+              Asigna 02, 03, 04, 05 y 06. Cada valor una vez. El modificador lo calcula el Sistema desde el enhanced; al crear, base y enhanced coinciden.
             </p>
             {STAT_KEYS.map((s) => (
               <Select
                 key={s}
-                label={STAT_LABELS[s]}
+                label={`${STAT_LABELS[s]}+  ${formatSigned(statModifier(form[`${s}_base`]))}`}
                 value={String(form[`${s}_base`])}
                 onChange={(e) => setStartingStat(s, Number(e.target.value))}
                 options={STARTING_STAT_VALUES.map((n) => ({
                   value: String(n),
-                  label: formatStat(n),
+                  label: `${formatStat(n)}  ${formatSigned(statModifier(n))}`,
                 }))}
               />
             ))}

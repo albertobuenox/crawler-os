@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { GlassPanel } from "@/components/ui/GlassPanel";
 import type { Crawler, Skill } from "@/lib/types";
-import { statModifier } from "@/lib/rules";
+import { formatSigned, statModifier } from "@/lib/rules";
 import { SKILL_TYPE_LABEL, BRAND } from "@/lib/copy";
 import { skillRollLabel } from "@/lib/skills";
 
@@ -55,8 +55,7 @@ export default function CrawlerSkillsPage() {
                   <div className="text-right">
                     <span className="font-stat text-[var(--cyan-400)]">Rango {s.rank}</span>
                     <span className="ml-2 text-xs text-[var(--text-4)]">
-                      {s.linked_stat.toUpperCase()} {statModifier(crawler[`${s.linked_stat}_enhanced`]) >= 0 ? "+" : ""}
-                      {statModifier(crawler[`${s.linked_stat}_enhanced`])}
+                      {s.linked_stat.toUpperCase()} {formatSigned(statModifier(crawler[`${s.linked_stat}_enhanced`]))}
                     </span>
                     {s.check_marks > 0 && (
                       <span className="ml-2 text-[var(--warn)]">✔×{s.check_marks}</span>

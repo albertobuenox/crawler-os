@@ -5,7 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { GlassPanel } from "@/components/ui/GlassPanel";
 import { Button } from "@/components/ui/Button";
-import { ResourceBar } from "@/components/hud/HealthBoxes";
+import { HealthBoxes } from "@/components/hud/HealthBoxes";
 import type { Crawler, GameSession } from "@/lib/types";
 import { castSession } from "@/lib/utils";
 import { STATUS_LABEL } from "@/lib/copy";
@@ -48,12 +48,7 @@ export default function DMMobilePage() {
               <span>{c.name}</span>
               <span className="text-[var(--text-3)]">{STATUS_LABEL[c.status]}</span>
             </div>
-            <ResourceBar
-              label="Casillas HP restantes"
-              current={10 - c.hp_boxes_filled}
-              max={10}
-              color="var(--hp)"
-            />
+            <HealthBoxes boxesFilled={c.hp_boxes_filled} conEnhanced={c.con_enhanced} />
           </div>
         ))}
       </GlassPanel>

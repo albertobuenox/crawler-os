@@ -30,7 +30,23 @@ function boxAnimate(hasLife: boolean, barColor: string) {
       };
 }
 
-/** CarlRPG: 10 boxes, each worth CON mod. Filled = remaining life; color follows health. */
+function BoxValue({ hasLife, value }: { hasLife: boolean; value: number }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        "pointer-events-none font-stat text-xs font-semibold leading-none sm:text-sm",
+        hasLife
+          ? "text-[var(--text-1)] drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]"
+          : "text-[var(--text-4)] opacity-45"
+      )}
+    >
+      {value}
+    </span>
+  );
+}
+
+/** 10 casillas. Cada una vale el modificador de CON+; el daño incompleto no vacía la siguiente. */
 export function HealthBoxes({
   boxesFilled,
   conEnhanced,
@@ -56,13 +72,14 @@ export function HealthBoxes({
           className="font-stat text-sm transition-colors duration-500"
           style={{ color: barColor }}
         >
-          {lifeBoxes}/10 casillas · {boxValue} HP c/u
+          {lifeBoxes}/10 casillas
         </span>
       </div>
       <div className="grid grid-cols-10 gap-1">
         {Array.from({ length: 10 }).map((_, i) => {
           const hasLife = i < lifeBoxes;
           const isEmpty = !hasLife;
+          const title = `Casilla ${i + 1} · ${boxValue} HP${hasLife ? " (vida)" : " (vacía)"}`;
 
           if (interactive) {
             return (
@@ -70,27 +87,33 @@ export function HealthBoxes({
                 key={i}
                 type="button"
                 onClick={() => handleBoxClick(i)}
-                title={`Casilla ${i + 1}${hasLife ? " (vida)" : " — clic para rellenar"}`}
+                title={isEmpty ? `${title} — clic para rellenar` : title}
                 className={cn(
-                  "aspect-square rounded-sm border cursor-pointer",
+                  "flex aspect-square items-center justify-center rounded-sm border cursor-pointer",
                   isEmpty && "border-[var(--stroke-glass)] bg-[rgba(255,255,255,0.04)] hover:bg-[rgba(255,255,255,0.08)]"
                 )}
+                initial={false}
                 animate={boxAnimate(hasLife, barColor)}
                 transition={BOX_TRANSITION}
                 whileHover={isEmpty ? { scale: 1.08 } : { scale: 1.04 }}
                 whileTap={{ scale: 0.95 }}
-              />
+              >
+                <BoxValue hasLife={hasLife} value={boxValue} />
+              </motion.button>
             );
           }
 
           return (
             <motion.div
               key={i}
-              title={`Casilla ${i + 1}${hasLife ? " (vida)" : " (dañada)"}`}
-              className="aspect-square rounded-sm border"
+              title={title}
+              className="flex aspect-square items-center justify-center rounded-sm border"
+              initial={false}
               animate={boxAnimate(hasLife, barColor)}
               transition={BOX_TRANSITION}
-            />
+            >
+              <BoxValue hasLife={hasLife} value={boxValue} />
+            </motion.div>
           );
         })}
       </div>

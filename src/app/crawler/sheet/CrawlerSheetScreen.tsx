@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { CharacterSheet } from "@/components/hud/CharacterSheet";
-import type { Crawler, Skill, Effect, ItemInstance, Resource } from "@/lib/types";
+import type { Crawler, Skill, Effect, ItemInstance, Resource, StatModifierRow } from "@/lib/types";
 
 type SheetItem = ItemInstance & { resource: Resource };
 
@@ -13,6 +13,7 @@ export function CrawlerSheetScreen({ crawlerId }: { crawlerId?: string }) {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [effects, setEffects] = useState<Effect[]>([]);
   const [items, setItems] = useState<SheetItem[]>([]);
+  const [modifiers, setModifiers] = useState<StatModifierRow[]>([]);
   const [missing, setMissing] = useState(false);
 
   const load = useCallback(async () => {
@@ -51,14 +52,16 @@ export function CrawlerSheetScreen({ crawlerId }: { crawlerId?: string }) {
 
     setMissing(false);
     setCrawler(target);
-    const [{ data: sk }, { data: ef }, { data: it }] = await Promise.all([
+    const [{ data: sk }, { data: ef }, { data: it }, { data: mods }] = await Promise.all([
       supabase.from("skills").select("*, skill_catalog(*)").eq("crawler_id", target.id),
       supabase.from("effects").select("*").eq("crawler_id", target.id),
       supabase.from("item_instances").select("*, resource:resources(*)").eq("crawler_id", target.id),
+      supabase.from("modifiers").select("*").eq("crawler_id", target.id),
     ]);
     setSkills((sk as Skill[]) ?? []);
     setEffects((ef as Effect[]) ?? []);
     setItems((it as SheetItem[]) ?? []);
+    setModifiers((mods as StatModifierRow[]) ?? []);
   }, [crawlerId, supabase]);
 
   useEffect(() => {
@@ -70,7 +73,7 @@ export function CrawlerSheetScreen({ crawlerId }: { crawlerId?: string }) {
 
   return (
     <main className="p-3 pb-24 lg:p-4">
-      <CharacterSheet crawler={crawler} skills={skills} effects={effects} items={items} />
+      <CharacterSheet crawler={crawler} skills={skills} effects={effects} items={items} modifiers={modifiers} />
     </main>
   );
 }

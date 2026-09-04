@@ -1,4 +1,5 @@
 import type { DiceRollKind, StatKey } from "./types";
+import { STAT_LABELS } from "./types";
 
 export const STAT_KEYS = ["str", "int", "con", "dex", "cha"] as const;
 
@@ -23,9 +24,79 @@ export function assignStartingStat<T extends Record<`${StatKey}_base`, number>>(
   return updated;
 }
 
-/** CarlRPG stat modifier: floor((stat - 10) / 2) */
-export function statModifier(stat: number): number {
-  return Math.floor((stat - 10) / 2);
+export function formatSigned(value: number): string {
+  return `${value >= 0 ? "+" : ""}${value}`;
+}
+
+export function enhancedStatLabel(stat: StatKey): string {
+  return `${STAT_LABELS[stat]}+`;
+}
+
+/**
+ * Modifier from enhanced stat.
+ * +1 → 1–2, +2 → 3–5, +3 → 6–9, +4 → 10–14, +5 → 15–20, then the range grows by 1 each step.
+ */
+export function statModifier(enhanced: number): number {
+  if (!Number.isFinite(enhanced) || enhanced <= 0) return 0;
+  return Math.ceil((-3 + Math.sqrt(9 + 8 * enhanced)) / 2);
+}
+
+export type StatBonusChip = { name: string; value: number };
+
+export function payloadStatBonus(
+  payload: Record<string, unknown> | null | undefined,
+  stat: StatKey
+): number {
+  if (!payload) return 0;
+  const bag = payload.stats ?? payload.stat_bonuses;
+  if (bag && typeof bag === "object" && !Array.isArray(bag)) {
+    const v = (bag as Record<string, unknown>)[stat];
+    if (typeof v === "number" && Number.isFinite(v)) return v;
+  }
+  const bonuses = payload.bonuses;
+  if (!Array.isArray(bonuses)) return 0;
+  return bonuses.reduce((sum, entry) => {
+    if (!entry || typeof entry !== "object") return sum;
+    const rec = entry as Record<string, unknown>;
+    if (rec.stat === stat && typeof rec.value === "number") return sum + rec.value;
+    return sum;
+  }, 0);
+}
+
+export type StatModifierSource = {
+  source_type: string;
+  source_id: string | null;
+  target_field: string;
+  value: number;
+};
+
+function sourceTypeLabel(type: string) {
+  if (type === "item" || type === "equipment") return "Equipo";
+  if (type === "effect" || type === "magic" || type === "spell") return "Magia";
+  return type.trim() || "Bonificación";
+}
+
+export function collectStatBonusChips(
+  stat: StatKey,
+  sources: StatModifierSource[],
+  named: { id: string; name: string }[],
+  equippedItems: { id: string; resource: { id: string; name: string; payload: Record<string, unknown> } }[] = []
+): StatBonusChip[] {
+  const fromRows = sources
+    .filter((s) => s.target_field === stat && s.value !== 0)
+    .map((s) => ({
+      name:
+        named.find((n) => n.id === s.source_id)?.name ??
+        equippedItems.find((i) => i.id === s.source_id || i.resource.id === s.source_id)?.resource.name ??
+        sourceTypeLabel(s.source_type),
+      value: s.value,
+    }));
+  if (fromRows.length > 0) return fromRows;
+
+  return equippedItems.flatMap((item) => {
+    const value = payloadStatBonus(item.resource.payload, stat);
+    return value ? [{ name: item.resource.name, value }] : [];
+  });
 }
 
 export function computeDc(

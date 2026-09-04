@@ -8,11 +8,11 @@ import { HealthBoxes, ResourceBar } from "@/components/hud/HealthBoxes";
 import { InventorySlot } from "@/components/hud/InventorySlot";
 import { cn } from "@/lib/utils";
 import { crawlerFullBodyUrl } from "@/lib/crawler-art";
-import { formatStat, statModifier } from "@/lib/rules";
+import { collectStatBonusChips, formatSigned, statModifier } from "@/lib/rules";
 import { crawlerClassLabel, SKILL_TYPE_LABEL, EFFECT_KIND_LABEL, BRAND } from "@/lib/copy";
 import { skillRollLabel } from "@/lib/skills";
-import type { Crawler, Skill, Effect, ItemInstance, Resource, StatKey } from "@/lib/types";
-import { STAT_LABELS } from "@/lib/types";
+import type { Crawler, Skill, Effect, ItemInstance, Resource, StatKey, StatModifierRow } from "@/lib/types";
+import { StatBlock } from "@/components/hud/StatBlock";
 
 type SheetTab = "stats" | "skills" | "background";
 
@@ -126,11 +126,13 @@ export function CharacterSheet({
   skills,
   effects,
   items,
+  modifiers = [],
 }: {
   crawler: Crawler;
   skills: Skill[];
   effects: Effect[];
   items: SheetItem[];
+  modifiers?: StatModifierRow[];
 }) {
   const [tab, setTab] = useState<SheetTab>("stats");
   const bag = items.filter((i) => !i.equipped_slot);
@@ -138,7 +140,7 @@ export function CharacterSheet({
 
   return (
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-12 lg:items-start">
-      <GlassPanel variant="identity" className="lg:col-span-4 xl:col-span-3" title={crawler.name} subtitle={`${crawler.race ?? "—"} · ${crawlerClassLabel(crawler.class_name)} · LV ${crawler.level}`}>
+      <GlassPanel variant="identity" className="!overflow-visible lg:col-span-4 xl:col-span-3" title={crawler.name} subtitle={`${crawler.race ?? "—"} · ${crawlerClassLabel(crawler.class_name)} · LV ${crawler.level}`}>
         <div className="mb-4 flex gap-1">
           {TABS.map(({ id, label, icon: Icon, glow, color }) => {
             const active = tab === id;
@@ -172,7 +174,9 @@ export function CharacterSheet({
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
           >
-            {tab === "stats" && <StatsTab crawler={crawler} effects={effects} />}
+            {tab === "stats" && (
+              <StatsTab crawler={crawler} effects={effects} items={items} modifiers={modifiers} />
+            )}
             {tab === "skills" && <SkillsTab crawler={crawler} skills={skills} />}
             {tab === "background" && <BackgroundTab crawler={crawler} />}
           </motion.div>
@@ -257,24 +261,37 @@ function EquipCell({
   );
 }
 
-function StatsTab({ crawler, effects }: { crawler: Crawler; effects: Effect[] }) {
+function StatsTab({
+  crawler,
+  effects,
+  items,
+  modifiers,
+}: {
+  crawler: Crawler;
+  effects: Effect[];
+  items: SheetItem[];
+  modifiers: StatModifierRow[];
+}) {
+  const named = [
+    ...effects.map((e) => ({ id: e.id, name: e.name })),
+    ...items.map((i) => ({ id: i.resource.id, name: i.resource.name })),
+    ...items.map((i) => ({ id: i.id, name: i.resource.name })),
+  ];
+  const equipped = items.filter((i) => i.equipped_slot);
+
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-5 gap-1.5">
-        {STAT_KEYS.map((key, i) => {
-          const value = crawler[`${key}_enhanced`];
-          const mod = statModifier(value);
-          return (
-            <div key={key} className={cn("well rounded-[14px] border p-2 text-center", STAT_NEON[i])}>
-              <div className="text-[8px] tracking-[0.16em] text-[var(--text-3)]">{STAT_LABELS[key]}</div>
-              <div className="font-stat text-xl leading-none">{formatStat(value)}</div>
-              <div className="text-[10px] text-[var(--text-3)]">
-                {mod >= 0 ? "+" : ""}
-                {mod}
-              </div>
-            </div>
-          );
-        })}
+      <div className="grid grid-cols-5 gap-1.5 overflow-visible">
+        {STAT_KEYS.map((key, i) => (
+          <StatBlock
+            key={key}
+            statKey={key}
+            base={crawler[`${key}_base`]}
+            enhanced={crawler[`${key}_enhanced`]}
+            bonuses={collectStatBonusChips(key, modifiers, named, equipped)}
+            neonClass={STAT_NEON[i]}
+          />
+        ))}
       </div>
       <HealthBoxes boxesFilled={crawler.hp_boxes_filled} conEnhanced={crawler.con_enhanced} />
       <ResourceBar label="Maná" current={crawler.mana_current} max={crawler.mana_max} />
@@ -338,8 +355,7 @@ function SkillsTab({ crawler, skills }: { crawler: Crawler; skills: Skill[] }) {
             <span className="font-stat text-[var(--gold-400)]">R{s.rank}</span>
           </div>
           <p className="mt-1 text-xs text-[var(--text-3)]">
-            {s.linked_stat.toUpperCase()} {statModifier(crawler[`${s.linked_stat}_enhanced`]) >= 0 ? "+" : ""}
-            {statModifier(crawler[`${s.linked_stat}_enhanced`])}
+            {s.linked_stat.toUpperCase()} {formatSigned(statModifier(crawler[`${s.linked_stat}_enhanced`]))}
             {s.skill_catalog && ` · d100 ${skillRollLabel(s.skill_catalog.roll_min, s.skill_catalog.roll_max)}`}
           </p>
         </li>

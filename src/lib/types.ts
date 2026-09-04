@@ -273,6 +273,16 @@ export interface Effect {
   payload: Record<string, unknown>;
 }
 
+export interface StatModifierRow {
+  id: string;
+  crawler_id: string;
+  source_type: string;
+  source_id: string | null;
+  target_field: string;
+  value: number;
+  expires_at: string | null;
+}
+
 export const RARITY_COLORS: Record<Rarity, string> = {
   common: "var(--rarity-common)",
   uncommon: "var(--rarity-uncommon)",

@@ -8,13 +8,13 @@ import { GlassPanel } from "@/components/ui/GlassPanel";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
 import { HealthBoxes, ResourceBar } from "@/components/hud/HealthBoxes";
-import type { Crawler, Skill, Effect, SkillCatalogEntry, StatKey } from "@/lib/types";
-import { STAT_LABELS } from "@/lib/types";
-import { formatStat, statModifier } from "@/lib/rules";
+import type { Crawler, Skill, Effect, SkillCatalogEntry, StatKey, StatModifierRow, ItemInstance, Resource } from "@/lib/types";
+import { formatStat, collectStatBonusChips } from "@/lib/rules";
 import { SKILL_TYPE_LABEL } from "@/lib/copy";
 import { defaultSkillType, skillRollLabel } from "@/lib/skills";
 import { Minus, Plus, X, Skull, ShieldAlert, Flame, Droplets, Zap, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { StatBlock } from "@/components/hud/StatBlock";
 
 /* ── Preset negative effects ── */
 const PRESET_EFFECTS: {
@@ -40,75 +40,7 @@ const STAT_NEON = [
   "text-[var(--magenta-500)] border-[var(--stroke-magenta)] shadow-[var(--glow-magenta)]",
 ];
 
-/* ── Inline editable stat ── */
-function EditableStat({
-  statKey,
-  value,
-  neonClass,
-  onChange,
-}: {
-  statKey: StatKey;
-  value: number;
-  neonClass: string;
-  onChange: (v: number) => void;
-}) {
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(String(value));
-  const mod = statModifier(value);
-
-  function commit() {
-    const n = parseInt(draft, 10);
-    if (!isNaN(n) && n >= 0 && n <= 99) onChange(n);
-    setEditing(false);
-  }
-
-  if (editing) {
-    return (
-      <motion.div
-        initial={{ scale: 0.95 }}
-        animate={{ scale: 1 }}
-        className={cn("well rounded-[14px] border p-2 text-center", neonClass)}
-      >
-        <div className="text-[8px] tracking-[0.16em] text-[var(--text-3)]">{STAT_LABELS[statKey]}</div>
-        <input
-          autoFocus
-          type="number"
-          min={0}
-          max={99}
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={commit}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") commit();
-            if (e.key === "Escape") setEditing(false);
-          }}
-          className="w-full bg-transparent text-center font-stat text-xl leading-none outline-none"
-        />
-        <div className="text-[10px] text-[var(--text-3)]">
-          {mod >= 0 ? "+" : ""}{mod}
-        </div>
-      </motion.div>
-    );
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={() => { setDraft(String(value)); setEditing(true); }}
-      className={cn(
-        "well rounded-[14px] border p-2 text-center cursor-pointer transition-all duration-200 hover:scale-105 hover:brightness-125",
-        neonClass
-      )}
-      title={`Clic para editar ${STAT_LABELS[statKey]}`}
-    >
-      <div className="text-[8px] tracking-[0.16em] text-[var(--text-3)]">{STAT_LABELS[statKey]}</div>
-      <div className="font-stat text-xl leading-none">{formatStat(value)}</div>
-      <div className="text-[10px] text-[var(--text-3)]">
-        {mod >= 0 ? "+" : ""}{mod}
-      </div>
-    </button>
-  );
-}
+type SheetItem = ItemInstance & { resource: Resource };
 
 /* ── AI Favor with yellow number and +/- ── */
 function AIFavorEditor({ value, onChange }: { value: number; onChange: (v: number) => void }) {
@@ -177,6 +109,8 @@ export default function DMCrawlerSheetPage() {
   const [crawler, setCrawler] = useState<Crawler | null>(null);
   const [skills, setSkills] = useState<Skill[]>([]);
   const [effects, setEffects] = useState<Effect[]>([]);
+  const [modifiers, setModifiers] = useState<StatModifierRow[]>([]);
+  const [items, setItems] = useState<SheetItem[]>([]);
   const [saving, setSaving] = useState(false);
   const [showEffectPicker, setShowEffectPicker] = useState(false);
   const [showSkillPicker, setShowSkillPicker] = useState(false);
@@ -184,14 +118,18 @@ export default function DMCrawlerSheetPage() {
   useEffect(() => {
     if (!id) return;
     (async () => {
-      const [{ data: c }, { data: sk }, { data: ef }] = await Promise.all([
+      const [{ data: c }, { data: sk }, { data: ef }, { data: mods }, { data: it }] = await Promise.all([
         supabase.from("crawlers").select("*").eq("id", id).single(),
         supabase.from("skills").select("*, skill_catalog(*)").eq("crawler_id", id),
         supabase.from("effects").select("*").eq("crawler_id", id),
+        supabase.from("modifiers").select("*").eq("crawler_id", id),
+        supabase.from("item_instances").select("*, resource:resources(*)").eq("crawler_id", id),
       ]);
       setCrawler(c as Crawler);
       setSkills((sk as Skill[]) ?? []);
       setEffects((ef as Effect[]) ?? []);
+      setModifiers((mods as StatModifierRow[]) ?? []);
+      setItems((it as SheetItem[]) ?? []);
     })();
     supabase
       .from("skill_catalog")
@@ -244,11 +182,13 @@ export default function DMCrawlerSheetPage() {
 
   function updateStat(key: StatKey, value: number) {
     if (!crawler) return;
+    const bonus = crawler[`${key}_enhanced`] - crawler[`${key}_base`];
+    const nextEnhanced = value + bonus;
     setCrawler({
       ...crawler,
       [`${key}_base`]: value,
-      [`${key}_enhanced`]: value,
-      ...(key === "int" ? { mana_max: value, mana_current: Math.min(crawler.mana_current, value) } : {}),
+      [`${key}_enhanced`]: nextEnhanced,
+      ...(key === "int" ? { mana_max: nextEnhanced, mana_current: Math.min(crawler.mana_current, nextEnhanced) } : {}),
     });
   }
 
@@ -307,7 +247,7 @@ export default function DMCrawlerSheetPage() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* ── Left column: character sheet ── */}
-        <GlassPanel className="lg:col-span-2" title="Hoja de personaje">
+        <GlassPanel className="!overflow-visible lg:col-span-2" title="Hoja de personaje">
           <div className="grid gap-4 sm:grid-cols-2">
             <Input label="Nombre" value={crawler.name} onChange={(e) => setCrawler({ ...crawler, name: e.target.value })} />
             <Input label="Nivel" type="number" value={crawler.level} onChange={(e) => setCrawler({ ...crawler, level: +e.target.value })} />
@@ -320,15 +260,27 @@ export default function DMCrawlerSheetPage() {
             />
           </div>
 
-          {/* Stats — click to edit */}
-          <div className="mt-6 grid grid-cols-5 gap-1.5">
+          {/* Stats — clic edita el base; el enhanced y el modificador se calculan */}
+          <div className="mt-6 grid grid-cols-5 gap-1.5 overflow-visible">
             {STAT_KEYS.map((key, i) => (
-              <EditableStat
+              <StatBlock
                 key={key}
                 statKey={key}
-                value={crawler[`${key}_enhanced`]}
+                base={crawler[`${key}_base`]}
+                enhanced={crawler[`${key}_enhanced`]}
+                bonuses={collectStatBonusChips(
+                  key,
+                  modifiers,
+                  [
+                    ...effects.map((e) => ({ id: e.id, name: e.name })),
+                    ...items.map((it) => ({ id: it.resource.id, name: it.resource.name })),
+                    ...items.map((it) => ({ id: it.id, name: it.resource.name })),
+                  ],
+                  items.filter((it) => it.equipped_slot)
+                )}
                 neonClass={STAT_NEON[i]}
-                onChange={(v) => updateStat(key, v)}
+                editable
+                onBaseChange={(v) => updateStat(key, v)}
               />
             ))}
           </div>
