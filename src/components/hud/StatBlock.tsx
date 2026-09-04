@@ -76,8 +76,8 @@ export function StatBlock({
   const inner = (
     <>
       <div className="text-[8px] tracking-[0.16em] text-[var(--text-3)]">{plusLabel}</div>
-      <div className="font-stat text-xl leading-none">{formatStat(liveEnhanced)}</div>
-      <div className="text-[10px] text-[var(--text-3)]">{formatSigned(mod)}</div>
+      <div className="cursor-default font-stat text-xl leading-none">{formatStat(liveEnhanced)}</div>
+      <div className="cursor-default text-[10px] text-[var(--text-3)]">{formatSigned(mod)}</div>
       {editing ? (
         <input
           autoFocus

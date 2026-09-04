@@ -8,9 +8,9 @@ import { HealthBoxes, ResourceBar } from "@/components/hud/HealthBoxes";
 import { InventorySlot } from "@/components/hud/InventorySlot";
 import { cn } from "@/lib/utils";
 import { crawlerFullBodyUrl } from "@/lib/crawler-art";
-import { collectStatBonusChips, formatSigned, statModifier } from "@/lib/rules";
-import { crawlerClassLabel, SKILL_TYPE_LABEL, EFFECT_KIND_LABEL, BRAND } from "@/lib/copy";
-import { skillRollLabel } from "@/lib/skills";
+import { collectStatBonusChips } from "@/lib/rules";
+import { crawlerClassLabel, EFFECT_KIND_LABEL, BRAND } from "@/lib/copy";
+import { SkillListItem } from "@/components/hud/SkillListItem";
 import type { Crawler, Skill, Effect, ItemInstance, Resource, StatKey, StatModifierRow } from "@/lib/types";
 import { StatBlock } from "@/components/hud/StatBlock";
 
@@ -127,12 +127,22 @@ export function CharacterSheet({
   effects,
   items,
   modifiers = [],
+  canEditSkills = false,
+  canViewInventory = true,
+  advancementOpen = false,
+  onToggleSkillCheck,
+  onAdjustSkillRank,
 }: {
   crawler: Crawler;
   skills: Skill[];
   effects: Effect[];
   items: SheetItem[];
   modifiers?: StatModifierRow[];
+  canEditSkills?: boolean;
+  canViewInventory?: boolean;
+  advancementOpen?: boolean;
+  onToggleSkillCheck?: (skill: Skill, checked: boolean) => void;
+  onAdjustSkillRank?: (skill: Skill, delta: -1 | 1) => void;
 }) {
   const [tab, setTab] = useState<SheetTab>("stats");
   const bag = items.filter((i) => !i.equipped_slot);
@@ -177,7 +187,16 @@ export function CharacterSheet({
             {tab === "stats" && (
               <StatsTab crawler={crawler} effects={effects} items={items} modifiers={modifiers} />
             )}
-            {tab === "skills" && <SkillsTab crawler={crawler} skills={skills} />}
+            {tab === "skills" && (
+              <SkillsTab
+                crawler={crawler}
+                skills={skills}
+                canEditSkills={canEditSkills}
+                advancementOpen={advancementOpen}
+                onToggleSkillCheck={onToggleSkillCheck}
+                onAdjustSkillRank={onAdjustSkillRank}
+              />
+            )}
             {tab === "background" && <BackgroundTab crawler={crawler} />}
           </motion.div>
         </AnimatePresence>
@@ -209,26 +228,41 @@ export function CharacterSheet({
         </div>
       </GlassPanel>
 
-      <GlassPanel className="lg:col-span-3" title="Inventario" subtitle="Pasa el cursor para inspeccionar">
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-          {Array.from({ length: bagSlots }, (_, i) => {
-            const item = bag[i];
-            if (!item) {
-              return <InventorySlot key={`empty-${i}`} empty size="lg" />;
-            }
-            return (
-              <InventorySlot
-                key={item.id}
-                name={item.resource.name}
-                rarity={item.resource.rarity}
-                quantity={item.quantity}
-                iconUrl={item.resource.icon_url}
-                detail={item.resource.system_copy ?? item.resource.description ?? undefined}
-                size="lg"
-                showTooltip
-              />
-            );
-          })}
+      <GlassPanel className="lg:col-span-3" title="Inventario" subtitle={canViewInventory ? "Pasa el cursor para inspeccionar" : undefined}>
+        <div className="relative min-h-[12rem]">
+          <div
+            className={cn(
+              "grid grid-cols-3 gap-2 sm:grid-cols-4",
+              !canViewInventory && "pointer-events-none select-none blur-xl"
+            )}
+            aria-hidden={!canViewInventory}
+          >
+            {Array.from({ length: bagSlots }, (_, i) => {
+              const item = bag[i];
+              if (!item) {
+                return <InventorySlot key={`empty-${i}`} empty size="lg" />;
+              }
+              return (
+                <InventorySlot
+                  key={item.id}
+                  name={item.resource.name}
+                  rarity={item.resource.rarity}
+                  quantity={item.quantity}
+                  iconUrl={item.resource.icon_url}
+                  detail={item.resource.system_copy ?? item.resource.description ?? undefined}
+                  size="lg"
+                  showTooltip={canViewInventory}
+                />
+              );
+            })}
+          </div>
+          {!canViewInventory && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-[rgba(5,6,13,0.45)] px-4">
+              <p className="max-w-[16rem] text-center font-display text-sm font-bold leading-snug tracking-[0.04em] text-[var(--text-1)]">
+                No seas stalker, si quieres saber qué tiene este jugador pregúntale
+              </p>
+            </div>
+          )}
         </div>
       </GlassPanel>
     </div>
@@ -336,31 +370,45 @@ function MiniStat({ label, value }: { label: string; value: number }) {
   );
 }
 
-function SkillsTab({ crawler, skills }: { crawler: Crawler; skills: Skill[] }) {
+function SkillsTab({
+  crawler,
+  skills,
+  canEditSkills,
+  advancementOpen,
+  onToggleSkillCheck,
+  onAdjustSkillRank,
+}: {
+  crawler: Crawler;
+  skills: Skill[];
+  canEditSkills: boolean;
+  advancementOpen: boolean;
+  onToggleSkillCheck?: (skill: Skill, checked: boolean) => void;
+  onAdjustSkillRank?: (skill: Skill, delta: -1 | 1) => void;
+}) {
   if (skills.length === 0) {
     return <p className="text-sm text-[var(--text-3)]">Aún no hay habilidades.</p>;
   }
   return (
-    <ul className="space-y-2">
-      {skills.map((s) => (
-        <li key={s.id} className="well px-3 py-2 text-sm">
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <p className="font-semibold text-[var(--text-1)]">{s.name}</p>
-              <p className="text-[10px] uppercase tracking-wider text-[var(--magenta-400)]">
-                {SKILL_TYPE_LABEL[s.skill_type] ?? s.skill_type}
-                {s.skill_catalog?.animal_only ? " · solo animal" : ""}
-              </p>
-            </div>
-            <span className="font-stat text-[var(--gold-400)]">R{s.rank}</span>
-          </div>
-          <p className="mt-1 text-xs text-[var(--text-3)]">
-            {s.linked_stat.toUpperCase()} {formatSigned(statModifier(crawler[`${s.linked_stat}_enhanced`]))}
-            {s.skill_catalog && ` · d100 ${skillRollLabel(s.skill_catalog.roll_min, s.skill_catalog.roll_max)}`}
-          </p>
-        </li>
-      ))}
-    </ul>
+    <div className="space-y-2">
+      {advancementOpen && canEditSkills && (
+        <p className="rounded-lg border border-[var(--stroke-cyan)] bg-[rgba(0,212,255,0.08)] px-3 py-2 text-[11px] text-[var(--cyan-400)]">
+          Subida abierta. Ajusta el rango de las skills que hayas marcado.
+        </p>
+      )}
+      <ul className="space-y-2">
+        {skills.map((s) => (
+          <SkillListItem
+            key={s.id}
+            crawler={crawler}
+            skill={s}
+            canCheck={canEditSkills && !advancementOpen}
+            canAdjustRank={canEditSkills && advancementOpen && s.check_marks > 0 && s.skill_type !== "passive"}
+            onToggleCheck={onToggleSkillCheck}
+            onAdjustRank={onAdjustSkillRank}
+          />
+        ))}
+      </ul>
+    </div>
   );
 }
 

@@ -34,6 +34,14 @@ export function skillSlugFromName(name: string): string {
   return slug || "skill";
 }
 
+export function isActiveSkill(skill: Pick<Skill, "skill_type">): boolean {
+  return skill.skill_type !== "passive";
+}
+
+export function isSkillChecked(skill: Pick<Skill, "check_marks">): boolean {
+  return skill.check_marks > 0;
+}
+
 export function catalogRangeOverlap(
   catalog: SkillCatalogEntry[],
   rollMin: number,

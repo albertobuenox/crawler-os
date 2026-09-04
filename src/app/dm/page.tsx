@@ -10,6 +10,7 @@ import type { Crawler, EventLogEntry, GameSession } from "@/lib/types";
 import { castSession } from "@/lib/utils";
 import { PHASE_LABEL, STATUS_LABEL, BRAND } from "@/lib/copy";
 import { useRealtimeTable } from "@/hooks/useSession";
+import { SkillTimerPanel } from "@/components/hud/SkillTimerPanel";
 import Link from "next/link";
 
 export default function DMDashboardPage() {
@@ -133,6 +134,8 @@ export default function DMDashboardPage() {
           </Link>
         </div>
       </div>
+
+      <SkillTimerPanel sessionId={session.id} />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <GlassPanel>

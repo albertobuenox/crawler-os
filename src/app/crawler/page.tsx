@@ -12,6 +12,7 @@ import type { Crawler, EventLogEntry, Notification, DiceRequest } from "@/lib/ty
 import { useSessionBroadcast } from "@/hooks/useSession";
 import { statModifier } from "@/lib/rules";
 import { BRAND, SCENE_LABEL } from "@/lib/copy";
+import { useSkillTimer } from "@/hooks/useSkillTimer";
 import type { Rarity } from "@/lib/types";
 
 export default function CrawlerHomePage() {
@@ -101,6 +102,8 @@ export default function CrawlerHomePage() {
     if (event === "dice_anim") load();
   }, [load]));
 
+  const { open: advancementOpen } = useSkillTimer(crawler?.session_id);
+
   async function rollDice() {
     if (!diceRequest || !crawler) return;
     setRolling(true);
@@ -138,6 +141,14 @@ export default function CrawlerHomePage() {
           <div className="rounded-xl border border-[var(--stroke-danger)] p-3 text-center font-display text-[var(--danger)] opacity-70">
             YOU ARE DEAD
           </div>
+        )}
+
+        {advancementOpen && (
+          <Link href="/crawler/skills">
+            <div className="rounded-xl border border-[var(--stroke-cyan)] bg-[rgba(0,212,255,0.1)] p-3 text-center font-display text-sm text-[var(--cyan-400)]">
+              Subida de habilidades abierta — toca para ajustar las skills marcadas
+            </div>
+          </Link>
         )}
 
         <GlassPanel title="Objetivo actual" subtitle={`Piso ${crawler.floor}`}>

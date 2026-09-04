@@ -13,6 +13,7 @@ import {
   skillRollLabel,
   skillSlugFromName,
 } from "@/lib/skills";
+import { SkillThumb } from "@/components/hud/SkillThumb";
 
 const STAT_OPTIONS = (["str", "int", "con", "dex", "cha"] as const).map((s) => ({
   value: s,
@@ -317,7 +318,10 @@ export default function DMSkillsPage() {
       )}
 
       {formOpen && (
-        <GlassPanel title={editing ? `Editar ${editing.name}` : "Nueva skill"}>
+        <GlassPanel
+          title={editing ? `Editar ${editing.name}` : "Nueva skill"}
+          action={editing ? <SkillThumb slug={editing.slug} size="md" /> : undefined}
+        >
           <form onSubmit={saveCatalog} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Input
               id="skill-name"
@@ -385,7 +389,11 @@ export default function DMSkillsPage() {
       )}
 
       {assigning && (
-        <GlassPanel title={`Asignar ${assigning.name}`} subtitle={`d100 ${skillRollLabel(assigning.roll_min, assigning.roll_max)}`}>
+        <GlassPanel
+          title={`Asignar ${assigning.name}`}
+          subtitle={`d100 ${skillRollLabel(assigning.roll_min, assigning.roll_max)}`}
+          action={<SkillThumb slug={assigning.slug} size="md" />}
+        >
           <form onSubmit={assignSkill} className="space-y-4">
             {crawlers.length === 0 ? (
               <p className="text-sm text-[var(--text-3)]">No hay crawlers en esta sesión.</p>
@@ -456,6 +464,7 @@ export default function DMSkillsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[var(--stroke-glass)] text-left text-label">
+                <th className="p-3 w-14">Art</th>
                 <th className="p-3">d100</th>
                 <th className="p-3">Nombre</th>
                 <th className="p-3">Pág.</th>
@@ -469,6 +478,9 @@ export default function DMSkillsPage() {
                 const owners = ownersByCatalog.get(s.id) ?? [];
                 return (
                   <tr key={s.id} className="border-b border-[rgba(255,255,255,0.04)] hover:bg-[rgba(0,212,255,0.04)]">
+                    <td className="p-3">
+                      <SkillThumb slug={s.slug} size="sm" />
+                    </td>
                     <td className="p-3 font-mono-system text-[var(--cyan-400)]">
                       {skillRollLabel(s.roll_min, s.roll_max)}
                     </td>
@@ -512,7 +524,7 @@ export default function DMSkillsPage() {
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="p-6 text-center text-[var(--text-3)]">
+                  <td colSpan={7} className="p-6 text-center text-[var(--text-3)]">
                     No hay skills que coincidan.
                   </td>
                 </tr>

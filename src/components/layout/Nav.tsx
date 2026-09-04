@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { NotificationBadge } from "@/components/hud/EventLog";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 import { BRAND, SCENE_LABEL } from "@/lib/copy";
+import { SkillTimerChip } from "@/components/hud/SkillTimerPanel";
 
 const dmNav = [
   { href: "/dm", icon: Home, label: "Sesión", glow: "var(--glow-purple)", disabled: true },
@@ -153,13 +154,16 @@ export function DMTopBar({ sessionCode, sessionName }: { sessionCode?: string; s
         <h1 className="font-display text-lg tracking-wide">{sessionName ?? "Control de sesión"}</h1>
       </div>
       {sessionCode && (
-        <Link
-          href={`/table/${sessionCode}`}
-          target="_blank"
-          className="text-xs text-[var(--cyan-400)] hover:text-[var(--text-1)]"
-        >
-          {SCENE_LABEL} TV
-        </Link>
+        <div className="flex items-center gap-3">
+          <SkillTimerChip />
+          <Link
+            href={`/table/${sessionCode}`}
+            target="_blank"
+            className="text-xs text-[var(--cyan-400)] hover:text-[var(--text-1)]"
+          >
+            {SCENE_LABEL} TV
+          </Link>
+        </div>
       )}
     </header>
   );

@@ -9,6 +9,8 @@ import { Input, Select } from "@/components/ui/Input";
 import type { Skill, SkillCatalogEntry, StatKey } from "@/lib/types";
 import { SKILL_TYPE_LABEL } from "@/lib/copy";
 import { catalogOptionLabel, defaultSkillType, pickSkillByRoll, skillRollLabel } from "@/lib/skills";
+import { skillArtSlug } from "@/lib/skill-art";
+import { SkillThumb } from "@/components/hud/SkillThumb";
 
 const STAT_OPTIONS = (["str", "int", "con", "dex", "cha"] as const).map((s) => ({
   value: s,
@@ -116,10 +118,13 @@ export default function DMSkillsEditorPage() {
           />
         </div>
         {selected && (
-          <p className="sm:col-span-2 text-xs text-[var(--text-3)]">
-            d100 {skillRollLabel(selected.roll_min, selected.roll_max)} · pág. {selected.page_ref}
-            {selected.animal_only ? " · solo animal" : ""}
-          </p>
+          <div className="sm:col-span-2 flex items-center gap-3">
+            <SkillThumb slug={selected.slug} size="md" />
+            <p className="text-xs text-[var(--text-3)]">
+              d100 {skillRollLabel(selected.roll_min, selected.roll_max)} · pág. {selected.page_ref}
+              {selected.animal_only ? " · solo animal" : ""}
+            </p>
+          </div>
         )}
         <Input label="Rango" type="number" value={rank} onChange={(e) => setRank(+e.target.value)} />
         <Select
@@ -146,21 +151,28 @@ export default function DMSkillsEditorPage() {
           const cat = s.skill_catalog;
           return (
             <li key={s.id} className="well flex items-center justify-between gap-3 px-3 py-2 text-sm">
-              <span>
-                <span className="font-semibold text-[var(--text-1)]">{s.name}</span>
-                <span className="ml-2 text-[var(--text-3)]">
-                  rango {s.rank} · {SKILL_TYPE_LABEL[s.skill_type] ?? s.skill_type}
-                </span>
-                {cat && (
-                  <span className="ml-2 text-[10px] uppercase tracking-wider text-[var(--text-4)]">
-                    d100 {skillRollLabel(cat.roll_min, cat.roll_max)} · pág. {cat.page_ref}
-                    {cat.animal_only ? " · solo animal" : ""}
+              <span className="flex min-w-0 items-center gap-2.5">
+                <SkillThumb slug={skillArtSlug(s)} size="sm" />
+                <span>
+                  <span className="font-semibold text-[var(--text-1)]">{s.name}</span>
+                  <span className="ml-2 text-[var(--text-3)]">
+                    rango {s.rank} · {SKILL_TYPE_LABEL[s.skill_type] ?? s.skill_type}
                   </span>
-                )}
-                <span className="ml-2 text-[var(--text-4)]">marcas: {s.check_marks}</span>
+                  {cat && (
+                    <span className="ml-2 text-[10px] uppercase tracking-wider text-[var(--text-4)]">
+                      d100 {skillRollLabel(cat.roll_min, cat.roll_max)} · pág. {cat.page_ref}
+                      {cat.animal_only ? " · solo animal" : ""}
+                    </span>
+                  )}
+                  <span className="ml-2 text-[var(--text-4)]">marcas: {s.check_marks}</span>
+                </span>
               </span>
-              <Button variant="neon" size="sm" onClick={() => markCheck(s.id, s.check_marks + 1)}>
-                + Marca
+              <Button
+                variant="neon"
+                size="sm"
+                onClick={() => markCheck(s.id, s.check_marks > 0 ? 0 : 1)}
+              >
+                {s.check_marks > 0 ? "Quitar marca" : "Marcar"}
               </Button>
             </li>
           );

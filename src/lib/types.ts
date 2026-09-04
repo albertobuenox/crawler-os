@@ -75,6 +75,10 @@ export interface GameSession {
   created_by: string;
   is_active: boolean;
   skill_advancement_hours: number;
+  skill_timer_running?: boolean;
+  skill_timer_elapsed_seconds?: number;
+  skill_timer_started_at?: string | null;
+  skill_advancement_open?: boolean;
 }
 
 export interface Crawler {

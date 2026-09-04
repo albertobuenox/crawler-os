@@ -12,6 +12,8 @@ import type { Crawler, Skill, Effect, SkillCatalogEntry, StatKey, StatModifierRo
 import { formatStat, collectStatBonusChips } from "@/lib/rules";
 import { SKILL_TYPE_LABEL } from "@/lib/copy";
 import { defaultSkillType, skillRollLabel } from "@/lib/skills";
+import { skillArtSlug } from "@/lib/skill-art";
+import { SkillThumb } from "@/components/hud/SkillThumb";
 import { Minus, Plus, X, Skull, ShieldAlert, Flame, Droplets, Zap, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { StatBlock } from "@/components/hud/StatBlock";
@@ -403,13 +405,17 @@ export default function DMCrawlerSheetPage() {
                   exit={{ opacity: 0, x: 8 }}
                   className="well mb-2 flex items-center justify-between gap-2 px-3 py-2 text-sm"
                 >
-                  <div className="min-w-0">
+                  <SkillThumb slug={skillArtSlug(s)} size="sm" />
+                  <div className="min-w-0 flex-1">
                     <span className="font-semibold text-[var(--text-1)]">{s.name}</span>
                     <span className="ml-2 text-[var(--text-3)]">
                       R{s.rank} · {SKILL_TYPE_LABEL[s.skill_type] ?? s.skill_type}
                     </span>
                     {s.skill_catalog?.animal_only && (
                       <span className="ml-1 text-[10px] text-[var(--text-4)]">· solo animal</span>
+                    )}
+                    {s.check_marks > 0 && (
+                      <span className="ml-2 text-[10px] uppercase tracking-wider text-[var(--gold-400)]">marcada</span>
                     )}
                   </div>
                   <button
@@ -442,17 +448,20 @@ export default function DMCrawlerSheetPage() {
                           disabled={owned}
                           onClick={() => addSkillFromCatalog(entry)}
                           className={cn(
-                            "flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs transition-all",
+                            "flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-xs transition-all",
                             owned
                               ? "text-[var(--text-4)] opacity-50 cursor-not-allowed"
                               : "text-[var(--text-2)] hover:bg-white/8 cursor-pointer hover:text-[var(--text-1)]"
                           )}
                         >
-                          <span>
-                            <span className="font-medium">{entry.name}</span>
-                            <span className="ml-2 text-[var(--text-4)]">
-                              d100 {skillRollLabel(entry.roll_min, entry.roll_max)}
-                              {entry.animal_only ? " · animal" : ""}
+                          <span className="flex min-w-0 items-center gap-2">
+                            <SkillThumb slug={entry.slug} size="xs" />
+                            <span>
+                              <span className="font-medium">{entry.name}</span>
+                              <span className="ml-2 text-[var(--text-4)]">
+                                d100 {skillRollLabel(entry.roll_min, entry.roll_max)}
+                                {entry.animal_only ? " · animal" : ""}
+                              </span>
                             </span>
                           </span>
                           {owned && <Check size={12} className="text-[var(--ok)]" />}

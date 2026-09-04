@@ -77,6 +77,11 @@
   --glow-gold: 0 0 28px rgba(251, 191, 36, 0.55);
   --glow-danger: 0 0 24px rgba(255, 59, 92, 0.5);
   --glow-purple: 0 0 24px rgba(168, 85, 247, 0.4);
+  --hotbar: #ff2d6a;
+  --hotbar-pink: #ff5c9a;
+  --hotbar-fill: rgba(28, 6, 14, 0.9);
+  --stroke-hotbar: rgba(255, 45, 106, 0.92);
+  --glow-hotbar: 0 0 10px rgba(255, 45, 106, 0.55), 0 0 22px rgba(236, 72, 153, 0.3);
 
   /* Gradients */
   --grad-cta-energy: linear-gradient(90deg, #f97316 0%, #ec4899 100%);

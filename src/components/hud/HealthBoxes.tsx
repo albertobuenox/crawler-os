@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { healthBoxValue, healthBarColor } from "@/lib/rules";
+import { healthBoxValue, healthBarColor, healthPercent } from "@/lib/rules";
 import { cn } from "@/lib/utils";
 
 interface HealthBoxesProps {
@@ -16,17 +16,22 @@ interface HealthBoxesProps {
 
 const BOX_TRANSITION = { duration: 0.45, ease: [0.22, 1, 0.36, 1] as const };
 
+function hexGlow(hex: string, alpha: number) {
+  const a = Math.round(alpha * 255)
+    .toString(16)
+    .padStart(2, "0");
+  return `${hex}${a}`;
+}
+
 function boxAnimate(hasLife: boolean, barColor: string) {
   return hasLife
     ? {
         backgroundColor: barColor,
         borderColor: barColor,
-        boxShadow: `0 0 10px ${barColor}88`,
       }
     : {
         backgroundColor: "rgba(255,255,255,0.04)",
         borderColor: "rgba(255,255,255,0.1)",
-        boxShadow: "0 0 0px transparent",
       };
 }
 
@@ -46,6 +51,58 @@ function BoxValue({ hasLife, value }: { hasLife: boolean; value: number }) {
   );
 }
 
+function HealthPip({
+  index,
+  hasLife,
+  boxValue,
+  barColor,
+  interactive,
+  onSelect,
+}: {
+  index: number;
+  hasLife: boolean;
+  boxValue: number;
+  barColor: string;
+  interactive: boolean;
+  onSelect: (index: number) => void;
+}) {
+  const isEmpty = !hasLife;
+  const title = `Casilla ${index + 1} · ${boxValue} HP${hasLife ? " (vida)" : " (vacía)"}`;
+  const className = cn(
+    "flex aspect-square min-w-0 flex-1 items-center justify-center rounded-sm border",
+    interactive && "cursor-pointer",
+    isEmpty && "border-[var(--stroke-glass)] bg-[rgba(255,255,255,0.04)]",
+    interactive && isEmpty && "hover:bg-[rgba(255,255,255,0.08)]"
+  );
+  const motionProps = {
+    initial: false as const,
+    animate: boxAnimate(hasLife, barColor),
+    transition: BOX_TRANSITION,
+  };
+
+  if (interactive) {
+    return (
+      <motion.button
+        type="button"
+        onClick={() => onSelect(index)}
+        title={isEmpty ? `${title} — clic para rellenar` : title}
+        className={className}
+        {...motionProps}
+        whileHover={isEmpty ? { scale: 1.08 } : { scale: 1.04 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        <BoxValue hasLife={hasLife} value={boxValue} />
+      </motion.button>
+    );
+  }
+
+  return (
+    <motion.div title={title} className={className} {...motionProps}>
+      <BoxValue hasLife={hasLife} value={boxValue} />
+    </motion.div>
+  );
+}
+
 /** 10 casillas. Cada una vale el modificador de CON+; el daño incompleto no vacía la siguiente. */
 export function HealthBoxes({
   boxesFilled,
@@ -57,6 +114,7 @@ export function HealthBoxes({
   const boxValue = healthBoxValue(conEnhanced);
   const damageFilled = Math.min(Math.max(boxesFilled, 0), 10);
   const lifeBoxes = 10 - damageFilled;
+  const pct = healthPercent(damageFilled);
   const barColor = healthBarColor(lifeBoxes);
 
   function handleBoxClick(index: number) {
@@ -65,57 +123,63 @@ export function HealthBoxes({
   }
 
   return (
-    <div className={cn("space-y-2", className)}>
+    <div
+      className={cn("space-y-2", className)}
+      role="group"
+      aria-label={`Barra de salud ${pct}% · ${lifeBoxes} de 10 casillas`}
+    >
       <div className="flex items-center justify-between">
         <span className="text-label">Barra de salud</span>
         <span
-          className="font-stat text-sm transition-colors duration-500"
+          className="font-stat text-sm tabular-nums transition-colors duration-500"
           style={{ color: barColor }}
         >
-          {lifeBoxes}/10 casillas
+          {lifeBoxes}/10 · {pct}%
         </span>
       </div>
-      <div className="grid grid-cols-10 gap-1">
-        {Array.from({ length: 10 }).map((_, i) => {
-          const hasLife = i < lifeBoxes;
-          const isEmpty = !hasLife;
-          const title = `Casilla ${i + 1} · ${boxValue} HP${hasLife ? " (vida)" : " (vacía)"}`;
-
-          if (interactive) {
-            return (
-              <motion.button
+      <div className="flex gap-1 overflow-visible">
+        {lifeBoxes > 0 && (
+          <motion.div
+            layout
+            className="flex min-w-0 gap-1 rounded-[6px] p-0.5"
+            style={{ flex: lifeBoxes }}
+            initial={false}
+            animate={{
+              boxShadow: `0 0 0 1px ${hexGlow(barColor, 0.72)}, 0 0 7px ${hexGlow(barColor, 0.8)}, 0 0 16px ${hexGlow(barColor, 0.38)}`,
+            }}
+            transition={BOX_TRANSITION}
+          >
+            {Array.from({ length: lifeBoxes }).map((_, i) => (
+              <HealthPip
                 key={i}
-                type="button"
-                onClick={() => handleBoxClick(i)}
-                title={isEmpty ? `${title} — clic para rellenar` : title}
-                className={cn(
-                  "flex aspect-square items-center justify-center rounded-sm border cursor-pointer",
-                  isEmpty && "border-[var(--stroke-glass)] bg-[rgba(255,255,255,0.04)] hover:bg-[rgba(255,255,255,0.08)]"
-                )}
-                initial={false}
-                animate={boxAnimate(hasLife, barColor)}
-                transition={BOX_TRANSITION}
-                whileHover={isEmpty ? { scale: 1.08 } : { scale: 1.04 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <BoxValue hasLife={hasLife} value={boxValue} />
-              </motion.button>
-            );
-          }
-
-          return (
-            <motion.div
-              key={i}
-              title={title}
-              className="flex aspect-square items-center justify-center rounded-sm border"
-              initial={false}
-              animate={boxAnimate(hasLife, barColor)}
-              transition={BOX_TRANSITION}
-            >
-              <BoxValue hasLife={hasLife} value={boxValue} />
-            </motion.div>
-          );
-        })}
+                index={i}
+                hasLife
+                boxValue={boxValue}
+                barColor={barColor}
+                interactive={interactive}
+                onSelect={handleBoxClick}
+              />
+            ))}
+          </motion.div>
+        )}
+        {lifeBoxes < 10 && (
+          <div className="flex min-w-0 gap-1 p-0.5" style={{ flex: 10 - lifeBoxes }}>
+            {Array.from({ length: 10 - lifeBoxes }).map((_, offset) => {
+              const i = lifeBoxes + offset;
+              return (
+                <HealthPip
+                  key={i}
+                  index={i}
+                  hasLife={false}
+                  boxValue={boxValue}
+                  barColor={barColor}
+                  interactive={interactive}
+                  onSelect={handleBoxClick}
+                />
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

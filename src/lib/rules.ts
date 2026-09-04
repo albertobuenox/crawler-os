@@ -133,14 +133,19 @@ export function healthPercent(boxesFilled: number): number {
   return ((10 - boxesFilled) / 10) * 100;
 }
 
-/** Life boxes (0–10) → bar color: blue (full) → yellow → pink → red (critical) */
+/** Life boxes (0–10) → bar color: green (full) → olive → gold → orange → red (critical) */
 const HEALTH_COLOR_STOPS: { at: number; hex: string }[] = [
-  { at: 10, hex: "#3b82f6" }, // blue (--mana)
-  { at: 7, hex: "#22d3ee" },  // cyan transition
-  { at: 5, hex: "#fbbf24" },  // yellow (--gold-400)
-  { at: 3, hex: "#ec4899" },  // pink (--pink-500)
-  { at: 1, hex: "#ff3b5c" },  // red (--hp)
-  { at: 0, hex: "#ff3b5c" },
+  { at: 10, hex: "#1faa3a" }, // 100% deep vibrant green
+  { at: 9, hex: "#34c043" },  // 90%
+  { at: 8, hex: "#4caf36" },  // 80% leafy green
+  { at: 7, hex: "#73c22e" },  // 70%
+  { at: 6, hex: "#a4c639" },  // 60% lime olive
+  { at: 5, hex: "#c6c02e" },  // 50% yellow-olive
+  { at: 4, hex: "#e8a317" },  // 40% golden yellow-orange
+  { at: 3, hex: "#f07812" },  // 30% orange
+  { at: 2, hex: "#f04e12" },  // 20% reddish-orange
+  { at: 1, hex: "#ff3d00" },  // 10% vibrant red-orange
+  { at: 0, hex: "#c41818" },
 ];
 
 function lerpHex(a: string, b: string, t: number): string {
