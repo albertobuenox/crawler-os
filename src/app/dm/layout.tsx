@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { DMNavRail, DMTopBar } from "@/components/layout/Nav";
 import { FloatingUtilityMenu } from "@/components/layout/FloatingUtilityMenu";
 import { CommandPaletteRoot } from "@/components/layout/CommandPalette";
+import { DMSceneChat } from "@/components/hud/DMSceneChat";
 import { castSession } from "@/lib/utils";
 
 export default async function DMLayout({ children }: { children: React.ReactNode }) {
@@ -39,6 +40,7 @@ export default async function DMLayout({ children }: { children: React.ReactNode
           <main className="flex-1 overflow-auto px-10 py-8 pl-16">{children}</main>
         </div>
         <FloatingUtilityMenu />
+        <DMSceneChat />
       </div>
     </CommandPaletteRoot>
   );

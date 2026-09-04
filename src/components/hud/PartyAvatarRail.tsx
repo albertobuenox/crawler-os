@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowLeftRight, Eye, RotateCcw, SmilePlus } from "lucide-react";
@@ -10,10 +10,10 @@ import {
   AVATAR_EMOTIONS,
   crawlerAvatarUrl,
   crawlerInitials,
-  readStoredAvatarEmotions,
-  writeStoredAvatarEmotions,
+  parseAvatarEmotion,
   type AvatarEmotion,
 } from "@/lib/crawler-art";
+import { crawlerClassLabel, crawlerIdentityLine, crawlerRaceLabel } from "@/lib/copy";
 import { clampLifeBoxes, clampMana, healthBarColor, healthPercent, MANA_BAR_COLOR, manaPercent } from "@/lib/rules";
 import { cn } from "@/lib/utils";
 
@@ -23,10 +23,41 @@ export type PartyAvatar = {
   portrait_url: string | null;
   status: CrawlerStatus;
   level: number;
+  race: string | null;
+  class_name: string | null;
   hp_boxes_filled: number;
   mana_current: number;
   mana_max: number;
+  avatar_emotion: AvatarEmotion | null;
 };
+
+export function toPartyAvatar(row: {
+  id: string;
+  name: string;
+  portrait_url?: string | null;
+  status: CrawlerStatus;
+  level: number;
+  race?: string | null;
+  class_name?: string | null;
+  hp_boxes_filled: number;
+  mana_current: number;
+  mana_max: number;
+  avatar_emotion?: string | null;
+}): PartyAvatar {
+  return {
+    id: row.id,
+    name: row.name,
+    portrait_url: row.portrait_url ?? null,
+    status: row.status,
+    level: row.level,
+    race: row.race ?? null,
+    class_name: row.class_name ?? null,
+    hp_boxes_filled: row.hp_boxes_filled,
+    mana_current: row.mana_current,
+    mana_max: row.mana_max,
+    avatar_emotion: parseAvatarEmotion(row.avatar_emotion),
+  };
+}
 
 const MIN_SLOTS = 4;
 
@@ -98,22 +129,29 @@ function MiniVitalBar({
 
   return (
     <div className="mb-1 w-full">
-      <p
-        className={cn(
-          "mb-0.5 truncate text-center font-display text-[8px] tracking-[0.12em]",
-          isSelf ? "text-[var(--gold-400)]" : "text-[var(--cyan-400)]"
-        )}
+      <Link
+        href={`/crawler/sheet/${member.id}`}
+        className="mb-0.5 block rounded-sm text-center outline-offset-2"
+        aria-label={`${name} — ir a la hoja de personaje`}
       >
-        {name}
-      </p>
+        <p
+          className={cn(
+            "truncate font-display text-[8px] tracking-[0.12em]",
+            isSelf ? "text-[var(--gold-400)]" : "text-[var(--cyan-400)]"
+          )}
+        >
+          {name}
+        </p>
+        <p className="font-stat text-[8px] leading-tight text-[var(--text-2)]">Nv {member.level}</p>
+        <p className="truncate font-display text-[7px] leading-tight tracking-wide text-[var(--text-4)]">
+          {crawlerRaceLabel(member.race)} · {crawlerClassLabel(member.class_name)}
+        </p>
+      </Link>
       <div
         className="flex h-[18px] w-full overflow-hidden border border-[rgba(186,210,230,0.4)] bg-black"
         title={`NV ${member.level} · Vida ${lifeBoxes}/10 · Maná ${manaNow}/${manaMax} · ${Math.round(manaPct)}%`}
         aria-label={`Nivel ${member.level}, vida ${Math.round(hpPct)} por ciento, maná ${Math.round(manaPct)} por ciento`}
       >
-        <div className="flex aspect-square h-full shrink-0 items-center justify-center border-r border-[rgba(186,210,230,0.4)] font-stat text-[10px] leading-none text-white sm:text-[11px]">
-          {member.level}
-        </div>
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="flex min-h-0 flex-[2] gap-px bg-black p-px">
             {Array.from({ length: 10 }, (_, i) => {
@@ -248,6 +286,8 @@ function AvatarFrame({
   member,
   isSelf = false,
   emotion,
+  choosing = false,
+  dimmed = false,
   onEmotionChange,
   onLifeChange,
   onManaChange,
@@ -255,6 +295,8 @@ function AvatarFrame({
   member?: PartyAvatar;
   isSelf?: boolean;
   emotion?: AvatarEmotion | null;
+  choosing?: boolean;
+  dimmed?: boolean;
   onEmotionChange?: (emotion: AvatarEmotion | null) => void;
   onLifeChange?: (lifeBoxes: number) => void;
   onManaChange?: (manaCurrent: number) => void;
@@ -279,7 +321,7 @@ function AvatarFrame({
 
   return (
     <div
-      className="group relative"
+      className={cn("group relative", dimmed && "pointer-events-none opacity-25")}
       onMouseLeave={() => setEmotionsOpen(false)}
       onBlur={(e) => {
         if (!e.currentTarget.contains(e.relatedTarget as Node)) setEmotionsOpen(false);
@@ -307,7 +349,8 @@ function AvatarFrame({
                 ? "border-[var(--gold-400)] shadow-[var(--glow-gold),0_0_18px_rgba(0,212,255,0.35)]"
                 : statusRing[member.status],
               !isSelf && "group-hover:border-[var(--stroke-cyan-hot)] group-hover:shadow-[var(--glow-cyan)] group-hover:brightness-110",
-              isSelf && "group-hover:brightness-110 group-hover:shadow-[var(--glow-gold),var(--glow-cyan)]"
+              isSelf && "group-hover:brightness-110 group-hover:shadow-[var(--glow-gold),var(--glow-cyan)]",
+              choosing && "border-[var(--cyan-400)] shadow-[0_0_22px_rgba(34,240,255,0.75),var(--glow-cyan)]"
             )}
           >
             {isSelf && <CornerTicks />}
@@ -336,11 +379,24 @@ function AvatarFrame({
             />
             <span className="sr-only">
               {isSelf ? "Tu personaje. " : ""}
-              {member.name}, nivel {member.level}.
+              {member.name}, {crawlerIdentityLine(member)}.
               {emotion ? ` Emoción: ${AVATAR_EMOTION_LABEL[emotion]}.` : ""}
             </span>
           </div>
         </Link>
+
+        {choosing && (
+          <div className="pointer-events-none absolute left-full top-1/2 z-[1] ml-3 w-max max-w-[14rem] -translate-y-1/2">
+            <div className="rounded-[12px] border border-[var(--stroke-cyan)] bg-[rgba(5,6,13,0.9)] px-3 py-2 shadow-[var(--glow-cyan)] backdrop-blur-md">
+              <p className="font-display text-[11px] tracking-[0.12em] text-[var(--cyan-300)]">
+                {member.name}
+              </p>
+              <p className="text-[11px] leading-snug text-[var(--text-2)]">
+                está eligiendo dado
+              </p>
+            </div>
+          </div>
+        )}
 
         <div
           className={cn(
@@ -348,7 +404,8 @@ function AvatarFrame({
             "opacity-0 transition-opacity duration-[var(--t-ui)] ease-[var(--ease-hologram)]",
             "pointer-events-none group-hover:pointer-events-auto group-hover:opacity-100",
             "group-focus-within:pointer-events-auto group-focus-within:opacity-100",
-            emotionsOpen && "pointer-events-auto opacity-100"
+            emotionsOpen && "pointer-events-auto opacity-100",
+            choosing && "hidden"
           )}
         >
           <div className="flex w-7 flex-col items-start gap-1.5">
@@ -437,20 +494,18 @@ function AvatarFrame({
 export function PartyAvatarRail({
   members,
   selfId,
+  choosingId,
   onSelfLifeChange,
   onSelfManaChange,
+  onSelfEmotionChange,
 }: {
   members: PartyAvatar[];
   selfId?: string | null;
+  choosingId?: string | null;
   onSelfLifeChange?: (lifeBoxes: number) => void;
   onSelfManaChange?: (manaCurrent: number) => void;
+  onSelfEmotionChange?: (emotion: AvatarEmotion | null) => void;
 }) {
-  const [emotions, setEmotions] = useState<Partial<Record<string, AvatarEmotion>>>({});
-
-  useEffect(() => {
-    setEmotions(readStoredAvatarEmotions());
-  }, []);
-
   const ordered = useMemo(() => {
     if (!selfId) return members;
     const self = members.find((m) => m.id === selfId);
@@ -459,34 +514,29 @@ export function PartyAvatarRail({
   }, [members, selfId]);
   const slots = Math.max(MIN_SLOTS, ordered.length);
 
-  function setMemberEmotion(id: string, emotion: AvatarEmotion | null) {
-    setEmotions((prev) => {
-      const next = { ...prev };
-      if (emotion) next[id] = emotion;
-      else delete next[id];
-      writeStoredAvatarEmotions(next);
-      return next;
-    });
-  }
-
   return (
     <aside
       aria-label="Personajes de la party"
-      className="relative z-[var(--z-drop)] flex w-20 shrink-0 flex-col gap-[18px] overflow-visible pt-1 sm:w-24 lg:w-28"
+      className={cn(
+        "relative flex w-24 shrink-0 flex-col gap-[18px] overflow-visible pt-1 sm:w-28 lg:w-32",
+        choosingId ? "z-[47]" : "z-[var(--z-drop)]"
+      )}
     >
       {Array.from({ length: slots }, (_, i) => {
         const member = ordered[i];
+        const isSelf = !!member && member.id === selfId;
+        const choosing = !!member && member.id === choosingId;
         return (
           <AvatarFrame
             key={member?.id ?? `empty-${i}`}
             member={member}
-            isSelf={!!member && member.id === selfId}
-            emotion={member && member.id === selfId ? emotions[member.id] ?? null : null}
-            onEmotionChange={
-              member && member.id === selfId ? (next) => setMemberEmotion(member.id, next) : undefined
-            }
-            onLifeChange={member && member.id === selfId ? onSelfLifeChange : undefined}
-            onManaChange={member && member.id === selfId ? onSelfManaChange : undefined}
+            isSelf={isSelf}
+            emotion={member?.avatar_emotion ?? null}
+            choosing={choosing}
+            dimmed={!!choosingId && !choosing}
+            onEmotionChange={isSelf ? onSelfEmotionChange : undefined}
+            onLifeChange={isSelf ? onSelfLifeChange : undefined}
+            onManaChange={isSelf ? onSelfManaChange : undefined}
           />
         );
       })}

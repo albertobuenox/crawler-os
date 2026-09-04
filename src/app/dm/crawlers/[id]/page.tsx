@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
+import { useSessionBroadcast } from "@/hooks/useSession";
 import { GlassPanel } from "@/components/ui/GlassPanel";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
@@ -118,6 +119,59 @@ export default function DMCrawlerSheetPage() {
   const [showSkillPicker, setShowSkillPicker] = useState(false);
   const [catalog, setCatalog] = useState<SkillCatalogEntry[]>([]);
   const { pulse, beat } = useVitalPulse();
+  const { broadcast } = useSessionBroadcast(
+    crawler?.session_id,
+    useCallback(
+      (event: string, payload: unknown) => {
+        if (event !== "party_patch" || !payload || typeof payload !== "object" || !("id" in payload)) return;
+        const patch = payload as Partial<Crawler> & { id: string };
+        if (patch.id !== id) return;
+        setCrawler((prev) =>
+          prev
+            ? {
+                ...prev,
+                ...(patch.hp_boxes_filled !== undefined ? { hp_boxes_filled: patch.hp_boxes_filled } : {}),
+                ...(patch.mana_current !== undefined ? { mana_current: patch.mana_current } : {}),
+                ...(patch.avatar_emotion !== undefined ? { avatar_emotion: patch.avatar_emotion } : {}),
+                ...(patch.status ? { status: patch.status } : {}),
+              }
+            : prev
+        );
+      },
+      [id]
+    )
+  );
+
+  useEffect(() => {
+    if (!id) return;
+    const ch = supabase
+      .channel(`dm-crawler:${id}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "crawlers", filter: `id=eq.${id}` },
+        (payload) => {
+          const row = payload.new as Crawler;
+          setCrawler((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  hp_boxes_filled: row.hp_boxes_filled,
+                  mana_current: row.mana_current,
+                  mana_max: row.mana_max,
+                  avatar_emotion: row.avatar_emotion,
+                  status: row.status,
+                  level: row.level,
+                }
+              : prev
+          );
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [id, supabase]);
+
   useEffect(() => {
     if (!id) return;
     (async () => {
@@ -156,6 +210,7 @@ export default function DMCrawlerSheetPage() {
     setSaving(true);
     await supabase.from("crawlers").update({
       name: crawler.name,
+      crawler_number: crawler.crawler_number?.trim() || null,
       level: crawler.level,
       str_base: crawler.str_base,
       int_base: crawler.int_base,
@@ -181,6 +236,13 @@ export default function DMCrawlerSheetPage() {
       sponsors: crawler.sponsors,
     }).eq("id", crawler.id);
     setSaving(false);
+  }
+
+  async function persistLiveVitals(patch: { hp_boxes_filled?: number; mana_current?: number }) {
+    if (!crawler) return;
+    setCrawler((prev) => (prev ? { ...prev, ...patch } : prev));
+    await supabase.from("crawlers").update(patch).eq("id", crawler.id);
+    await broadcast("party_patch", { id: crawler.id, ...patch });
   }
 
   function updateStat(key: StatKey, value: number) {
@@ -258,6 +320,11 @@ export default function DMCrawlerSheetPage() {
         >
           <div className="grid gap-4 sm:grid-cols-2">
             <Input label="Nombre" value={crawler.name} onChange={(e) => setCrawler({ ...crawler, name: e.target.value })} />
+            <Input
+              label="Mazmorrero N"
+              value={crawler.crawler_number ?? ""}
+              onChange={(e) => setCrawler({ ...crawler, crawler_number: e.target.value || null })}
+            />
             <Input label="Nivel" type="number" value={crawler.level} onChange={(e) => setCrawler({ ...crawler, level: +e.target.value })} />
             <Input label="Raza" value={crawler.race ?? ""} onChange={(e) => setCrawler({ ...crawler, race: e.target.value })} />
             <Input
@@ -301,7 +368,7 @@ export default function DMCrawlerSheetPage() {
               interactive
               onLifeChange={(life) => {
                 beat(healthBarColor(life));
-                setCrawler({ ...crawler, hp_boxes_filled: 10 - life });
+                void persistLiveVitals({ hp_boxes_filled: 10 - life });
               }}
             />
             <ResourceBar
@@ -309,7 +376,7 @@ export default function DMCrawlerSheetPage() {
               current={crawler.mana_current}
               max={crawler.mana_max}
               interactive
-              onCurrentChange={(mana) => setCrawler({ ...crawler, mana_current: mana })}
+              onCurrentChange={(mana) => void persistLiveVitals({ mana_current: mana })}
             />
           </div>
           <Textarea label="Notas" className="mt-4" value={crawler.notes ?? ""} onChange={(e) => setCrawler({ ...crawler, notes: e.target.value })} />
@@ -420,7 +487,7 @@ export default function DMCrawlerSheetPage() {
                   exit={{ opacity: 0, x: 8 }}
                   className="well mb-2 flex items-center justify-between gap-2 px-3 py-2 text-sm"
                 >
-                  <SkillThumb slug={skillArtSlug(s)} size="sm" />
+                  <SkillThumb slug={skillArtSlug(s)} skillType={s.skill_type} thumbUrl={s.skill_catalog?.thumb_url} size="sm" />
                   <div className="min-w-0 flex-1">
                     <span className="font-semibold text-[var(--text-1)]">{s.name}</span>
                     <span className="ml-2 text-[var(--text-3)]">
@@ -470,11 +537,11 @@ export default function DMCrawlerSheetPage() {
                           )}
                         >
                           <span className="flex min-w-0 items-center gap-2">
-                            <SkillThumb slug={entry.slug} size="xs" />
+                            <SkillThumb slug={entry.slug} skillType={defaultSkillType(entry)} thumbUrl={entry.thumb_url} size="xs" />
                             <span>
                               <span className="font-medium">{entry.name}</span>
                               <span className="ml-2 text-[var(--text-4)]">
-                                d100 {skillRollLabel(entry.roll_min, entry.roll_max)}
+                                d100 {skillRollLabel(entry.roll_min, entry.roll_max, entry.slug)}
                                 {entry.animal_only ? " · animal" : ""}
                               </span>
                             </span>

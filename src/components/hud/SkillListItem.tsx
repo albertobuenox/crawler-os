@@ -4,7 +4,7 @@ import { Check, Minus, Plus } from "lucide-react";
 import { SkillThumb } from "@/components/hud/SkillThumb";
 import { cn } from "@/lib/utils";
 import { formatSigned, statModifier } from "@/lib/rules";
-import { SKILL_TYPE_LABEL } from "@/lib/copy";
+import { SKILL_KIND_LABEL, SKILL_TYPE_LABEL } from "@/lib/copy";
 import { skillArtSlug } from "@/lib/skill-art";
 import { isActiveSkill, isSkillChecked, SKILL_RANK_MAX, SKILL_RANK_MIN, skillRollLabel } from "@/lib/skills";
 import type { Crawler, Skill } from "@/lib/types";
@@ -32,7 +32,13 @@ export function SkillListItem({
 
   return (
     <li className="well flex items-start gap-2.5 px-3 py-2 text-sm">
-      <SkillThumb slug={skillArtSlug(skill)} size="md" className="mt-0.5" />
+      <SkillThumb
+        slug={skillArtSlug(skill)}
+        skillType={skill.skill_type}
+        thumbUrl={skill.skill_catalog?.thumb_url}
+        size="md"
+        className="mt-0.5"
+      />
       {showCheck && (
         <button
           type="button"
@@ -57,7 +63,9 @@ export function SkillListItem({
           <div>
             <p className="font-semibold text-[var(--text-1)]">{skill.name}</p>
             <p className="text-[10px] uppercase tracking-wider text-[var(--magenta-400)]">
-              {SKILL_TYPE_LABEL[skill.skill_type] ?? skill.skill_type}
+              {skill.skill_catalog?.kind
+                ? (SKILL_KIND_LABEL[skill.skill_catalog.kind] ?? skill.skill_catalog.kind)
+                : SKILL_TYPE_LABEL[skill.skill_type] ?? skill.skill_type}
               {skill.skill_catalog?.animal_only ? " · solo animal" : ""}
             </p>
           </div>
@@ -89,8 +97,11 @@ export function SkillListItem({
         </div>
         <p className="mt-1 text-xs text-[var(--text-3)]">
           {skill.linked_stat.toUpperCase()} {formatSigned(statModifier(crawler[`${skill.linked_stat}_enhanced`]))}
-          {skill.skill_catalog && ` · d100 ${skillRollLabel(skill.skill_catalog.roll_min, skill.skill_catalog.roll_max)}`}
+          {skill.skill_catalog && ` · d100 ${skillRollLabel(skill.skill_catalog.roll_min, skill.skill_catalog.roll_max, skill.skill_catalog.slug)}`}
         </p>
+        {skill.skill_catalog?.description?.trim() ? (
+          <p className="mt-1 text-xs leading-relaxed text-[var(--text-3)]">{skill.skill_catalog.description.trim()}</p>
+        ) : null}
         {extra}
       </div>
     </li>

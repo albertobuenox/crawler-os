@@ -23,6 +23,14 @@ export const AVATAR_EMOTION_LABEL: Record<AvatarEmotion, string> = {
   tristeza: "Tristeza",
 };
 
+const AVATAR_EMOTION_SET = new Set<string>(AVATAR_EMOTIONS);
+
+export function parseAvatarEmotion(value: unknown): AvatarEmotion | null {
+  return typeof value === "string" && AVATAR_EMOTION_SET.has(value)
+    ? (value as AvatarEmotion)
+    : null;
+}
+
 const EMOTION_STORAGE_KEY = "crawler-os:avatar-emotions";
 
 export function crawlerArtSlug(name: string): string | null {

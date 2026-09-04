@@ -1,6 +1,7 @@
 "use client";
 
 import type { EventLogEntry } from "@/lib/types";
+import { isChatEvent } from "@/lib/chat";
 import { cn } from "@/lib/utils";
 import { BRAND } from "@/lib/copy";
 
@@ -21,7 +22,8 @@ interface EventLogListProps {
 }
 
 export function EventLogList({ entries, compact, className }: EventLogListProps) {
-  if (entries.length === 0) {
+  const visible = entries.filter((e) => !isChatEvent(e));
+  if (visible.length === 0) {
     return (
       <p className="font-mono-system text-sm text-[var(--text-3)]">
         No hay eventos. El dungeon observa.
@@ -31,7 +33,7 @@ export function EventLogList({ entries, compact, className }: EventLogListProps)
 
   return (
     <ul className={cn("space-y-1 font-mono-system text-xs", className)}>
-      {entries.map((e) => (
+      {visible.map((e) => (
         <li
           key={e.id}
           className="rounded px-2 py-1.5 hover:bg-[rgba(0,212,255,0.06)]"

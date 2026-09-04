@@ -5,35 +5,29 @@ import { createClient } from "@/lib/supabase/client";
 import { GlassPanel } from "@/components/ui/GlassPanel";
 import { Button } from "@/components/ui/Button";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
-import { Input, Select } from "@/components/ui/Input";
-import type { Crawler, Skill, SkillCatalogEntry, StatKey } from "@/lib/types";
-import { STAT_LABELS } from "@/lib/types";
+import { Input } from "@/components/ui/Input";
+import { AssignSkillModal } from "@/components/dm/AssignSkillModal";
+import { CreateSkillModal } from "@/components/dm/CreateSkillModal";
+import type { Crawler, Skill, SkillCatalogEntry, SkillKind, StatKey } from "@/lib/types";
+import { SKILL_KIND_LABEL, skillKindLabel } from "@/lib/copy";
 import { castSession } from "@/lib/utils";
 import {
   clampSkillRank,
   defaultSkillType,
-  SKILL_RANK_MAX,
   SKILL_RANK_MIN,
   skillRollLabel,
   skillSlugFromName,
 } from "@/lib/skills";
 import { SkillThumb } from "@/components/hud/SkillThumb";
 import { useCreateRequest } from "@/hooks/useDmDeepLink";
+import { cn } from "@/lib/utils";
 
-const STAT_OPTIONS = (["str", "int", "con", "dex", "cha"] as const).map((s) => ({
-  value: s,
-  label: STAT_LABELS[s],
-}));
-
-const emptyForm = {
-  name: "",
-  roll_min: 1,
-  roll_max: 1,
-  page_ref: 27,
-  animal_only: false,
+const KIND_PILL: Record<SkillKind, string> = {
+  ataque: "text-[var(--orange-400)]",
+  defensa: "text-[var(--cyan-400)]",
+  apoyo: "text-[var(--gold-400)]",
+  destreza: "text-[var(--magenta-400)]",
 };
-
-type CatalogForm = typeof emptyForm;
 
 export default function DMSkillsPage() {
   const supabase = createClient();
@@ -43,12 +37,13 @@ export default function DMSkillsPage() {
   const [query, setQuery] = useState("");
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<SkillCatalogEntry | null>(null);
-  const [form, setForm] = useState<CatalogForm>(emptyForm);
   const [assigning, setAssigning] = useState<SkillCatalogEntry | null>(null);
   const [assignIds, setAssignIds] = useState<string[]>([]);
   const [rank, setRank] = useState(SKILL_RANK_MIN);
   const [linkedStat, setLinkedStat] = useState<StatKey>("str");
   const [error, setError] = useState("");
+  const [formError, setFormError] = useState("");
+  const [assignError, setAssignError] = useState("");
   const [busy, setBusy] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<SkillCatalogEntry | null>(null);
 
@@ -106,9 +101,12 @@ export default function DMSkillsPage() {
     const q = query.trim().toLowerCase();
     if (!q) return catalog;
     return catalog.filter((s) => {
-      const roll = skillRollLabel(s.roll_min, s.roll_max);
+      const roll = skillRollLabel(s.roll_min, s.roll_max, s.slug);
+      const kind = skillKindLabel(s.kind);
       return (
         s.name.toLowerCase().includes(q) ||
+        (s.description ?? "").toLowerCase().includes(q) ||
+        kind.toLowerCase().includes(q) ||
         roll.includes(q) ||
         String(s.page_ref).includes(q)
       );
@@ -130,8 +128,7 @@ export default function DMSkillsPage() {
 
   const openCreate = useCallback(() => {
     setEditing(null);
-    setForm(emptyForm);
-    setError("");
+    setFormError("");
     setFormOpen(true);
     setAssigning(null);
   }, []);
@@ -139,14 +136,7 @@ export default function DMSkillsPage() {
 
   function openEdit(entry: SkillCatalogEntry) {
     setEditing(entry);
-    setForm({
-      name: entry.name,
-      roll_min: entry.roll_min,
-      roll_max: entry.roll_max,
-      page_ref: entry.page_ref,
-      animal_only: entry.animal_only,
-    });
-    setError("");
+    setFormError("");
     setFormOpen(true);
     setAssigning(null);
   }
@@ -156,56 +146,45 @@ export default function DMSkillsPage() {
     setAssignIds([]);
     setRank(SKILL_RANK_MIN);
     setLinkedStat("str");
-    setError("");
+    setAssignError("");
     setFormOpen(false);
   }
 
   function uniqueSlug(name: string, exceptId?: string) {
     const base = skillSlugFromName(name);
-    const taken = new Set(
-      catalog.filter((s) => s.id !== exceptId).map((s) => s.slug)
-    );
+    const taken = new Set(catalog.filter((s) => s.id !== exceptId).map((s) => s.slug));
     if (!taken.has(base)) return base;
     let n = 2;
     while (taken.has(`${base}-${n}`)) n += 1;
     return `${base}-${n}`;
   }
 
-  async function saveCatalog(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-    const rollMin = Number(form.roll_min);
-    const rollMax = Number(form.roll_max);
-    const pageRef = Number(form.page_ref);
-    if (!form.name.trim()) {
-      setError("Ponle un nombre a la skill.");
-      return;
-    }
-    if (rollMin < 1 || rollMax > 100 || rollMax < rollMin) {
-      setError("El rango d100 tiene que estar entre 1 y 100, con máximo ≥ mínimo.");
-      return;
-    }
-
+  async function saveCatalog(payload: {
+    name: string;
+    description: string;
+    kind: SkillKind;
+    animal_only: boolean;
+    thumb?: File | null;
+  }) {
+    setFormError("");
     setBusy(true);
-    const payload = {
-      name: form.name.trim(),
-      roll_min: rollMin,
-      roll_max: rollMax,
-      page_ref: pageRef,
-      animal_only: form.animal_only,
-    };
+    const form = new FormData();
+    form.set("name", payload.name);
+    form.set("description", payload.description);
+    form.set("kind", payload.kind);
+    form.set("animal_only", payload.animal_only ? "true" : "false");
+    if (editing) form.set("id", editing.id);
+    else form.set("slug", uniqueSlug(payload.name));
+    if (payload.thumb) form.set("thumb", payload.thumb);
 
     const res = await fetch("/api/dm/skill-catalog", {
       method: editing ? "PATCH" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(
-        editing ? { id: editing.id, ...payload } : { ...payload, slug: uniqueSlug(form.name) }
-      ),
+      body: form,
     });
     const body = (await res.json()) as { error?: string };
     setBusy(false);
     if (!res.ok) {
-      setError(body.error || "No se pudo guardar la skill.");
+      setFormError(body.error || "No se pudo guardar la skill.");
       return;
     }
     setFormOpen(false);
@@ -253,15 +232,15 @@ export default function DMSkillsPage() {
   async function assignSkill(e: React.FormEvent) {
     e.preventDefault();
     if (!assigning) return;
-    setError("");
+    setAssignError("");
     if (assignIds.length === 0) {
-      setError("Elige al menos un crawler.");
+      setAssignError("Elige al menos un crawler.");
       return;
     }
     const owned = new Set((ownersByCatalog.get(assigning.id) ?? []).map((o) => o.crawler.id));
     const targets = assignIds.filter((id) => !owned.has(id));
     if (targets.length === 0) {
-      setError("Esos crawlers ya tienen esta skill.");
+      setAssignError("Esos crawlers ya tienen esta skill.");
       return;
     }
 
@@ -278,7 +257,7 @@ export default function DMSkillsPage() {
     );
     setBusy(false);
     if (insertError) {
-      setError(insertError.message);
+      setAssignError(insertError.message);
       return;
     }
     setAssigning(null);
@@ -308,8 +287,8 @@ export default function DMSkillsPage() {
           <h2 className="font-display text-xl">Skills</h2>
           <p className="text-xs text-[var(--text-cyan)]">Catálogo CarlRPG — crear, editar, borrar o asignar</p>
         </div>
-        <Button variant="energy" onClick={formOpen && !editing ? () => setFormOpen(false) : openCreate}>
-          {formOpen && !editing ? "Cancelar" : "Nueva skill"}
+        <Button variant="energy" onClick={openCreate}>
+          Nueva skill
         </Button>
       </div>
 
@@ -319,150 +298,19 @@ export default function DMSkillsPage() {
         </p>
       )}
 
-      {formOpen && (
-        <GlassPanel
-          title={editing ? `Editar ${editing.name}` : "Nueva skill"}
-          action={editing ? <SkillThumb slug={editing.slug} size="md" /> : undefined}
-        >
-          <form onSubmit={saveCatalog} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Input
-              id="skill-name"
-              className="sm:col-span-2"
-              label="Nombre"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              required
-            />
-            <Input
-              id="skill-roll-min"
-              label="d100 mín"
-              type="number"
-              min={1}
-              max={100}
-              value={form.roll_min}
-              onChange={(e) => setForm({ ...form, roll_min: +e.target.value })}
-              required
-            />
-            <Input
-              id="skill-roll-max"
-              label="d100 máx"
-              type="number"
-              min={1}
-              max={100}
-              value={form.roll_max}
-              onChange={(e) => setForm({ ...form, roll_max: +e.target.value })}
-              required
-            />
-            <Input
-              id="skill-page"
-              label="Página"
-              type="number"
-              min={1}
-              value={form.page_ref}
-              onChange={(e) => setForm({ ...form, page_ref: +e.target.value })}
-              required
-            />
-            <label className="flex items-center gap-2 self-end pb-2 text-sm text-[var(--text-2)]">
-              <input
-                type="checkbox"
-                checked={form.animal_only}
-                onChange={(e) => setForm({ ...form, animal_only: e.target.checked })}
-                className="h-4 w-4 accent-[var(--cyan-400)]"
-              />
-              Solo animal
-            </label>
-            <div className="flex flex-wrap gap-2 sm:col-span-2 lg:col-span-4">
-              <Button type="submit" variant="session" loading={busy}>
-                {editing ? "Guardar cambios" : "Crear skill"}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => {
-                  setFormOpen(false);
-                  setEditing(null);
-                }}
-              >
-                Cancelar
-              </Button>
-            </div>
-          </form>
-        </GlassPanel>
-      )}
-
-      {assigning && (
-        <GlassPanel
-          title={`Asignar ${assigning.name}`}
-          subtitle={`d100 ${skillRollLabel(assigning.roll_min, assigning.roll_max)}`}
-          action={<SkillThumb slug={assigning.slug} size="md" />}
-        >
-          <form onSubmit={assignSkill} className="space-y-4">
-            {crawlers.length === 0 ? (
-              <p className="text-sm text-[var(--text-3)]">No hay crawlers en esta sesión.</p>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {crawlers.map((c) => {
-                  const owned = (ownersByCatalog.get(assigning.id) ?? []).some((o) => o.crawler.id === c.id);
-                  return (
-                    <label
-                      key={c.id}
-                      className="well flex items-center gap-2 rounded-xl px-3 py-2 text-sm"
-                    >
-                      <input
-                        type="checkbox"
-                        disabled={owned}
-                        checked={owned || assignIds.includes(c.id)}
-                        onChange={() => toggleAssignId(c.id)}
-                        className="h-4 w-4 accent-[var(--cyan-400)]"
-                      />
-                      <span className={owned ? "text-[var(--text-4)]" : "text-[var(--text-1)]"}>
-                        {c.name}
-                        {owned ? " · ya la tiene" : ""}
-                      </span>
-                    </label>
-                  );
-                })}
-              </div>
-            )}
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Input
-                id="assign-rank"
-                label="Rango"
-                type="number"
-                min={SKILL_RANK_MIN}
-                max={SKILL_RANK_MAX}
-                value={rank}
-                onChange={(e) => setRank(clampSkillRank(+e.target.value))}
-              />
-              <Select
-                id="assign-stat"
-                label="Característica"
-                value={linkedStat}
-                onChange={(e) => setLinkedStat(e.target.value as StatKey)}
-                options={STAT_OPTIONS}
-              />
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button type="submit" variant="session" loading={busy} disabled={crawlers.length === 0}>
-                Asignar
-              </Button>
-              <Button type="button" variant="ghost" onClick={() => setAssigning(null)}>
-                Cerrar
-              </Button>
-            </div>
-          </form>
-        </GlassPanel>
-      )}
-
-      <GlassPanel title="Tabla de skills" subtitle={`${catalog.length} en el catálogo`} action={
-        <Input
-          id="skill-search"
-          placeholder="Buscar nombre, d100 o página…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="h-9 w-56"
-        />
-      }>
+      <GlassPanel
+        title="Tabla de skills"
+        subtitle={`${catalog.length} en el catálogo`}
+        action={
+          <Input
+            id="skill-search"
+            placeholder="Buscar nombre, tipo o d100…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="h-9 w-56"
+          />
+        }
+      >
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -470,7 +318,7 @@ export default function DMSkillsPage() {
                 <th className="p-3 w-14">Art</th>
                 <th className="p-3">d100</th>
                 <th className="p-3">Nombre</th>
-                <th className="p-3">Pág.</th>
+                <th className="p-3">Tipo</th>
                 <th className="p-3">Animal</th>
                 <th className="p-3">Crawlers</th>
                 <th className="p-3">Acciones</th>
@@ -479,16 +327,29 @@ export default function DMSkillsPage() {
             <tbody>
               {filtered.map((s) => {
                 const owners = ownersByCatalog.get(s.id) ?? [];
+                const kind = (s.kind ?? "apoyo") as SkillKind;
                 return (
                   <tr key={s.id} className="border-b border-[rgba(255,255,255,0.04)] hover:bg-[rgba(0,212,255,0.04)]">
                     <td className="p-3">
-                      <SkillThumb slug={s.slug} size="sm" />
+                      <SkillThumb
+                        slug={s.slug}
+                        skillType={defaultSkillType(s)}
+                        thumbUrl={s.thumb_url}
+                        size="sm"
+                      />
                     </td>
                     <td className="p-3 font-mono-system text-[var(--cyan-400)]">
-                      {skillRollLabel(s.roll_min, s.roll_max)}
+                      {skillRollLabel(s.roll_min, s.roll_max, s.slug)}
                     </td>
-                    <td className="p-3 font-medium text-[var(--text-1)]">{s.name}</td>
-                    <td className="p-3 text-[var(--text-3)]">{s.page_ref}</td>
+                    <td className="p-3">
+                      <p className="font-medium text-[var(--text-1)]">{s.name}</p>
+                      {s.description?.trim() ? (
+                        <p className="mt-0.5 max-w-xs truncate text-xs text-[var(--text-4)]">{s.description}</p>
+                      ) : null}
+                    </td>
+                    <td className={cn("p-3 text-xs uppercase tracking-wider", KIND_PILL[kind])}>
+                      {SKILL_KIND_LABEL[kind] ?? kind}
+                    </td>
                     <td className="p-3 text-[var(--text-3)]">{s.animal_only ? "Sí" : "—"}</td>
                     <td className="p-3">
                       {owners.length === 0 ? (
@@ -536,6 +397,39 @@ export default function DMSkillsPage() {
           </table>
         </div>
       </GlassPanel>
+
+      <CreateSkillModal
+        open={formOpen}
+        editing={editing}
+        busy={busy}
+        error={formError}
+        onClose={() => {
+          if (!busy) {
+            setFormOpen(false);
+            setEditing(null);
+          }
+        }}
+        onSubmit={(payload) => void saveCatalog(payload)}
+      />
+
+      <AssignSkillModal
+        open={!!assigning}
+        skill={assigning}
+        crawlers={crawlers}
+        ownedIds={new Set((assigning ? ownersByCatalog.get(assigning.id) ?? [] : []).map((o) => o.crawler.id))}
+        assignIds={assignIds}
+        rank={rank}
+        linkedStat={linkedStat}
+        busy={busy}
+        error={assignError}
+        onToggle={toggleAssignId}
+        onRank={setRank}
+        onStat={setLinkedStat}
+        onClose={() => {
+          if (!busy) setAssigning(null);
+        }}
+        onSubmit={(e) => void assignSkill(e)}
+      />
 
       <ConfirmModal
         open={!!pendingDelete}

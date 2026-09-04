@@ -79,6 +79,7 @@ export const HOTBAR_SCALE_MIN = 1;
 export const HOTBAR_SCALE_DEFAULT = 1.9;
 /** 130% larger than the original squares. */
 export const HOTBAR_SCALE_MAX = 2.3;
+export const HOTBAR_SCALE_STEP = 0.05;
 
 export function clampHotbarScale(value: number): number {
   if (!Number.isFinite(value)) return HOTBAR_SCALE_DEFAULT;
@@ -90,6 +91,7 @@ export type HotbarChrome = {
   offsetY: number;
   minimized: boolean;
   scale: number;
+  diceOpen: boolean;
 };
 
 const DEFAULT_CHROME: HotbarChrome = {
@@ -97,6 +99,7 @@ const DEFAULT_CHROME: HotbarChrome = {
   offsetY: 0,
   minimized: false,
   scale: HOTBAR_SCALE_DEFAULT,
+  diceOpen: false,
 };
 
 export function hotbarChromeKey(crawlerId: string) {
@@ -114,6 +117,7 @@ export function readHotbarChrome(crawlerId: string): HotbarChrome {
       minimized: parsed.minimized === true,
       scale:
         typeof parsed.scale === "number" ? clampHotbarScale(parsed.scale) : HOTBAR_SCALE_DEFAULT,
+      diceOpen: parsed.diceOpen !== false,
     };
   } catch {
     return { ...DEFAULT_CHROME };

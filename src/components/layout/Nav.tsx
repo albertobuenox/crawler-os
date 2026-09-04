@@ -68,7 +68,7 @@ export function DMNavRail({ unread = 0 }: { unread?: number }) {
                 key={href}
                 title={`${label} — no disponible`}
                 aria-disabled="true"
-                className="relative mx-2 flex h-10 cursor-default items-center gap-3 overflow-hidden rounded-[14px] px-2 text-[var(--text-4)] opacity-35 hover:cursor-default"
+                className="dm-nav-item relative flex cursor-default items-center overflow-hidden text-[var(--text-4)] opacity-35 hover:cursor-default"
               >
                 <span className="relative flex h-6 w-6 shrink-0 items-center justify-center">
                   <Icon size={16} strokeWidth={1.75} />
@@ -84,7 +84,7 @@ export function DMNavRail({ unread = 0 }: { unread?: number }) {
               key={href}
               href={href}
               className={cn(
-                "relative mx-2 flex h-10 items-center gap-3 overflow-hidden rounded-[14px] px-2 transition-colors duration-[180ms]",
+                "dm-nav-item relative flex items-center overflow-hidden transition-colors duration-[180ms]",
                 active
                   ? "well text-[var(--cyan-400)]"
                   : "text-[var(--text-3)] hover:bg-[rgba(255,255,255,0.04)] hover:text-[var(--text-1)]"
@@ -120,7 +120,10 @@ export function CrawlerBottomNav() {
   const unread = useUnreadNotifications("unread-notifications-nav");
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-[var(--z-nav)] flex h-[72px] items-center justify-around border-t border-[var(--stroke-glass)] bg-[rgba(5,6,13,0.85)] px-2 backdrop-blur-xl lg:hidden">
+    <nav
+      data-header-dim=""
+      className="fixed bottom-0 left-0 right-0 z-[var(--z-nav)] flex h-[72px] items-center justify-around border-t border-[var(--stroke-glass)] bg-[rgba(5,6,13,0.85)] px-2 backdrop-blur-xl lg:hidden"
+    >
       {crawlerNav.map(({ href, icon: Icon, label, color }) => {
         const active = pathname === href || (href !== "/crawler" && pathname.startsWith(href));
         return (

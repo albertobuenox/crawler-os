@@ -2,12 +2,30 @@ import type { CrawlerStatus, ResourceKind, Rarity, SessionPhase } from "./types"
 
 export const BRAND = "BORANT CORP";
 export const SCENE_LABEL = "Escena";
+export const MASTER_CHAT_NAME = "Master";
 export const EMPTY_SCENE_COPY = "No se ve una mierda";
 
 export const NO_CLASS_LABEL = "Sin clase";
 
 export function crawlerClassLabel(className: string | null | undefined): string {
   return className?.trim() || NO_CLASS_LABEL;
+}
+
+export function crawlerRaceLabel(race: string | null | undefined): string {
+  return race?.trim() || "—";
+}
+
+export function crawlerIdentityLine(crawler: {
+  level: number;
+  race?: string | null;
+  class_name?: string | null;
+}): string {
+  return `Nv ${crawler.level} · ${crawlerRaceLabel(crawler.race)} · ${crawlerClassLabel(crawler.class_name)}`;
+}
+
+export function mazmorreroNumberLabel(number: string | null | undefined): string | null {
+  const n = number?.trim();
+  return n ? `Mazmorrero N ${n}` : null;
 }
 
 export const STATUS_LABEL: Record<CrawlerStatus, string> = {
@@ -47,6 +65,18 @@ export const SKILL_TYPE_LABEL: Record<string, string> = {
   utility: "Utilidad",
   passive: "Pasiva",
 };
+
+export const SKILL_KIND_LABEL: Record<string, string> = {
+  ataque: "Ataque",
+  defensa: "Defensa",
+  apoyo: "Apoyo",
+  destreza: "Destreza",
+};
+
+export function skillKindLabel(kind?: string | null): string {
+  if (!kind) return "";
+  return SKILL_KIND_LABEL[kind] ?? kind;
+}
 
 export const PHASE_LABEL: Record<SessionPhase, string> = {
   exploration: "Exploración",

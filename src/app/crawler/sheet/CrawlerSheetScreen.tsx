@@ -79,7 +79,22 @@ export function CrawlerSheetScreen({ crawlerId }: { crawlerId?: string }) {
     const channel = supabase
       .channel(`sheet-skills:${crawler.id}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "skills" }, () => void load())
-      .on("postgres_changes", { event: "*", schema: "public", table: "crawlers" }, () => void load())
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "crawlers", filter: `id=eq.${crawler.id}` },
+        (payload) => {
+          if (payload.eventType === "DELETE") {
+            setMissing(true);
+            setCrawler(null);
+            return;
+          }
+          if (payload.new) {
+            setCrawler((prev) => (prev ? { ...prev, ...(payload.new as Crawler) } : (payload.new as Crawler)));
+            return;
+          }
+          void load();
+        }
+      )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);

@@ -205,7 +205,9 @@ Todas las tablas tienen **Row Level Security** activado. Principios:
 
 Las siguientes tablas emiten cambios via Supabase Realtime (con `REPLICA IDENTITY FULL` para payloads completos en UPDATE):
 
-`sessions`, `crawlers`, `table_state`, `event_log`, `notifications`, `dice_requests`, `combat_rounds`, `map_pins`, `loot_boxes`, `session_members`
+`sessions`, `crawlers`, `table_state`, `event_log`, `notifications`, `dice_requests`, `combat_rounds`, `map_pins`, `loot_boxes`, `session_members`, `chat_messages`
+
+La presencia de party (vida, maná, emoción de avatar, estado) se sincroniza con cambios en `crawlers` más un broadcast `party_patch`. El chat de escena vive en `chat_messages` (canal `all` o el id de un crawler) y se replica en tiempo real.
 
 El frontend se suscribe con `supabase.channel().on('postgres_changes', ...)` para actualizar la UI sin recargar.
 

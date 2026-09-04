@@ -131,6 +131,7 @@ export interface Crawler {
   analyze_intel: Record<string, unknown>;
   status: CrawlerStatus;
   unconscious_rounds_remaining: number;
+  avatar_emotion?: string | null;
 }
 
 export interface Resource {
@@ -157,10 +158,15 @@ export interface ItemInstance {
   resource?: Resource;
 }
 
+export type SkillKind = "ataque" | "defensa" | "apoyo" | "destreza";
+
 export interface SkillCatalogEntry {
   id: string;
   slug: string;
   name: string;
+  description?: string;
+  kind?: SkillKind;
+  thumb_url?: string | null;
   roll_min: number;
   roll_max: number;
   page_ref: number;
@@ -287,6 +293,21 @@ export interface StatModifierRow {
   value: number;
   expires_at: string | null;
 }
+
+export interface ChatMessage {
+  id: string;
+  session_id: string;
+  author_user_id: string;
+  author_name: string;
+  author_role: UserRole;
+  author_crawler_id: string | null;
+  channel: string;
+  body: string;
+  created_at: string;
+}
+
+export const CHAT_CHANNEL_ALL = "all";
+export const CHAT_BODY_MAX = 500;
 
 export const RARITY_COLORS: Record<Rarity, string> = {
   common: "var(--rarity-common)",

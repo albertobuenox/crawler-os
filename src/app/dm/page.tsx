@@ -4,11 +4,11 @@ import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { GlassPanel } from "@/components/ui/GlassPanel";
 import { Button } from "@/components/ui/Button";
-import { StatKPI } from "@/components/hud/StatKPI";
 import { EventLogList } from "@/components/hud/EventLog";
-import type { Crawler, EventLogEntry, GameSession } from "@/lib/types";
+import { PartyComparePanel } from "@/components/hud/PartyComparePanel";
+import type { Crawler, Effect, EventLogEntry, GameSession, Skill } from "@/lib/types";
 import { castSession } from "@/lib/utils";
-import { PHASE_LABEL, STATUS_LABEL, BRAND } from "@/lib/copy";
+import { PHASE_LABEL, BRAND } from "@/lib/copy";
 import { useRealtimeTable } from "@/hooks/useSession";
 import { SkillTimerPanel } from "@/components/hud/SkillTimerPanel";
 import Link from "next/link";
@@ -17,6 +17,8 @@ export default function DMDashboardPage() {
   const supabase = createClient();
   const [session, setSession] = useState<GameSession | null>(null);
   const [crawlers, setCrawlers] = useState<Crawler[]>([]);
+  const [skills, setSkills] = useState<Skill[]>([]);
+  const [effects, setEffects] = useState<Effect[]>([]);
   const [events, setEvents] = useState<EventLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -48,8 +50,22 @@ export default function DMDashboardPage() {
           .order("created_at", { ascending: false })
           .limit(8),
       ]);
-      setCrawlers((cr as Crawler[]) ?? []);
+      const nextCrawlers = (cr as Crawler[]) ?? [];
+      setCrawlers(nextCrawlers);
       setEvents((ev as EventLogEntry[]) ?? []);
+
+      if (nextCrawlers.length > 0) {
+        const ids = nextCrawlers.map((crawler) => crawler.id);
+        const [{ data: sk }, { data: ef }] = await Promise.all([
+          supabase.from("skills").select("*, skill_catalog(*)").in("crawler_id", ids),
+          supabase.from("effects").select("*").in("crawler_id", ids),
+        ]);
+        setSkills((sk as Skill[]) ?? []);
+        setEffects((ef as Effect[]) ?? []);
+      } else {
+        setSkills([]);
+        setEffects([]);
+      }
     }
     setLoading(false);
   }, [supabase]);
@@ -68,6 +84,22 @@ export default function DMDashboardPage() {
     session ? `session_id=eq.${session.id}` : "session_id=eq.none",
     () => load()
   );
+
+  useEffect(() => {
+    if (!session) return;
+    const channel = supabase
+      .channel(`dm-home-intel:${session.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "skills" }, () => {
+        void load();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "effects" }, () => {
+        void load();
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [session, supabase, load]);
 
   async function createSession() {
     setCreating(true);
@@ -101,13 +133,6 @@ export default function DMDashboardPage() {
     );
   }
 
-  const alive = crawlers.filter((c) => c.status !== "dead").length;
-  const downed = crawlers.filter((c) => c.status === "downed").length;
-  const avgLevel =
-    crawlers.length > 0
-      ? Math.round(crawlers.reduce((s, c) => s + c.level, 0) / crawlers.length)
-      : 0;
-
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -118,12 +143,6 @@ export default function DMDashboardPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="session" size="sm" onClick={() => setPhase("exploration")}>
-            Explorar
-          </Button>
-          <Button variant="neon" size="sm" onClick={() => setPhase("combat_1")}>
-            Combate
-          </Button>
           <Button variant="ghost" size="sm" onClick={() => setPhase("paused")}>
             Pausa
           </Button>
@@ -137,42 +156,14 @@ export default function DMDashboardPage() {
 
       <SkillTimerPanel sessionId={session.id} />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <GlassPanel>
-          <StatKPI label="Crawlers vivos" value={alive} />
-        </GlassPanel>
-        <GlassPanel>
-          <StatKPI label="Nivel medio" value={avgLevel} />
-        </GlassPanel>
-        <GlassPanel>
-          <StatKPI label="Caídos" value={downed} sublabel="necesitan curación" />
-        </GlassPanel>
-        <GlassPanel>
-          <StatKPI label="Piso FN" value={session.floor_number} sublabel="modificador de DC" />
-        </GlassPanel>
-      </div>
+      <PartyComparePanel crawlers={crawlers} skills={skills} effects={effects} />
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <GlassPanel className="lg:col-span-2" title="Registro" subtitle="Últimos 8 eventos">
-          <EventLogList entries={events} compact />
-          <Link href="/dm/log" className="mt-3 inline-block text-xs text-[var(--cyan-400)]">
-            Ver registro completo →
-          </Link>
-        </GlassPanel>
-        <GlassPanel title="Estado del grupo">
-          <ul className="space-y-2">
-            {crawlers.map((c) => (
-              <li key={c.id} className="well flex items-center justify-between px-3 py-2 text-sm">
-                <span>{c.name}</span>
-                <span className="text-[var(--text-3)]">{STATUS_LABEL[c.status]}</span>
-              </li>
-            ))}
-            {crawlers.length === 0 && (
-              <p className="text-sm text-[var(--text-3)]">Aún no hay crawlers.</p>
-            )}
-          </ul>
-        </GlassPanel>
-      </div>
+      <GlassPanel title="Registro" subtitle="Últimos 8 eventos">
+        <EventLogList entries={events} compact />
+        <Link href="/dm/log" className="mt-3 inline-block text-xs text-[var(--cyan-400)]">
+          Ver registro completo →
+        </Link>
+      </GlassPanel>
     </div>
   );
 }

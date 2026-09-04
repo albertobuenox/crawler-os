@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Check, Pause, Pencil, Play, RotateCcw, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { GlassPanel } from "@/components/ui/GlassPanel";
-import { Button } from "@/components/ui/Button";
 import { useSkillTimer } from "@/hooks/useSkillTimer";
 import { composeSkillTimer, formatSkillTimer, splitSkillTimer } from "@/lib/skill-timer";
 import { cn } from "@/lib/utils";
@@ -101,17 +100,45 @@ export function SkillTimerPanel({ sessionId }: { sessionId: string }) {
                     : "En pausa."}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {open ? (
-            <Button type="button" variant="danger" size="sm" disabled={busy} onClick={() => void setOpen(false)}>
-              Volver a prohibir edición de habilidades
-            </Button>
-          ) : (
-            <Button type="button" variant="energy" size="sm" disabled={busy} onClick={() => void setOpen(true)}>
-              Permitir Subir habilidades
-            </Button>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={open}
+          aria-label={open ? "Subida de habilidades permitida" : "Subida de habilidades restringida"}
+          disabled={busy}
+          onClick={() => void setOpen(!open)}
+          className={cn(
+            "flex max-w-xs items-center gap-3 rounded-[var(--r-pill)] border px-3 py-2 text-left transition-all duration-[var(--t-ui)] disabled:cursor-not-allowed disabled:opacity-45",
+            open
+              ? "border-[var(--stroke-cyan)] bg-[rgba(0,212,255,0.08)] shadow-[var(--glow-cyan)]"
+              : "border-[var(--stroke-glass)] bg-[rgba(5,6,13,0.55)]"
           )}
-        </div>
+        >
+          <span
+            aria-hidden
+            className={cn(
+              "relative h-7 w-12 shrink-0 rounded-full border transition-all duration-[var(--t-ui)]",
+              open
+                ? "border-[var(--stroke-cyan-hot)] bg-[var(--cyan-500)] shadow-[var(--glow-cyan)]"
+                : "border-[var(--stroke-glass)] bg-[rgba(100,116,139,0.35)]"
+            )}
+          >
+            <span
+              className={cn(
+                "absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-[var(--text-1)] shadow-sm transition-transform duration-[var(--t-ui)]",
+                open && "translate-x-5"
+              )}
+            />
+          </span>
+          <span
+            className={cn(
+              "text-xs font-medium uppercase tracking-wider",
+              open ? "text-[var(--cyan-400)]" : "text-[var(--text-3)]"
+            )}
+          >
+            {open ? "Subida de habilidades permitida" : "Subida de habilidades restringida"}
+          </span>
+        </button>
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-2">

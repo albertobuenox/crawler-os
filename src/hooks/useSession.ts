@@ -10,8 +10,8 @@ export function useRealtimeTable<T = Record<string, unknown>>(
   onChange: (payload: { eventType: string; new: T; old: T }) => void
 ) {
   const supabase = createClient();
-
-  const stableOnChange = useCallback(onChange, [onChange]);
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
 
   useEffect(() => {
     const channel = supabase
@@ -25,7 +25,7 @@ export function useRealtimeTable<T = Record<string, unknown>>(
           filter,
         },
         (payload) => {
-          stableOnChange({
+          onChangeRef.current({
             eventType: payload.eventType,
             new: payload.new as T,
             old: payload.old as T,
@@ -37,7 +37,7 @@ export function useRealtimeTable<T = Record<string, unknown>>(
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [supabase, table, filter, stableOnChange]);
+  }, [supabase, table, filter]);
 }
 
 export function useSessionBroadcast(
@@ -46,6 +46,8 @@ export function useSessionBroadcast(
 ) {
   const supabase = createClient();
   const channelRef = useRef<RealtimeChannel | null>(null);
+  const onMessageRef = useRef(onMessage);
+  onMessageRef.current = onMessage;
 
   useEffect(() => {
     if (!sessionId) return;
@@ -57,16 +59,19 @@ export function useSessionBroadcast(
 
     channel
       .on("broadcast", { event: "cinematic" }, ({ payload }) =>
-        onMessage("cinematic", payload)
+        onMessageRef.current("cinematic", payload)
       )
       .on("broadcast", { event: "dice_anim" }, ({ payload }) =>
-        onMessage("dice_anim", payload)
+        onMessageRef.current("dice_anim", payload)
       )
       .on("broadcast", { event: "table_update" }, ({ payload }) =>
-        onMessage("table_update", payload)
+        onMessageRef.current("table_update", payload)
       )
       .on("broadcast", { event: "loot_box" }, ({ payload }) =>
-        onMessage("loot_box", payload)
+        onMessageRef.current("loot_box", payload)
+      )
+      .on("broadcast", { event: "party_patch" }, ({ payload }) =>
+        onMessageRef.current("party_patch", payload)
       )
       .subscribe();
 
@@ -74,7 +79,7 @@ export function useSessionBroadcast(
       channelRef.current = null;
       supabase.removeChannel(channel);
     };
-  }, [sessionId, supabase, onMessage]);
+  }, [sessionId, supabase]);
 
   const broadcast = useCallback(
     async (event: string, payload: unknown) => {

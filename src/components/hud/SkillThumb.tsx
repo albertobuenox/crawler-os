@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Sparkles } from "lucide-react";
 import { skillArtUrl } from "@/lib/skill-art";
+import type { Skill } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const SIZE = {
@@ -11,8 +12,12 @@ const SIZE = {
   md: { box: "h-10 w-10", icon: 16, radius: "rounded-[8px]" },
 } as const;
 
-export function useSkillArt(slug?: string | null) {
-  const src = skillArtUrl(slug);
+export function useSkillArt(
+  slug?: string | null,
+  skillType?: Skill["skill_type"] | null,
+  thumbUrl?: string | null
+) {
+  const src = skillArtUrl(slug, skillType, thumbUrl);
   const [failed, setFailed] = useState(!src);
 
   useEffect(() => {
@@ -28,14 +33,18 @@ export function useSkillArt(slug?: string | null) {
 
 export function SkillThumb({
   slug,
+  skillType,
+  thumbUrl,
   size = "sm",
   className,
 }: {
   slug?: string | null;
+  skillType?: Skill["skill_type"] | null;
+  thumbUrl?: string | null;
   size?: keyof typeof SIZE;
   className?: string;
 }) {
-  const { src, ready, markFailed } = useSkillArt(slug);
+  const { src, ready, markFailed } = useSkillArt(slug, skillType, thumbUrl);
   const spec = SIZE[size];
 
   return (
