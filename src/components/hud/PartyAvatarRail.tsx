@@ -97,12 +97,16 @@ function MiniVitalBar({
   member,
   name,
   isSelf,
+  sheetHref,
+  onOpenSheet,
   onLifeChange,
   onManaChange,
 }: {
   member: PartyAvatar;
   name: string;
   isSelf: boolean;
+  sheetHref?: string;
+  onOpenSheet?: (id: string) => void;
   onLifeChange?: (lifeBoxes: number) => void;
   onManaChange?: (manaCurrent: number) => void;
 }) {
@@ -130,7 +134,15 @@ function MiniVitalBar({
   return (
     <div className="mb-1 w-full">
       <Link
-        href={`/crawler/sheet/${member.id}`}
+        href={sheetHref ?? `/crawler/sheet/${member.id}`}
+        onClick={
+          onOpenSheet
+            ? (e) => {
+                e.preventDefault();
+                onOpenSheet(member.id);
+              }
+            : undefined
+        }
         className="mb-0.5 block rounded-sm text-center outline-offset-2"
         aria-label={`${name} — ir a la hoja de personaje`}
       >
@@ -288,6 +300,7 @@ function AvatarFrame({
   emotion,
   choosing = false,
   dimmed = false,
+  onOpenSheet,
   onEmotionChange,
   onLifeChange,
   onManaChange,
@@ -297,6 +310,7 @@ function AvatarFrame({
   emotion?: AvatarEmotion | null;
   choosing?: boolean;
   dimmed?: boolean;
+  onOpenSheet?: (id: string) => void;
   onEmotionChange?: (emotion: AvatarEmotion | null) => void;
   onLifeChange?: (lifeBoxes: number) => void;
   onManaChange?: (manaCurrent: number) => void;
@@ -331,12 +345,21 @@ function AvatarFrame({
         member={member}
         name={isSelf ? "Tu" : avatarBadgeName(member.name)}
         isSelf={isSelf}
+        onOpenSheet={onOpenSheet}
         onLifeChange={isSelf ? onLifeChange : undefined}
         onManaChange={isSelf ? onManaChange : undefined}
       />
       <div className="relative">
         <Link
           href={`/crawler/sheet/${member.id}`}
+          onClick={
+            onOpenSheet
+              ? (e) => {
+                  e.preventDefault();
+                  onOpenSheet(member.id);
+                }
+              : undefined
+          }
           aria-label={`ver hoja de ${member.name}`}
           data-party-slot={member.id}
           className="flex cursor-pointer flex-col outline-offset-2"
@@ -411,6 +434,14 @@ function AvatarFrame({
           <div className="flex w-7 flex-col items-start gap-1.5">
             <Link
               href={`/crawler/sheet/${member.id}`}
+              onClick={
+                onOpenSheet
+                  ? (e) => {
+                      e.preventDefault();
+                      onOpenSheet(member.id);
+                    }
+                  : undefined
+              }
               aria-label={`Ver perfil de ${member.name}`}
               title="Ver perfil"
               className={cn(
@@ -495,6 +526,7 @@ export function PartyAvatarRail({
   members,
   selfId,
   choosingId,
+  onOpenSheet,
   onSelfLifeChange,
   onSelfManaChange,
   onSelfEmotionChange,
@@ -502,6 +534,7 @@ export function PartyAvatarRail({
   members: PartyAvatar[];
   selfId?: string | null;
   choosingId?: string | null;
+  onOpenSheet?: (id: string) => void;
   onSelfLifeChange?: (lifeBoxes: number) => void;
   onSelfManaChange?: (manaCurrent: number) => void;
   onSelfEmotionChange?: (emotion: AvatarEmotion | null) => void;
@@ -534,6 +567,7 @@ export function PartyAvatarRail({
             emotion={member?.avatar_emotion ?? null}
             choosing={choosing}
             dimmed={!!choosingId && !choosing}
+            onOpenSheet={onOpenSheet}
             onEmotionChange={isSelf ? onSelfEmotionChange : undefined}
             onLifeChange={isSelf ? onSelfLifeChange : undefined}
             onManaChange={isSelf ? onSelfManaChange : undefined}

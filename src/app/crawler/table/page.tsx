@@ -11,6 +11,7 @@ import { SceneHotbar } from "@/components/hud/SceneHotbar";
 import { MinimapPanel } from "@/components/hud/MinimapPanel";
 import type { ItemInstance, Resource, Skill, TableState, MapPin } from "@/lib/types";
 import { useRealtimeTable, useSessionBroadcast } from "@/hooks/useSession";
+import { useSceneCanvas } from "@/hooks/useSceneCanvas";
 import { updateCrawlerVitals } from "@/lib/crawler-vitals";
 import { readStoredAvatarEmotions, type AvatarEmotion } from "@/lib/crawler-art";
 import { lifeToBoxesFilled } from "@/lib/rules";
@@ -114,6 +115,8 @@ export default function CrawlerTablePage() {
     return () => { supabase.removeChannel(ch); };
   }, [load, supabase]);
 
+  const scene = useSceneCanvas(sessionId, { role: "crawler", selfId });
+
   const { broadcast } = useSessionBroadcast(sessionId, useCallback((event, payload) => {
     if (event === "table_update") load();
     if (event === "party_patch" && payload && typeof payload === "object" && "id" in payload) {
@@ -180,7 +183,20 @@ export default function CrawlerTablePage() {
         />
         <div className="flex min-h-0 min-w-0 flex-1 flex-col items-center gap-2">
           <p className="text-center font-display text-xs tracking-widest text-[var(--cyan-400)]">ESCENA</p>
-          <TableCanvas tableState={tableState} resource={resource} pins={pins} className="min-h-0 w-full flex-1" />
+          <TableCanvas
+            tableState={tableState}
+            resource={resource}
+            pins={pins}
+            canvas={scene.doc}
+            mode="play"
+            role="crawler"
+            selfId={selfId}
+            className="min-h-0 w-full flex-1"
+            onCommit={(next, immediate, tokenId) => {
+              if (tokenId) scene.moveOwnToken(next, tokenId, immediate);
+            }}
+            onBusy={scene.setBusy}
+          />
         </div>
         <div className="w-20 shrink-0 sm:w-24 lg:w-28" aria-hidden="true" />
       </div>

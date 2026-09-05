@@ -109,6 +109,7 @@ export function SceneHotbar({
   items,
   lifted = false,
   diceLocked = false,
+  readOnly = false,
   onDiceOpenChange,
   onDiePicked,
 }: {
@@ -117,6 +118,7 @@ export function SceneHotbar({
   items: SheetItem[];
   lifted?: boolean;
   diceLocked?: boolean;
+  readOnly?: boolean;
   onDiceOpenChange?: (open: boolean) => void;
   onDiePicked?: (sides: SceneDieSides) => void;
 }) {
@@ -186,8 +188,8 @@ export function SceneHotbar({
       return slot;
     }) as HotbarSlots;
     setSlots(next);
-    writeHotbar(crawlerId, next);
-  }, [crawlerId, items, skills]);
+    if (!readOnly) writeHotbar(crawlerId, next);
+  }, [crawlerId, items, readOnly, skills]);
 
   useLayoutEffect(() => {
     const el = slotsMeasureRef.current;
@@ -208,6 +210,7 @@ export function SceneHotbar({
       nextScale = scaleRef.current,
       nextDice = diceOpenRef.current
     ) => {
+      if (readOnly) return;
       writeHotbarChrome(crawlerId, {
         offsetX: next.x,
         offsetY: next.y,
@@ -216,7 +219,7 @@ export function SceneHotbar({
         diceOpen: nextDice,
       });
     },
-    [crawlerId]
+    [crawlerId, readOnly]
   );
 
   const clampOffset = useCallback((x: number, y: number) => {
@@ -249,6 +252,7 @@ export function SceneHotbar({
   const persist = useCallback(
     async (next: HotbarSlots) => {
       setSlots(next);
+      if (readOnly) return;
       writeHotbar(crawlerId, next);
       const occupied = new Map<string, number>();
       next.forEach((entry, i) => {
@@ -262,11 +266,12 @@ export function SceneHotbar({
         })
       );
     },
-    [crawlerId, items, supabase]
+    [crawlerId, items, readOnly, supabase]
   );
 
   const assign = useCallback(
     (index: number, entry: HotbarEntry) => {
+      if (readOnly) return;
       const next = slots.map((slot, i) => {
         if (slotEquals(slot, entry)) return null;
         if (i === index) return entry;
@@ -276,7 +281,7 @@ export function SceneHotbar({
       setAssignIndex(null);
       setSelectedIndex(index);
     },
-    [persist, slots]
+    [persist, readOnly, slots]
   );
 
   const clearSlot = useCallback(
@@ -487,7 +492,7 @@ export function SceneHotbar({
   }
 
   function toggleDiceOpen() {
-    if (diceLocked && !diceOpen) return;
+    if (readOnly || (diceLocked && !diceOpen)) return;
     const next = !diceOpen;
     setDiceOpen(next);
     persistChrome(offset, minimized, scaleRef.current, next);

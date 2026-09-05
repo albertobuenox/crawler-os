@@ -76,6 +76,9 @@ export function useSessionBroadcast(
       .on("broadcast", { event: "minimap_update" }, ({ payload }) =>
         onMessageRef.current("minimap_update", payload)
       )
+      .on("broadcast", { event: "scene_canvas_update" }, ({ payload }) =>
+        onMessageRef.current("scene_canvas_update", payload)
+      )
       .subscribe();
 
     return () => {

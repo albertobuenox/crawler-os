@@ -199,6 +199,45 @@ export interface TableState {
   pan_x: number;
   pan_y: number;
   show_grid: boolean;
+  canvas?: SceneCanvasDoc | Record<string, unknown> | null;
+}
+
+export type SceneTokenKind = "player" | "enemy";
+
+export interface SceneMapLayer {
+  id: string;
+  image_url: string;
+  name: string;
+  x: number;
+  y: number;
+  scale: number;
+  rotation: number;
+  natural_w: number;
+  natural_h: number;
+  z: number;
+}
+
+export interface SceneToken {
+  id: string;
+  kind: SceneTokenKind;
+  label: string;
+  x: number;
+  y: number;
+  size: number;
+  rotation: number;
+  sprite_url: string | null;
+  crawler_id: string | null;
+  resource_id: string | null;
+  z: number;
+}
+
+export interface SceneCanvasDoc {
+  maps: SceneMapLayer[];
+  tokens: SceneToken[];
+  pan_x: number;
+  pan_y: number;
+  zoom: number;
+  updated_at: string;
 }
 
 export interface MapPin {

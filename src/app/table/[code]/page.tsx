@@ -8,6 +8,7 @@ import { MinimapPanel } from "@/components/hud/MinimapPanel";
 import type { TableState, MapPin, Resource, GameSession } from "@/lib/types";
 import { castSession } from "@/lib/utils";
 import { useSessionBroadcast } from "@/hooks/useSession";
+import { parseSceneCanvas } from "@/lib/scene-canvas";
 
 /** TV / tablet view — no nav, full screen mesa */
 export default function TableTVPage() {
@@ -57,7 +58,13 @@ export default function TableTVPage() {
         <p className="font-display text-xs tracking-[0.3em] text-[var(--cyan-400)]">CRAWLER OS — ESCENA</p>
         {session?.name && <p className="text-sm text-[var(--text-3)]">{session.name}</p>}
       </header>
-      <TableCanvas tableState={tableState} resource={resource} pins={pins} className="min-h-[70vh] flex-1" />
+      <TableCanvas
+        tableState={tableState}
+        resource={resource}
+        pins={pins}
+        canvas={parseSceneCanvas(tableState?.canvas)}
+        className="min-h-[70vh] flex-1"
+      />
       <MinimapPanel sessionId={session?.id} placement="fixed" />
     </div>
   );

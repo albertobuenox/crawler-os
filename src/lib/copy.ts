@@ -4,6 +4,8 @@ export const BRAND = "BORANT CORP";
 export const SCENE_LABEL = "Escena";
 export const MASTER_CHAT_NAME = "Master";
 export const EMPTY_SCENE_COPY = "No se ve una mierda";
+export const EMPTY_SCENE_CANVAS_COPY = "El marco está vacío. El Master aún no ha puesto un mapa.";
+export const EMPTY_SCENE_EDITOR_COPY = "Sube un mapa o coloca fichas. Esto es lo que ven los crawlers.";
 export const EMPTY_MINIMAP_COPY = "El piso aún no tiene forma. El Master no ha dibujado ni un pasillo.";
 export const MINIMAP_LABEL = "Minimapa";
 

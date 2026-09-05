@@ -19,6 +19,7 @@ export default function ResourceEditorPage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [spriteError, setSpriteError] = useState("");
 
   useEffect(() => {
     supabase.from("resources").select("*").eq("id", id).single().then(({ data }) => setResource(data as Resource));
@@ -34,6 +35,7 @@ export default function ResourceEditorPage() {
       rarity: resource.rarity,
       description: resource.description,
       system_copy: resource.system_copy,
+      icon_url: resource.icon_url,
     }).eq("id", resource.id);
     setBusy(false);
     if (saveError) setError(saveError.message);
@@ -68,6 +70,47 @@ export default function ResourceEditorPage() {
             <Select label="Tipo" value={resource.kind} onChange={(e) => setResource({ ...resource, kind: e.target.value as ResourceKind })} options={kindOptions(["item","box","achievement","map","monster"])} />
             <Select label="Rareza" value={resource.rarity} onChange={(e) => setResource({ ...resource, rarity: e.target.value as Rarity })} options={rarityOptions(["common","uncommon","rare","epic","legendary","celestial"])} />
             <Textarea label="Copy del Sistema" value={resource.system_copy ?? ""} onChange={(e) => setResource({ ...resource, system_copy: e.target.value })} />
+            {(resource.kind === "monster" || resource.kind === "map" || resource.kind === "npc") && (
+              <div className="space-y-2">
+                <p className="text-label">Sprite</p>
+                <div className="flex items-center gap-3">
+                  <span className="h-16 w-16 overflow-hidden rounded-[12px] border border-[var(--stroke-glass)] bg-[rgba(8,10,18,0.8)]">
+                    {resource.icon_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={resource.icon_url} alt="" className="h-full w-full object-cover" />
+                    ) : null}
+                  </span>
+                  <label className="btn-neon inline-flex h-10 cursor-pointer items-center px-4 text-sm">
+                    {resource.icon_url ? "Cambiar sprite" : "Subir sprite"}
+                    <input
+                      type="file"
+                      accept="image/webp,image/png,image/jpeg,image/gif"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        e.target.value = "";
+                        if (!file) return;
+                        setSpriteError("");
+                        setBusy(true);
+                        const body = new FormData();
+                        body.set("file", file);
+                        body.set("kind", "resource");
+                        body.set("session_id", resource.session_id);
+                        const res = await fetch("/api/dm/scene-assets", { method: "POST", body });
+                        const json = (await res.json()) as { url?: string; error?: string };
+                        setBusy(false);
+                        if (!res.ok || !json.url) {
+                          setSpriteError(json.error || "El Sistema rechazó el sprite.");
+                          return;
+                        }
+                        setResource({ ...resource, icon_url: json.url });
+                      }}
+                    />
+                  </label>
+                </div>
+                {spriteError && <p className="text-xs text-[var(--danger)]">{spriteError}</p>}
+              </div>
+            )}
             <div className="flex flex-wrap gap-2">
               <Button variant="session" onClick={() => void save()} loading={busy}>Guardar</Button>
               <Button variant="danger" onClick={() => setConfirmOpen(true)} loading={busy}>Borrar</Button>
