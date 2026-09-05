@@ -5,6 +5,12 @@ import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+const SIZE = {
+  md: "max-h-[min(88vh,760px)] max-w-lg",
+  lg: "max-h-[min(90vh,840px)] max-w-2xl",
+  xl: "max-h-[min(94vh,960px)] max-w-5xl",
+} as const;
+
 interface ModalProps {
   open: boolean;
   title: string;
@@ -13,6 +19,7 @@ interface ModalProps {
   action?: React.ReactNode;
   children: React.ReactNode;
   wide?: boolean;
+  size?: keyof typeof SIZE;
   onClose: () => void;
 }
 
@@ -24,8 +31,10 @@ export function Modal({
   action,
   children,
   wide = false,
+  size,
   onClose,
 }: ModalProps) {
+  const box = SIZE[size ?? (wide ? "lg" : "md")];
   const pointerDownOnBackdrop = useRef(false);
 
   useEffect(() => {
@@ -68,8 +77,8 @@ export function Modal({
             exit={{ scale: 0.97, opacity: 0 }}
             transition={{ type: "spring", damping: 24, stiffness: 280 }}
             className={cn(
-              "glass max-h-[min(88vh,760px)] w-full overflow-y-auto border-[var(--stroke-cyan)] p-6 shadow-[var(--glow-cyan)]",
-              wide ? "max-w-2xl" : "max-w-lg"
+              "glass w-full overflow-y-auto border-[var(--stroke-cyan)] p-6 shadow-[var(--glow-cyan)]",
+              box
             )}
             onClick={(e) => e.stopPropagation()}
           >

@@ -113,7 +113,7 @@ export function ResourceEditorModal({
   return (
     <Modal
       open={open}
-      wide
+      size="xl"
       eyebrow={`${BRAND} — RECURSOS`}
       title={resource ? `Editar ${resource.name}` : "Nuevo recurso"}
       subtitle="Guarda los cambios, o bórralo si ya no sirve."
@@ -121,38 +121,46 @@ export function ResourceEditorModal({
         if (!busy && !uploading) onClose();
       }}
     >
-      <form onSubmit={handleSubmit} className="grid gap-5 lg:grid-cols-[1fr_14rem]">
+      <form onSubmit={handleSubmit} className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_16rem]">
         <div className="space-y-4">
-          <Input
-            label="Nombre"
-            value={draft.name}
-            onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-            required
-          />
-          <Select
-            label="Tipo"
-            value={draft.kind}
-            onChange={(e) => setDraft({ ...draft, kind: e.target.value as ResourceKind })}
-            options={kindOptions(KINDS)}
-          />
-          <Select
-            label="Rareza"
-            value={draft.rarity}
-            onChange={(e) => setDraft({ ...draft, rarity: e.target.value as Rarity })}
-            options={rarityOptions(RARITIES)}
-          />
-          <Textarea
-            label="Descripción"
-            placeholder="Qué es el recurso. Se ve en la tabla y al pasar el cursor."
-            value={draft.description}
-            onChange={(e) => setDraft({ ...draft, description: e.target.value })}
-          />
-          <Textarea
-            label="Copy del Sistema"
-            placeholder="Voz de BORANT CORP. Opcional. Sale en revelaciones y cinemáticas."
-            value={draft.system_copy}
-            onChange={(e) => setDraft({ ...draft, system_copy: e.target.value })}
-          />
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-[1.4fr_1fr_1fr]">
+            <Input
+              label="Nombre"
+              value={draft.name}
+              onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+              required
+            />
+            <Select
+              label="Tipo"
+              value={draft.kind}
+              onChange={(e) => setDraft({ ...draft, kind: e.target.value as ResourceKind })}
+              options={kindOptions(KINDS)}
+            />
+            <Select
+              label="Rareza"
+              value={draft.rarity}
+              onChange={(e) => setDraft({ ...draft, rarity: e.target.value as Rarity })}
+              options={rarityOptions(RARITIES)}
+            />
+          </div>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Textarea
+              label="Descripción"
+              placeholder="Qué es el recurso. Se ve en la tabla y al pasar el cursor."
+              value={draft.description}
+              onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+              rows={10}
+              className="min-h-[14rem]"
+            />
+            <Textarea
+              label="Copy del Sistema"
+              placeholder="Voz de BORANT CORP. Opcional. Sale en revelaciones y cinemáticas."
+              value={draft.system_copy}
+              onChange={(e) => setDraft({ ...draft, system_copy: e.target.value })}
+              rows={10}
+              className="min-h-[14rem]"
+            />
+          </div>
           {showSprite && (
             <div className="space-y-2">
               <p className="text-label">Sprite</p>
