@@ -25,6 +25,7 @@ import {
 } from "@/lib/hotbar";
 import type { ItemInstance, Resource, Skill } from "@/lib/types";
 import { SKILL_KIND_LABEL, SKILL_TYPE_LABEL } from "@/lib/copy";
+import { resourceThumbUrl } from "@/lib/item-art";
 import { resourceBlurb } from "@/lib/resources";
 import { itemIsUnique } from "@/lib/loot";
 import { skillArtSlug } from "@/lib/skill-art";
@@ -565,9 +566,9 @@ export function SceneHotbar({
                           className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12px] text-[var(--text-1)] hover:bg-[rgba(255,45,106,0.14)]"
                         >
                           <span className="relative shrink-0">
-                            {item.resource.icon_url ? (
+                            {resourceThumbUrl(item.resource) ? (
                               // eslint-disable-next-line @next/next/no-img-element
-                              <img src={item.resource.icon_url} alt="" className="h-5 w-5 object-contain" />
+                              <img src={resourceThumbUrl(item.resource) ?? ""} alt="" className="h-5 w-5 object-contain" />
                             ) : (
                               <Sparkles size={14} className="text-[var(--hotbar)]" />
                             )}
@@ -781,6 +782,7 @@ function HotbarSlot({
   const filled = !!entry && (!!skill || !!item);
   const label = skill?.name ?? item?.resource.name ?? `Hueco ${key} vacío`;
   const detail = item ? itemDescription(item) : null;
+  const itemThumb = item ? resourceThumbUrl(item.resource) : null;
   const qty = item && item.quantity > 0 ? formatHotbarQty(item.quantity) : null;
   const Icon = skill ? (skillIcon[skill.skill_type] ?? Sparkles) : Sparkles;
   const skillArt = useSkillArt(skill ? skillArtSlug(skill) : null, skill?.skill_type, skill?.skill_catalog?.thumb_url);
@@ -873,9 +875,9 @@ function HotbarSlot({
             filled ? "hover:brightness-125" : "hover:bg-[rgba(255,45,106,0.12)]"
           )}
         >
-          {filled && item?.resource.icon_url ? (
+          {filled && itemThumb ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={item.resource.icon_url} alt="" className="h-[68%] w-[68%] object-contain" />
+            <img src={itemThumb} alt="" className="h-[68%] w-[68%] object-contain" />
           ) : filled && skill && skillArt.ready && skillArt.src ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img

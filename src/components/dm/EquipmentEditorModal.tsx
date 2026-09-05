@@ -6,6 +6,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea, Select } from "@/components/ui/Input";
 import { InventorySlot } from "@/components/hud/InventorySlot";
+import { ThumbPicker } from "@/components/dm/ThumbPicker";
 import { BRAND } from "@/lib/copy";
 import { resourceBlurb, resourceDescriptionLabel } from "@/lib/resources";
 import { itemIsUnique, lootOriginLabel } from "@/lib/loot";
@@ -18,6 +19,7 @@ import {
   type EquipSlotId,
   type EquipmentBonus,
 } from "@/lib/equipment";
+import { defaultGearArt, gearPresetsForSlot, retargetGearArt } from "@/lib/item-art";
 import type { Resource } from "@/lib/types";
 
 export type EquipmentDraft = {
@@ -31,13 +33,14 @@ export type EquipmentDraft = {
 };
 
 function draftFrom(resource: Resource | null): EquipmentDraft {
+  const equip_slot = resourceEquipSlot(resource) ?? "chest";
   return {
     name: resource?.name ?? "",
     description: resource?.description ?? "",
     system_copy: resource?.system_copy ?? "",
-    icon_url: resource?.icon_url ?? null,
+    icon_url: resource?.icon_url ?? defaultGearArt(equip_slot),
     is_unique: itemIsUnique(resource),
-    equip_slot: resourceEquipSlot(resource) ?? "chest",
+    equip_slot,
     bonuses: parseEquipmentBonuses(resource?.payload),
   };
 }
@@ -63,37 +66,18 @@ export function EquipmentEditorForm({
 }) {
   const [draft, setDraft] = useState<EquipmentDraft>(draftFrom(resource));
   const [localError, setLocalError] = useState("");
-  const [spriteError, setSpriteError] = useState("");
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     setDraft(draftFrom(resource));
     setLocalError("");
-    setSpriteError("");
     setUploading(false);
   }, [resource]);
 
   const shownError = localError || error;
   const origin = lootOriginLabel(resource);
   const previewBonuses = draft.bonuses.filter((bonus) => bonus.text.trim());
-
-  async function uploadSprite(file: File) {
-    if (!sessionId) return;
-    setSpriteError("");
-    setUploading(true);
-    const body = new FormData();
-    body.set("file", file);
-    body.set("kind", "resource");
-    body.set("session_id", sessionId);
-    const res = await fetch("/api/dm/scene-assets", { method: "POST", body });
-    const json = (await res.json()) as { url?: string; error?: string };
-    setUploading(false);
-    if (!res.ok || !json.url) {
-      setSpriteError(json.error || "El Sistema rechazó el sprite.");
-      return;
-    }
-    setDraft((current) => ({ ...current, icon_url: json.url ?? null }));
-  }
+  const artOptions = gearPresetsForSlot(draft.equip_slot);
 
   function patchBonus(id: string, patch: Partial<EquipmentBonus>) {
     setDraft((current) => ({
@@ -132,7 +116,14 @@ export function EquipmentEditorForm({
           <Select
             label="Se equipa en"
             value={draft.equip_slot}
-            onChange={(e) => setDraft({ ...draft, equip_slot: e.target.value as EquipSlotId })}
+            onChange={(e) => {
+              const equip_slot = e.target.value as EquipSlotId;
+              setDraft((current) => ({
+                ...current,
+                equip_slot,
+                icon_url: retargetGearArt(current.icon_url, equip_slot),
+              }));
+            }}
             options={EQUIP_SLOT_OPTIONS}
           />
         </div>
@@ -226,31 +217,15 @@ export function EquipmentEditorForm({
           )}
         </div>
 
-        <div className="space-y-2">
-          <p className="text-label">Miniatura</p>
-          <div className="flex items-center gap-3">
-            <span className="h-16 w-16 overflow-hidden rounded-[12px] border border-[var(--stroke-glass)] bg-[rgba(8,10,18,0.8)]">
-              {draft.icon_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={draft.icon_url} alt="" className="h-full w-full object-cover" />
-              ) : null}
-            </span>
-            <label className="btn-neon inline-flex h-10 cursor-pointer items-center px-4 text-sm">
-              {draft.icon_url ? "Cambiar imagen" : "Subir imagen"}
-              <input
-                type="file"
-                accept="image/webp,image/png,image/jpeg,image/gif"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  e.target.value = "";
-                  if (file) void uploadSprite(file);
-                }}
-              />
-            </label>
-          </div>
-          {spriteError && <p className="text-xs text-[var(--danger)]">{spriteError}</p>}
-        </div>
+        <ThumbPicker
+          value={draft.icon_url}
+          options={artOptions}
+          sessionId={sessionId}
+          disabled={busy}
+          hint="O elige una de su slot."
+          onChange={(icon_url) => setDraft((current) => ({ ...current, icon_url }))}
+          onBusy={setUploading}
+        />
 
         {shownError && <p className="text-sm text-[var(--danger)]">{shownError}</p>}
         <div className="flex flex-wrap justify-end gap-2 pt-1">

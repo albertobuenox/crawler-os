@@ -10,6 +10,7 @@ import { ResourceKindMark } from "@/components/hud/ResourceKindMark";
 import { EquipmentEditorForm, type EquipmentDraft } from "@/components/dm/EquipmentEditorModal";
 import { ObjectEditorForm, type ObjectDraft } from "@/components/dm/ObjectEditorModal";
 import { BRAND } from "@/lib/copy";
+import { resourceThumbUrl } from "@/lib/item-art";
 import { ITEM_CATEGORY_LABEL, objectTypeLabel } from "@/lib/objects";
 import { itemIsUnique, lootBoxRarityOptions, lootFloorOptions } from "@/lib/loot";
 import type { LootBoxRarity, Resource } from "@/lib/types";
@@ -284,7 +285,7 @@ export function LootBoxEditorModal({
                     name={item.name}
                     rarity={item.rarity}
                     unique={itemIsUnique(item)}
-                    iconUrl={item.icon_url}
+                    iconUrl={resourceThumbUrl(item)}
                     hideRarity
                     showTooltip
                   />

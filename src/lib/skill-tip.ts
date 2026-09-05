@@ -1,7 +1,8 @@
 import { SKILL_KIND_LABEL, SKILL_TYPE_LABEL } from "./copy";
 import { skillArtSlug } from "./skill-art";
+import { spellArtSlug } from "./spell-art";
 import { defaultSkillType, skillRollLabel } from "./skills";
-import type { Skill, SkillCatalogEntry, SkillKind } from "./types";
+import type { Skill, SkillCatalogEntry, SkillKind, Spell, SpellCatalogEntry } from "./types";
 
 export type SkillTipInfo = {
   name: string;
@@ -65,4 +66,34 @@ export function tipFromSkill(skill: Skill): SkillTipInfo {
 
 export function toSkillTip(source: Skill | SkillCatalogEntry): SkillTipInfo {
   return isAssignedSkill(source) ? tipFromSkill(source) : tipFromCatalog(source);
+}
+
+export function tipFromSpellCatalog(entry: SpellCatalogEntry): SkillTipInfo {
+  return {
+    name: entry.name,
+    description: entry.description?.trim() ?? "",
+    typeLabel: entry.kind ? SKILL_KIND_LABEL[entry.kind] ?? entry.kind : "Conjuro",
+    kind: entry.kind,
+    skillType: "spell",
+    slug: entry.slug,
+    thumbUrl: entry.thumb_url,
+  };
+}
+
+export function tipFromSpell(spell: Spell): SkillTipInfo {
+  const cat = spell.spell_catalog;
+  return {
+    name: spell.name,
+    description: cat?.description?.trim() || spell.notes?.trim() || "",
+    typeLabel: cat?.kind ? SKILL_KIND_LABEL[cat.kind] ?? cat.kind : "Conjuro",
+    kind: cat?.kind,
+    skillType: "spell",
+    rank: spell.rank,
+    slug: spellArtSlug(spell),
+    thumbUrl: cat?.thumb_url,
+  };
+}
+
+export function toSpellTip(source: Spell | SpellCatalogEntry): SkillTipInfo {
+  return "rank" in source && "linked_stat" in source ? tipFromSpell(source) : tipFromSpellCatalog(source);
 }

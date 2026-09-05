@@ -1,12 +1,16 @@
 /**
  * Ilustraciones locales:
- * - Attack: `public/skills/attack/<slug>.webp`
- * - Resto:  `public/skills/<slug>.webp`
+ * - Utility: `public/skills/utility/<archivo>.webp`
+ * - Attack:  `public/skills/attack/<slug>.webp`
+ * - Spells:  `public/spells/<archivo>.webp`
+ * - Resto:   `public/skills/<slug>.webp`
  * El slug es el del catálogo (aiming, animal-handling, wrasslin…).
  * Si el archivo aún no está, la UI muestra un recuadro vacío.
  */
 
 import { ATTACK_SKILL_SLUGS, skillSlugFromName } from "./skills";
+import { utilitySkillArtUrl } from "./skill-utility-art";
+import { spellArtUrl } from "./spell-art";
 import type { Skill, SkillCatalogEntry } from "./types";
 
 export function skillArtUrl(
@@ -14,9 +18,12 @@ export function skillArtUrl(
   skillType?: Skill["skill_type"] | null,
   thumbUrl?: string | null
 ): string | null {
+  if (skillType === "spell") return spellArtUrl(slug, thumbUrl);
   if (thumbUrl?.trim()) return thumbUrl.trim();
   if (!slug?.trim()) return null;
   const name = slug.trim();
+  const utility = utilitySkillArtUrl(name);
+  if (utility) return utility;
   if (skillType === "attack" || ATTACK_SKILL_SLUGS.has(name)) {
     return `/skills/attack/${name}.webp`;
   }

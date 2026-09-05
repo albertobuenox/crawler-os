@@ -17,6 +17,7 @@ import {
   User,
   Backpack,
   Sparkles,
+  WandSparkles,
   StickyNote,
   Skull,
   UserRound,
@@ -34,6 +35,7 @@ const dmNav = [
   { href: "/dm", icon: Home, label: "Sesión", glow: "var(--glow-purple)", disabled: false },
   { href: "/dm/crawlers", icon: Users, label: "Crawlers", glow: "var(--glow-magenta)" },
   { href: "/dm/skills", icon: Sparkles, label: "Skills", glow: "var(--glow-gold)" },
+  { href: "/dm/spells", icon: WandSparkles, label: "Spells", glow: "var(--glow-magenta)" },
   { href: "/dm/objects", icon: Backpack, label: "Objetos", glow: "var(--glow-cyan)" },
   { href: "/dm/npcs", icon: UserRound, label: "PNJs", glow: "var(--glow-magenta)" },
   { href: "/dm/mobs", icon: Skull, label: "Mobs", glow: "var(--glow-orange)" },
@@ -121,6 +123,7 @@ const crawlerNav = [
   { href: "/crawler/sheet", icon: User, label: "Hoja", color: "var(--magenta-500)" },
   { href: "/crawler/inventory", icon: Backpack, label: "Objetos", color: "var(--cyan-500)" },
   { href: "/crawler/skills", icon: Sparkles, label: "Habilidades", color: "var(--cyan-500)" },
+  { href: "/crawler/spells", icon: WandSparkles, label: "Spells", color: "var(--magenta-500)" },
   { href: "/crawler/table", icon: LayoutGrid, label: SCENE_LABEL, color: "var(--gold-400)" },
   { href: "/crawler/notifications", icon: Bell, label: "Sistema", color: "var(--orange-500)" },
 ];

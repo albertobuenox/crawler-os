@@ -1,3 +1,4 @@
+import { resourceThumbUrl } from "@/lib/item-art";
 import {
   RESOURCE_TYPE_MARK_LABEL,
   RESOURCE_TYPE_MARK_SRC,
@@ -16,7 +17,7 @@ export function ResourceKindMark({
   size = "md",
   className,
 }: {
-  resource: Pick<Resource, "kind" | "item_category" | "equip_slot" | "payload"> | null | undefined;
+  resource: Pick<Resource, "kind" | "item_category" | "equip_slot" | "payload" | "icon_url"> | null | undefined;
   size?: keyof typeof SIZE;
   className?: string;
 }) {
@@ -35,7 +36,7 @@ export function ResourceKindMark({
       )}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={RESOURCE_TYPE_MARK_SRC[mark]} alt="" className="h-full w-full object-cover" />
+      <img src={resourceThumbUrl(resource) ?? RESOURCE_TYPE_MARK_SRC[mark]} alt="" className="h-full w-full object-cover" />
     </span>
   );
 }

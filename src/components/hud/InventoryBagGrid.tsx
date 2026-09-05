@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { InventorySlot } from "@/components/hud/InventorySlot";
 import { Button } from "@/components/ui/Button";
+import { resourceThumbUrl } from "@/lib/item-art";
 import { resourceBlurb } from "@/lib/resources";
 import { slotFromResource } from "@/lib/loot";
 import { bonusLines, isEquippable } from "@/lib/equipment";
@@ -77,7 +78,7 @@ export function InventoryBagGrid({
                 name={item.resource.name}
                 rarity={item.resource.rarity}
                 quantity={item.quantity}
-                iconUrl={item.resource.icon_url}
+                iconUrl={resourceThumbUrl(item.resource)}
                 detail={resourceBlurb(item.resource)}
                 bonuses={bonusLines(item.resource)}
                 selected={selectedId === item.id}

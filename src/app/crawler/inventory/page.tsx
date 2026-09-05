@@ -10,6 +10,7 @@ import { InventoryBagGrid } from "@/components/hud/InventoryBagGrid";
 import { CrawlerCraftModal } from "@/components/hud/CrawlerCraftModal";
 import type { Crawler, ItemInstance, Resource } from "@/lib/types";
 import { RARITY_LABEL } from "@/lib/copy";
+import { resourceThumbUrl } from "@/lib/item-art";
 import { resourceBlurb } from "@/lib/resources";
 import { lootOriginLabel, slotFromResource } from "@/lib/loot";
 import { useEquipFlow } from "@/hooks/useEquipFlow";
@@ -99,7 +100,7 @@ export default function CrawlerInventoryPage() {
                   <InventorySlot
                     name={item?.resource.name}
                     rarity={item?.resource.rarity}
-                    iconUrl={item?.resource.icon_url}
+                    iconUrl={item ? resourceThumbUrl(item.resource) : null}
                     detail={item ? resourceBlurb(item.resource) : undefined}
                     bonuses={item ? bonusLines(item.resource) : undefined}
                     empty={!item}
@@ -153,7 +154,7 @@ export default function CrawlerInventoryPage() {
                 key={i.id}
                 name={i.resource.name}
                 rarity={i.resource.rarity}
-                iconUrl={i.resource.icon_url}
+                iconUrl={resourceThumbUrl(i.resource)}
                 detail={resourceBlurb(i.resource)}
                 bonuses={bonusLines(i.resource)}
                 showTooltip

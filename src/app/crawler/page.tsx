@@ -144,11 +144,18 @@ export default function CrawlerHomePage() {
         )}
 
         {advancementOpen && (
-          <Link href="/crawler/skills">
-            <div className="rounded-xl border border-[var(--stroke-cyan)] bg-[rgba(0,212,255,0.1)] p-3 text-center font-display text-sm text-[var(--cyan-400)]">
-              Subida de habilidades abierta — toca para ajustar las skills marcadas
-            </div>
-          </Link>
+          <div className="grid gap-2">
+            <Link href="/crawler/skills">
+              <div className="rounded-xl border border-[var(--stroke-cyan)] bg-[rgba(0,212,255,0.1)] p-3 text-center font-display text-sm text-[var(--cyan-400)]">
+                Subida abierta — toca para ajustar las skills marcadas
+              </div>
+            </Link>
+            <Link href="/crawler/spells">
+              <div className="rounded-xl border border-[var(--stroke-magenta)] bg-[rgba(232,121,249,0.1)] p-3 text-center font-display text-sm text-[var(--magenta-400)]">
+                También puedes ajustar los spells que hayas marcado
+              </div>
+            </Link>
+          </div>
         )}
 
         <GlassPanel title="Objetivo actual" subtitle={`Piso ${crawler.floor}`}>

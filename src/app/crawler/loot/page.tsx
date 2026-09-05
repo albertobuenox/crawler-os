@@ -8,6 +8,7 @@ import { CinematicOverlay } from "@/components/hud/CinematicOverlay";
 import type { LootBox, Resource } from "@/lib/types";
 import { BRAND } from "@/lib/copy";
 import { InventorySlot } from "@/components/hud/InventorySlot";
+import { resourceThumbUrl } from "@/lib/item-art";
 import { LOOT_BOX_RARITY_LABEL, boxLootFloor, boxLootRarity, lootFloorLabel } from "@/lib/loot";
 
 export default function CrawlerLootPage() {
@@ -58,7 +59,7 @@ export default function CrawlerLootPage() {
                   <InventorySlot
                     name={b.resource.name}
                     rarity={b.resource.rarity}
-                    iconUrl={b.resource.icon_url}
+                    iconUrl={resourceThumbUrl(b.resource)}
                     lootRarity={rarity}
                     sourceLabel={lootFloorLabel(floor)}
                     showTooltip

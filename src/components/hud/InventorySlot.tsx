@@ -120,7 +120,7 @@ export function InventorySlot({
               alt=""
               className={cn(
                 "mb-0.5 object-contain",
-                size === "sm" ? "h-5 w-5" : "h-8 w-8 sm:h-10 sm:w-10"
+                size === "sm" ? "h-6 w-6" : "h-10 w-10 sm:h-12 sm:w-12"
               )}
             />
           ) : null}

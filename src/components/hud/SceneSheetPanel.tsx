@@ -5,8 +5,9 @@ import { X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { CharacterSheet } from "@/components/hud/CharacterSheet";
 import { sortSkillsStable } from "@/lib/skills";
+import { sortSpellsStable } from "@/lib/spells";
 import { useSkillTimer } from "@/hooks/useSkillTimer";
-import type { Crawler, Effect, ItemInstance, Resource, Skill, StatModifierRow } from "@/lib/types";
+import type { Crawler, Effect, ItemInstance, Resource, Skill, Spell, StatModifierRow } from "@/lib/types";
 
 type SheetItem = ItemInstance & { resource: Resource };
 
@@ -22,6 +23,7 @@ export function SceneSheetPanel({
   const supabase = createClient();
   const [crawler, setCrawler] = useState<Crawler | null>(null);
   const [skills, setSkills] = useState<Skill[]>([]);
+  const [spells, setSpells] = useState<Spell[]>([]);
   const [effects, setEffects] = useState<Effect[]>([]);
   const [items, setItems] = useState<SheetItem[]>([]);
   const [modifiers, setModifiers] = useState<StatModifierRow[]>([]);
@@ -36,13 +38,15 @@ export function SceneSheetPanel({
     }
     setMissing(false);
     setCrawler(c as Crawler);
-    const [{ data: sk }, { data: ef }, { data: it }, { data: mods }] = await Promise.all([
+    const [{ data: sk }, { data: sp }, { data: ef }, { data: it }, { data: mods }] = await Promise.all([
       supabase.from("skills").select("*, skill_catalog(*)").eq("crawler_id", crawlerId).order("created_at"),
+      supabase.from("spells").select("*, spell_catalog(*)").eq("crawler_id", crawlerId).order("created_at"),
       supabase.from("effects").select("*").eq("crawler_id", crawlerId),
       supabase.from("item_instances").select("*, resource:resources(*)").eq("crawler_id", crawlerId),
       supabase.from("modifiers").select("*").eq("crawler_id", crawlerId),
     ]);
     setSkills(sortSkillsStable((sk as Skill[]) ?? []));
+    setSpells(sortSpellsStable((sp as Spell[]) ?? []));
     setEffects((ef as Effect[]) ?? []);
     setItems((it as SheetItem[]) ?? []);
     setModifiers((mods as StatModifierRow[]) ?? []);
@@ -56,6 +60,7 @@ export function SceneSheetPanel({
     const channel = supabase
       .channel(`dm-scene-sheet:${crawlerId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "skills" }, () => void load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "spells" }, () => void load())
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "crawlers", filter: `id=eq.${crawlerId}` },
@@ -91,6 +96,7 @@ export function SceneSheetPanel({
           <CharacterSheet
             crawler={crawler}
             skills={skills}
+            spells={spells}
             effects={effects}
             items={items}
             modifiers={modifiers}

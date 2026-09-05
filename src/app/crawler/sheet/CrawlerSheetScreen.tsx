@@ -6,8 +6,9 @@ import { CharacterSheet } from "@/components/hud/CharacterSheet";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { updateCrawlerVitals } from "@/lib/crawler-vitals";
 import { clampMana, lifeToBoxesFilled } from "@/lib/rules";
-import type { Crawler, Skill, Effect, ItemInstance, Resource, StatModifierRow } from "@/lib/types";
+import type { Crawler, Skill, Spell, Effect, ItemInstance, Resource, StatModifierRow } from "@/lib/types";
 import { sortSkillsStable } from "@/lib/skills";
+import { sortSpellsStable } from "@/lib/spells";
 import { useSkillTimer } from "@/hooks/useSkillTimer";
 import { useEquipFlow } from "@/hooks/useEquipFlow";
 
@@ -17,6 +18,7 @@ export function CrawlerSheetScreen({ crawlerId }: { crawlerId?: string }) {
   const supabase = createClient();
   const [crawler, setCrawler] = useState<Crawler | null>(null);
   const [skills, setSkills] = useState<Skill[]>([]);
+  const [spells, setSpells] = useState<Spell[]>([]);
   const [effects, setEffects] = useState<Effect[]>([]);
   const [items, setItems] = useState<SheetItem[]>([]);
   const [modifiers, setModifiers] = useState<StatModifierRow[]>([]);
@@ -60,13 +62,15 @@ export function CrawlerSheetScreen({ crawlerId }: { crawlerId?: string }) {
 
     setMissing(false);
     setCrawler(target);
-    const [{ data: sk }, { data: ef }, { data: it }, { data: mods }] = await Promise.all([
+    const [{ data: sk }, { data: sp }, { data: ef }, { data: it }, { data: mods }] = await Promise.all([
       supabase.from("skills").select("*, skill_catalog(*)").eq("crawler_id", target.id).order("created_at"),
+      supabase.from("spells").select("*, spell_catalog(*)").eq("crawler_id", target.id).order("created_at"),
       supabase.from("effects").select("*").eq("crawler_id", target.id),
       supabase.from("item_instances").select("*, resource:resources(*)").eq("crawler_id", target.id),
       supabase.from("modifiers").select("*").eq("crawler_id", target.id),
     ]);
     setSkills(sortSkillsStable((sk as Skill[]) ?? []));
+    setSpells(sortSpellsStable((sp as Spell[]) ?? []));
     setEffects((ef as Effect[]) ?? []);
     setItems((it as SheetItem[]) ?? []);
     setModifiers((mods as StatModifierRow[]) ?? []);
@@ -81,6 +85,7 @@ export function CrawlerSheetScreen({ crawlerId }: { crawlerId?: string }) {
     const channel = supabase
       .channel(`sheet-skills:${crawler.id}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "skills" }, () => void load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "spells" }, () => void load())
       .on("postgres_changes", { event: "*", schema: "public", table: "item_instances" }, () => void load())
       .on(
         "postgres_changes",
@@ -107,6 +112,7 @@ export function CrawlerSheetScreen({ crawlerId }: { crawlerId?: string }) {
   const { open: advancementOpen } = useSkillTimer(crawler?.session_id);
   const isOwnSheet = Boolean(crawler && userId && crawler.owner_user_id === userId);
   const canEditSkills = isOwnSheet;
+  const canEditSpells = isOwnSheet;
   const canEditVitals = isOwnSheet;
   const equip = useEquipFlow(items, load);
 
@@ -127,6 +133,16 @@ export function CrawlerSheetScreen({ crawlerId }: { crawlerId?: string }) {
     await load();
   }
 
+  async function onToggleSpellCheck(spell: Spell, checked: boolean) {
+    await supabase.rpc("set_spell_checked", { p_spell_id: spell.id, p_checked: checked });
+    await load();
+  }
+
+  async function onAdjustSpellRank(spell: Spell, delta: -1 | 1) {
+    await supabase.rpc("adjust_spell_rank", { p_spell_id: spell.id, p_delta: delta });
+    await load();
+  }
+
   if (missing) return <p className="p-4 text-[var(--text-3)]">Sin hoja de personaje.</p>;
   if (!crawler) return <p className="p-4 text-[var(--text-3)]">Cargando hoja...</p>;
 
@@ -135,16 +151,20 @@ export function CrawlerSheetScreen({ crawlerId }: { crawlerId?: string }) {
       <CharacterSheet
         crawler={crawler}
         skills={skills}
+        spells={spells}
         effects={effects}
         items={items}
         modifiers={modifiers}
         canEditSkills={canEditSkills}
+        canEditSpells={canEditSpells}
         canEditVitals={canEditVitals}
         canViewInventory={isOwnSheet}
         canEquip={isOwnSheet}
         advancementOpen={advancementOpen}
         onToggleSkillCheck={onToggleSkillCheck}
         onAdjustSkillRank={onAdjustSkillRank}
+        onToggleSpellCheck={onToggleSpellCheck}
+        onAdjustSpellRank={onAdjustSpellRank}
         onLifeChange={(life) => void persistVitals({ hp_boxes_filled: lifeToBoxesFilled(life) })}
         onManaChange={(mana) => void persistVitals({ mana_current: clampMana(mana, crawler.mana_max) })}
         onEquip={(itemId, slot) => {

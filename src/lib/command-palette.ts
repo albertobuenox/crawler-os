@@ -26,6 +26,7 @@ export type CommandIcon =
   | "home"
   | "users"
   | "sparkles"
+  | "wand"
   | "database"
   | "map"
   | "layout-grid"
@@ -65,6 +66,7 @@ export type CreateKind =
   | "box"
   | "npc"
   | "skill"
+  | "spell"
   | "notification"
   | "note"
   | "checklist"
@@ -95,6 +97,7 @@ export function buildPaletteCommands(ctx: PaletteContext): PaletteCommand[] {
     nav("go-session", "Sesión", "/dm", "home", ["dashboard", "control", "inicio", "piso"]),
     nav("go-crawlers", "Crawlers", "/dm/crawlers", "users", ["jugadores", "personajes", "party"]),
     nav("go-skills", "Skills", "/dm/skills", "sparkles", ["habilidades", "catálogo", "d100"]),
+    nav("go-spells", "Spells", "/dm/spells", "wand", ["conjuros", "magia", "catálogo", "spell"]),
     nav("go-objects", "Objetos", "/dm/objects", "box", ["loot", "items", "objetos", "equipo", "consumible", "caja"]),
     nav("go-npcs", "PNJs", "/dm/npcs", "user", ["npc", "pnj", "personaje"]),
     nav("go-mobs", "Mobs", "/dm/mobs", "skull", ["enemigo", "monstruo", "bestiario"]),
@@ -194,6 +197,16 @@ export function buildPaletteCommands(ctx: PaletteContext): PaletteCommand[] {
       icon: "plus",
       href: "/dm/skills?new=1",
       createKind: "skill",
+    },
+    {
+      id: "create-spell",
+      group: "create",
+      label: "Nuevo spell",
+      hint: "Abrir formulario",
+      keywords: ["crear", "conjuro", "magia", "spell"],
+      icon: "plus",
+      href: "/dm/spells?new=1",
+      createKind: "spell",
     },
     {
       id: "create-notification",
@@ -382,7 +395,16 @@ export function buildPaletteCommands(ctx: PaletteContext): PaletteCommand[] {
         keywords: [nameKey, "habilidades", "skills"],
         icon: "sparkles",
         href: `/dm/crawlers/${crawler.id}/skills`,
-      }
+      },
+      {
+        id: `crawler-spells-${crawler.id}`,
+        group: "crawlers",
+        label: `Spells de ${crawler.name}`,
+        hint: "Conjuros",
+        keywords: [nameKey, "conjuros", "spells", "magia"],
+        icon: "wand",
+        href: `/dm/crawlers/${crawler.id}/spells`,
+      },
     );
   }
 

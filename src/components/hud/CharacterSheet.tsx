@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Sparkles, ScrollText, User, Shield } from "lucide-react";
+import { Sparkles, User, Shield, WandSparkles } from "lucide-react";
 import { GlassPanel } from "@/components/ui/GlassPanel";
 import { HealthBoxes, ResourceBar, useVitalPulse } from "@/components/hud/HealthBoxes";
 import { InventorySlot } from "@/components/hud/InventorySlot";
@@ -11,11 +11,14 @@ import { CrawlerCraftModal } from "@/components/hud/CrawlerCraftModal";
 import { cn } from "@/lib/utils";
 import { crawlerFullBodyUrl } from "@/lib/crawler-art";
 import { collectStatBonusChips, healthBarColor } from "@/lib/rules";
-import { crawlerClassLabel, EFFECT_KIND_LABEL, BRAND } from "@/lib/copy";
+import { crawlerClassLabel, EFFECT_KIND_LABEL } from "@/lib/copy";
+import { resourceThumbUrl } from "@/lib/item-art";
 import { resourceBlurb } from "@/lib/resources";
 import { slotFromResource } from "@/lib/loot";
 import { SkillListItem } from "@/components/hud/SkillListItem";
+import { SpellListItem } from "@/components/hud/SpellListItem";
 import { sortSkillsStable } from "@/lib/skills";
+import { sortSpellsStable } from "@/lib/spells";
 import {
   ACCESSORY_SLOTS,
   BODY_SLOTS,
@@ -26,15 +29,15 @@ import {
   slotAccepts,
   writeItemDrag,
 } from "@/lib/equipment";
-import type { Crawler, Skill, Effect, ItemInstance, Resource, StatKey, StatModifierRow } from "@/lib/types";
+import type { Crawler, Skill, Spell, Effect, ItemInstance, Resource, StatKey, StatModifierRow } from "@/lib/types";
 import { StatBlock } from "@/components/hud/StatBlock";
 
-type SheetTab = "stats" | "skills" | "background";
+type SheetTab = "stats" | "skills" | "spells";
 
 const TABS: { id: SheetTab; label: string; icon: typeof User; glow: string; color: string }[] = [
   { id: "stats", label: "Stats", icon: User, glow: "var(--glow-cyan)", color: "var(--cyan-400)" },
   { id: "skills", label: "Skills", icon: Sparkles, glow: "var(--glow-magenta)", color: "var(--magenta-400)" },
-  { id: "background", label: "Transfondo", icon: ScrollText, glow: "var(--glow-gold)", color: "var(--gold-400)" },
+  { id: "spells", label: "Spells", icon: WandSparkles, glow: "var(--glow-gold)", color: "var(--gold-400)" },
 ];
 
 const STAT_KEYS: StatKey[] = ["str", "int", "con", "dex", "cha"];
@@ -50,18 +53,6 @@ type SheetItem = ItemInstance & { resource: Resource };
 
 function itemForSlot(items: SheetItem[], slot: string) {
   return items.find((i) => i.equipped_slot === slot) ?? null;
-}
-
-function loreText(value: unknown, empty: string) {
-  if (value == null) return empty;
-  if (typeof value === "string") return value.trim() || empty;
-  if (Array.isArray(value)) return value.length ? value.map(String).join(", ") : empty;
-  if (typeof value === "object") {
-    const keys = Object.keys(value as object);
-    if (keys.length === 0) return empty;
-    return JSON.stringify(value, null, 2);
-  }
-  return String(value);
 }
 
 function StandingTemplate() {
@@ -118,16 +109,20 @@ function FullBodyFrame({ name }: { name: string }) {
 export function CharacterSheet({
   crawler,
   skills,
+  spells = [],
   effects,
   items,
   modifiers = [],
   canEditSkills = false,
+  canEditSpells = false,
   canEditVitals = false,
   canViewInventory = true,
   canEquip = false,
   advancementOpen = false,
   onToggleSkillCheck,
   onAdjustSkillRank,
+  onToggleSpellCheck,
+  onAdjustSpellRank,
   onLifeChange,
   onManaChange,
   onEquip,
@@ -136,16 +131,20 @@ export function CharacterSheet({
 }: {
   crawler: Crawler;
   skills: Skill[];
+  spells?: Spell[];
   effects: Effect[];
   items: SheetItem[];
   modifiers?: StatModifierRow[];
   canEditSkills?: boolean;
+  canEditSpells?: boolean;
   canEditVitals?: boolean;
   canViewInventory?: boolean;
   canEquip?: boolean;
   advancementOpen?: boolean;
   onToggleSkillCheck?: (skill: Skill, checked: boolean) => void;
   onAdjustSkillRank?: (skill: Skill, delta: -1 | 1) => void;
+  onToggleSpellCheck?: (spell: Spell, checked: boolean) => void;
+  onAdjustSpellRank?: (spell: Spell, delta: -1 | 1) => void;
   onLifeChange?: (lifeBoxes: number) => void;
   onManaChange?: (manaCurrent: number) => void;
   onEquip?: (itemId: string, slot?: string) => void;
@@ -231,7 +230,16 @@ export function CharacterSheet({
                 onAdjustSkillRank={onAdjustSkillRank}
               />
             )}
-            {tab === "background" && <BackgroundTab crawler={crawler} />}
+            {tab === "spells" && (
+              <SpellsTab
+                crawler={crawler}
+                spells={spells}
+                canEditSpells={canEditSpells}
+                advancementOpen={advancementOpen}
+                onToggleSpellCheck={onToggleSpellCheck}
+                onAdjustSpellRank={onAdjustSpellRank}
+              />
+            )}
           </motion.div>
         </AnimatePresence>
       </GlassPanel>
@@ -375,7 +383,7 @@ function EquipCell({
       <InventorySlot
         name={item?.resource.name}
         rarity={item?.resource.rarity}
-        iconUrl={item?.resource.icon_url}
+        iconUrl={item ? resourceThumbUrl(item.resource) : null}
         detail={item ? resourceBlurb(item.resource) : undefined}
         bonuses={item ? bonusLines(item.resource) : undefined}
         empty={!item}
@@ -557,29 +565,44 @@ function SkillsTab({
   );
 }
 
-function BackgroundTab({ crawler }: { crawler: Crawler }) {
-  const rows: { label: string; value: string }[] = [
-    { label: "Deidad", value: loreText(crawler.deity, "Ninguna") },
-    { label: "Trauma pasado", value: loreText(crawler.past_trauma, "El dungeon aún no ha abierto esa herida.") },
-    { label: "Popularidad", value: loreText(crawler.popularity, "Anónimo. Por ahora.") },
-    { label: "Cabos sueltos", value: loreText(crawler.loose_ends, "Ninguno registrado") },
-    { label: "Arrepentimientos", value: loreText(crawler.regrets, `Ninguno que ${BRAND} quiera imprimir`) },
-    { label: "Notas", value: loreText(crawler.notes, "Vacío") },
-    { label: "Habilidades raciales", value: loreText(crawler.racial_abilities, "Ninguna") },
-    { label: "Habilidades de clase", value: loreText(crawler.class_abilities, "Ninguna") },
-    { label: "Mascota", value: loreText(crawler.pet, "Sin mascota") },
-    { label: "Patrocinadores", value: loreText(crawler.sponsors, "Ninguno") },
-    { label: "Espacio personal", value: loreText(crawler.personal_space, "Vacío") },
-  ];
-
+function SpellsTab({
+  crawler,
+  spells,
+  canEditSpells,
+  advancementOpen,
+  onToggleSpellCheck,
+  onAdjustSpellRank,
+}: {
+  crawler: Crawler;
+  spells: Spell[];
+  canEditSpells: boolean;
+  advancementOpen: boolean;
+  onToggleSpellCheck?: (spell: Spell, checked: boolean) => void;
+  onAdjustSpellRank?: (spell: Spell, delta: -1 | 1) => void;
+}) {
+  if (spells.length === 0) {
+    return <p className="text-sm text-[var(--text-3)]">Aún no hay conjuros.</p>;
+  }
   return (
-    <div className="space-y-3">
-      {rows.map((row) => (
-        <div key={row.label}>
-          <p className="text-label mb-1">{row.label}</p>
-          <p className="whitespace-pre-wrap text-sm text-[var(--text-2)]">{row.value}</p>
-        </div>
-      ))}
+    <div className="space-y-2">
+      {advancementOpen && canEditSpells && (
+        <p className="rounded-lg border border-[var(--stroke-cyan)] bg-[rgba(0,212,255,0.08)] px-3 py-2 text-[11px] text-[var(--cyan-400)]">
+          Subida abierta. Ajusta el rango de los spells que hayas marcado.
+        </p>
+      )}
+      <ul className="space-y-2">
+        {sortSpellsStable(spells).map((s) => (
+          <SpellListItem
+            key={s.id}
+            crawler={crawler}
+            spell={s}
+            canCheck={canEditSpells && !advancementOpen}
+            canAdjustRank={canEditSpells && advancementOpen && s.check_marks > 0}
+            onToggleCheck={onToggleSpellCheck}
+            onAdjustRank={onAdjustSpellRank}
+          />
+        ))}
+      </ul>
     </div>
   );
 }

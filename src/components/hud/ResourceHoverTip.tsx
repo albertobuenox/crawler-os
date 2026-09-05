@@ -15,6 +15,7 @@ import {
   lootOriginLabel,
 } from "@/lib/loot";
 import { Star } from "lucide-react";
+import { resourceThumbUrl } from "@/lib/item-art";
 import { resourceDescriptionLabel, resourceKindLabel } from "@/lib/resources";
 import { ResourceKindMark } from "@/components/hud/ResourceKindMark";
 import { bonusLines, EQUIP_SLOT_LABEL, resourceEquipSlot } from "@/lib/equipment";
@@ -211,6 +212,7 @@ function ResourceTipCard({
   const slug = resource.slug?.trim();
   const slot = resourceEquipSlot(resource);
   const bonuses = bonusLines(resource);
+  const thumb = resourceThumbUrl(resource);
 
   return (
     <div
@@ -223,10 +225,10 @@ function ResourceTipCard({
         placed ? "opacity-100" : "opacity-0"
       )}
     >
-      {resource.icon_url ? (
+      {thumb ? (
         <div className="relative h-28 w-full overflow-hidden bg-[rgba(0,212,255,0.06)]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={resource.icon_url} alt="" className="h-full w-full object-cover" />
+          <img src={thumb} alt="" className="h-full w-full object-contain" />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-[rgba(5,6,13,0.92)] to-transparent" />
         </div>
       ) : null}

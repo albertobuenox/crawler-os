@@ -221,6 +221,28 @@ export interface Skill {
   skill_catalog?: SkillCatalogEntry | null;
 }
 
+export interface SpellCatalogEntry {
+  id: string;
+  slug: string;
+  name: string;
+  description?: string;
+  kind?: SkillKind;
+  thumb_url?: string | null;
+}
+
+export interface Spell {
+  id: string;
+  crawler_id: string;
+  catalog_id: string | null;
+  name: string;
+  rank: number;
+  linked_stat: StatKey;
+  check_marks: number;
+  notes: string | null;
+  created_at?: string;
+  spell_catalog?: SpellCatalogEntry | null;
+}
+
 export interface TableState {
   id: string;
   session_id: string;
