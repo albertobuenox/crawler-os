@@ -108,6 +108,7 @@ export function SceneSpectator({
         <PartyAvatarRail
           members={party}
           selfId={crawlerId}
+          sessionId={sessionId}
           locked={admin.active}
           forceEmotion={admin.active ? "miedo" : undefined}
           onOpenSheet={admin.active ? undefined : onOpenSheet}

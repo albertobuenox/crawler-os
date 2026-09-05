@@ -5,6 +5,7 @@ import { FloatingUtilityMenu } from "@/components/layout/FloatingUtilityMenu";
 import { CommandPaletteRoot } from "@/components/layout/CommandPalette";
 import { DMSceneChat } from "@/components/hud/DMSceneChat";
 import { LoginWelcomeNotice } from "@/components/layout/LoginWelcomeNotice";
+import { SessionLiveRoot } from "@/components/layout/SessionLiveRoot";
 import { MasterPinnedOverlays } from "@/components/dm/MasterPinnedOverlays";
 import { castSession } from "@/lib/utils";
 
@@ -35,6 +36,7 @@ export default async function DMLayout({ children }: { children: React.ReactNode
 
   return (
     <CommandPaletteRoot>
+      <SessionLiveRoot role="dm">
       <LoginWelcomeNotice />
       <div className="relative z-[var(--z-shell)] flex min-h-screen">
         <DMNavRail />
@@ -46,6 +48,7 @@ export default async function DMLayout({ children }: { children: React.ReactNode
         <DMSceneChat />
         <MasterPinnedOverlays />
       </div>
+      </SessionLiveRoot>
     </CommandPaletteRoot>
   );
 }

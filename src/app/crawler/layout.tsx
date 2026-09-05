@@ -6,6 +6,7 @@ import { CrawlerAdminLock } from "@/components/layout/CrawlerAdminLock";
 import { CrawlerBottomNav } from "@/components/layout/Nav";
 import { CrawlerHeader } from "@/components/layout/CrawlerHeader";
 import { LoginWelcomeNotice } from "@/components/layout/LoginWelcomeNotice";
+import { SessionLiveRoot } from "@/components/layout/SessionLiveRoot";
 
 export default async function CrawlerLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -24,6 +25,7 @@ export default async function CrawlerLayout({ children }: { children: React.Reac
 
   return (
     <SceneDiceProvider>
+      <SessionLiveRoot role="crawler">
       <LoginWelcomeNotice />
       <div className="relative z-[var(--z-shell)] flex h-dvh flex-col pb-[72px] lg:pb-0">
         <CrawlerAdminLock>
@@ -35,6 +37,7 @@ export default async function CrawlerLayout({ children }: { children: React.Reac
           <CrawlerBottomNav />
         </CrawlerAdminLock>
       </div>
+      </SessionLiveRoot>
     </SceneDiceProvider>
   );
 }

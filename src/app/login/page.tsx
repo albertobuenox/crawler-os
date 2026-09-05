@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { GlassPanel } from "@/components/ui/GlassPanel";
 import { cn } from "@/lib/utils";
-import { STATUS_LABEL, BRAND } from "@/lib/copy";
+import { STATUS_LABEL, BRAND, LOBBY_PICK_COPY, LOBBY_LIVE_LABEL } from "@/lib/copy";
 import { crawlerAvatarUrl, crawlerInitials } from "@/lib/crawler-art";
 import type { CrawlerStatus, UserRole } from "@/lib/types";
 import { Cpu, User } from "lucide-react";
@@ -18,10 +17,10 @@ type LobbyCrawler = {
   class_name: string | null;
   level: number;
   status: CrawlerStatus;
+  online?: boolean;
 };
 
 export default function LoginPage() {
-  const router = useRouter();
   const [role, setRole] = useState<UserRole | null>(null);
   const [crawlers, setCrawlers] = useState<LobbyCrawler[]>([]);
   const [loadingList, setLoadingList] = useState(false);
@@ -65,8 +64,7 @@ export default function LoginPage() {
       const body = (await res.json()) as { redirect?: string; error?: string };
       if (!res.ok) throw new Error(body.error || "No se pudo entrar");
       markLoginNoticePending();
-      router.push(body.redirect || "/");
-      router.refresh();
+      window.location.assign(body.redirect || "/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo entrar al dungeon");
       setEntering(false);
@@ -126,6 +124,7 @@ export default function LoginPage() {
         {role === "crawler" && (
           <div className="space-y-3">
             <p className="text-label text-center">Participantes de la mazmorra</p>
+            <p className="text-center text-xs text-[var(--text-3)]">{LOBBY_PICK_COPY}</p>
             {loadingList && (
               <p className="text-center text-sm text-[var(--text-3)]">{BRAND} está cargando…</p>
             )}
@@ -165,8 +164,15 @@ export default function LoginPage() {
                         </span>
                       </span>
                     </span>
-                    <span className="text-[10px] uppercase tracking-wider text-[var(--text-3)]">
-                      {STATUS_LABEL[c.status] ?? c.status}
+                    <span className="flex flex-col items-end gap-1">
+                      {c.online && (
+                        <span className="text-[10px] uppercase tracking-wider text-[var(--ok)]">
+                          {LOBBY_LIVE_LABEL}
+                        </span>
+                      )}
+                      <span className="text-[10px] uppercase tracking-wider text-[var(--text-3)]">
+                        {STATUS_LABEL[c.status] ?? c.status}
+                      </span>
                     </span>
                   </button>
                 );

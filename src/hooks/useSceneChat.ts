@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { RealtimeChannel } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
+import { broadcastSession, onSessionEvent, retainSessionBus } from "@/lib/session-bus";
 import { chatFromEvent, cycleChatChannel, upsertChatMessage, type ChatChannelOption } from "@/lib/chat";
 import { MASTER_CHAT_NAME } from "@/lib/copy";
 import {
@@ -26,7 +26,6 @@ export function useSceneChat(
   const [sending, setSending] = useState(false);
   const [ready, setReady] = useState(false);
   const [roster, setRoster] = useState<ChatChannelOption[]>(members ?? []);
-  const broadcastRef = useRef<RealtimeChannel | null>(null);
   const membersRef = useRef(members);
   membersRef.current = members;
   const authorRef = useRef<{
@@ -167,23 +166,18 @@ export function useSceneChat(
       )
       .subscribe();
 
-    const bus = supabase.channel(`session-chat:${sessionId}`, {
-      config: { broadcast: { self: true } },
+    const release = retainSessionBus(sessionId);
+    const off = onSessionEvent(sessionId, (event, payload) => {
+      if (event !== "chat_message" || !payload || typeof payload !== "object") return;
+      const msg = payload as ChatMessage;
+      if (!msg.id || !msg.body || !msg.created_at) return;
+      pushMessage(msg);
     });
-    broadcastRef.current = bus;
-    bus
-      .on("broadcast", { event: "chat_message" }, ({ payload }) => {
-        if (!payload || typeof payload !== "object") return;
-        const msg = payload as ChatMessage;
-        if (!msg.id || !msg.body || !msg.created_at) return;
-        pushMessage(msg);
-      })
-      .subscribe();
 
     return () => {
-      broadcastRef.current = null;
+      off();
+      release();
       supabase.removeChannel(live);
-      supabase.removeChannel(bus);
     };
   }, [pushMessage, sessionId, supabase]);
 
@@ -214,11 +208,7 @@ export function useSceneChat(
       const msg = payload as ChatMessage;
       pushMessage(msg);
       setDraft("");
-      await broadcastRef.current?.send({
-        type: "broadcast",
-        event: "chat_message",
-        payload: msg,
-      });
+      await broadcastSession(sessionId, "chat_message", msg);
       return true;
     } finally {
       setSending(false);

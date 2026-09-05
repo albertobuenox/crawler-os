@@ -5,6 +5,16 @@ import type { LootBoxRarity } from "./types";
 export const BRAND = "BORANT CORP";
 export const SCENE_LABEL = "Escena";
 export const MASTER_CHAT_NAME = "Master";
+export const LOBBY_PICK_COPY = "Cada PC entra con un crawler distinto. El Master abre el piso.";
+export const LOBBY_LIVE_LABEL = "En mesa";
+export const TABLE_LIVE_COPY = "Mesa";
+
+export function tableLiveLine(crawlerOnline: number, crawlerTotal: number, masterOnline: boolean) {
+  const party = `${crawlerOnline}/${Math.max(crawlerTotal, 0)}`;
+  return masterOnline
+    ? `${TABLE_LIVE_COPY} ${party} · Master en línea`
+    : `${TABLE_LIVE_COPY} ${party} · Master ausente`;
+}
 export const EMPTY_SCENE_COPY = "No se ve una mierda";
 export const EMPTY_SCENE_CANVAS_COPY = "El marco está vacío. El Master aún no ha puesto un mapa.";
 export const EMPTY_SCENE_EDITOR_COPY = "Sube un mapa o coloca fichas. Esto es lo que ven los crawlers.";

@@ -14,7 +14,8 @@ import { chatChannelColor, chatChannelLabel, type ChatChannelOption } from "@/li
 import { SceneLogList } from "@/components/hud/SceneLogList";
 import { useSceneChat } from "@/hooks/useSceneChat";
 import { useSceneLog } from "@/hooks/useSceneLog";
-import { BRAND } from "@/lib/copy";
+import { BRAND, tableLiveLine } from "@/lib/copy";
+import { useSessionPresence } from "@/hooks/useSessionPresence";
 import { CHAT_BODY_MAX, CHAT_CHANNEL_ALL, type ChatMessage } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -201,6 +202,7 @@ export function SceneChat({
   } | null>(null);
   const skipClickRef = useRef(false);
   const chat = useSceneChat(sessionId, members);
+  const live = useSessionPresence(sessionId);
   const rosterNames = Object.fromEntries(chat.roster.map((m) => [m.id, m.label]));
   const log = useSceneLog(sessionId, rosterNames);
   posRef.current = pos;
@@ -505,6 +507,9 @@ export function SceneChat({
                 );
               })}
             </div>
+            <p className="min-w-0 truncate font-display text-[9px] uppercase tracking-[0.12em] text-[var(--text-cyan)]">
+              {tableLiveLine(live.crawlerOnline, chat.roster.length, live.masterOnline)}
+            </p>
             <div className="flex shrink-0 touch-auto items-center gap-1">
               <div
                 role="group"

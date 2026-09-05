@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useSessionBroadcast } from "@/hooks/useSession";
+import { fetchActiveMembership, useSessionBroadcast } from "@/hooks/useSession";
 import { useSceneDice } from "@/hooks/useSceneDice";
 import { parseAvatarEmotion, type AvatarEmotion } from "@/lib/crawler-art";
 
@@ -32,12 +32,7 @@ export function SceneDiceProvider({ children }: { children: ReactNode }) {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || cancelled) return;
-      const { data: member } = await supabase
-        .from("session_members")
-        .select("session_id, crawler_id")
-        .eq("user_id", user.id)
-        .limit(1)
-        .maybeSingle();
+      const member = await fetchActiveMembership(user.id);
       if (!member || cancelled) return;
       setSessionId(member.session_id);
       const { data: crawlers } = await supabase

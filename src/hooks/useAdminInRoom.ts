@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useRealtimeTable, useSessionBroadcast } from "@/hooks/useSession";
+import { fetchActiveMembership, useRealtimeTable, useSessionBroadcast } from "@/hooks/useSession";
 
 function payloadActive(payload: unknown): boolean | null {
   if (!payload || typeof payload !== "object" || !("active" in payload)) return null;
@@ -90,12 +90,7 @@ export function useCrawlerSessionId() {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user || cancelled) return;
-      const { data: member } = await supabase
-        .from("session_members")
-        .select("session_id")
-        .eq("user_id", user.id)
-        .limit(1)
-        .maybeSingle();
+      const member = await fetchActiveMembership(user.id);
       if (!cancelled) setSessionId(member?.session_id ?? undefined);
     })();
     return () => {

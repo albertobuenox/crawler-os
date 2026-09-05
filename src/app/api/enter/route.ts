@@ -34,6 +34,57 @@ async function ensureUser(
   return existing;
 }
 
+function floorCode() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let tail = "";
+  for (let i = 0; i < 4; i += 1) {
+    tail += chars[Math.floor(Math.random() * chars.length)] ?? "A";
+  }
+  return `FLOOR-${tail}`;
+}
+
+async function ensureActiveFloor(
+  admin: ReturnType<typeof createAdminClient>,
+  userId: string
+) {
+  const { data: session } = await admin
+    .from("sessions")
+    .select("id, created_by")
+    .eq("is_active", true)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (session) {
+    if (session.created_by !== userId) {
+      await admin.from("sessions").update({ created_by: userId }).eq("id", session.id);
+    }
+    await admin.from("session_members").upsert(
+      { session_id: session.id, user_id: userId },
+      { onConflict: "session_id,user_id" }
+    );
+    return;
+  }
+
+  let created: { id: string } | null = null;
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const { data, error } = await admin
+      .from("sessions")
+      .insert({ name: "Sesión de piso", created_by: userId, code: floorCode() })
+      .select("id")
+      .single();
+    if (!error && data) {
+      created = data;
+      break;
+    }
+  }
+  if (!created) throw new Error("No se pudo abrir el piso");
+
+  await admin.from("session_members").insert({ session_id: created.id, user_id: userId });
+  await admin.from("table_state").insert({ session_id: created.id });
+  void admin.from("minimap_state").insert({ session_id: created.id });
+}
+
 async function signInAs(
   admin: ReturnType<typeof createAdminClient>,
   email: string
@@ -127,25 +178,7 @@ export async function POST(request: Request) {
     }
 
     await admin.from("profiles").update({ role: "dm", display_name: "Dungeon Master" }).eq("id", userId);
-
-    const { data: session } = await admin
-      .from("sessions")
-      .select("id, created_by")
-      .eq("is_active", true)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (session) {
-      if (session.created_by !== userId) {
-        await admin.from("sessions").update({ created_by: userId }).eq("id", session.id);
-      }
-      await admin.from("session_members").upsert(
-        { session_id: session.id, user_id: userId },
-        { onConflict: "session_id,user_id" }
-      );
-    }
-
+    await ensureActiveFloor(admin, userId);
     await signInAs(admin, email);
     return NextResponse.json({ ok: true, redirect: "/dm" });
   } catch (err) {

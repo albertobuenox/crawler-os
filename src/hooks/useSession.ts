@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useCallback, useRef } from "react";
-import type { RealtimeChannel } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
+import { broadcastSession, onSessionEvent, retainSessionBus } from "@/lib/session-bus";
+import { castSession } from "@/lib/utils";
 
 export function useRealtimeTable<T = Record<string, unknown>>(
   table: string,
@@ -45,62 +46,25 @@ export function useSessionBroadcast(
   sessionId: string | undefined,
   onMessage: (event: string, payload: unknown) => void
 ) {
-  const supabase = createClient();
-  const channelRef = useRef<RealtimeChannel | null>(null);
   const onMessageRef = useRef(onMessage);
   onMessageRef.current = onMessage;
 
   useEffect(() => {
     if (!sessionId) return;
-
-    const channel = supabase.channel(`session:${sessionId}`, {
-      config: { broadcast: { self: true } },
+    const release = retainSessionBus(sessionId);
+    const off = onSessionEvent(sessionId, (event, payload) => {
+      onMessageRef.current(event, payload);
     });
-    channelRef.current = channel;
-
-    channel
-      .on("broadcast", { event: "cinematic" }, ({ payload }) =>
-        onMessageRef.current("cinematic", payload)
-      )
-      .on("broadcast", { event: "dice_anim" }, ({ payload }) =>
-        onMessageRef.current("dice_anim", payload)
-      )
-      .on("broadcast", { event: "table_update" }, ({ payload }) =>
-        onMessageRef.current("table_update", payload)
-      )
-      .on("broadcast", { event: "loot_box" }, ({ payload }) =>
-        onMessageRef.current("loot_box", payload)
-      )
-      .on("broadcast", { event: "party_patch" }, ({ payload }) =>
-        onMessageRef.current("party_patch", payload)
-      )
-      .on("broadcast", { event: "minimap_update" }, ({ payload }) =>
-        onMessageRef.current("minimap_update", payload)
-      )
-      .on("broadcast", { event: "scene_canvas_update" }, ({ payload }) =>
-        onMessageRef.current("scene_canvas_update", payload)
-      )
-      .on("broadcast", { event: "admin_in_room" }, ({ payload }) =>
-        onMessageRef.current("admin_in_room", payload)
-      )
-      .subscribe();
-
     return () => {
-      channelRef.current = null;
-      supabase.removeChannel(channel);
+      off();
+      release();
     };
-  }, [sessionId, supabase]);
+  }, [sessionId]);
 
   const broadcast = useCallback(
     async (event: string, payload: unknown) => {
       if (!sessionId) return;
-      const channel = channelRef.current;
-      if (!channel) return;
-      await channel.send({
-        type: "broadcast",
-        event,
-        payload: payload as Record<string, unknown>,
-      });
+      await broadcastSession(sessionId, event, payload);
     },
     [sessionId]
   );
@@ -119,17 +83,22 @@ export async function fetchProfile() {
   return data;
 }
 
-export async function fetchActiveSession(userId: string) {
+export async function fetchActiveMembership(userId: string) {
   const supabase = createClient();
-  const { data: member } = await supabase
+  const { data: members } = await supabase
     .from("session_members")
-    .select("session_id, sessions(*)")
+    .select("session_id, crawler_id, joined_at, sessions(*)")
     .eq("user_id", userId)
-    .order("joined_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .order("joined_at", { ascending: false });
 
-  return member?.sessions ?? null;
+  const rows = members ?? [];
+  const live = rows.find((row) => castSession(row.sessions)?.is_active);
+  return live ?? rows[0] ?? null;
+}
+
+export async function fetchActiveSession(userId: string) {
+  const member = await fetchActiveMembership(userId);
+  return member ? castSession(member.sessions) : null;
 }
 
 export async function fetchMyCrawler(sessionId: string, userId: string) {

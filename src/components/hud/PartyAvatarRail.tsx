@@ -15,6 +15,7 @@ import {
 } from "@/lib/crawler-art";
 import { crawlerClassLabel, crawlerIdentityLine, crawlerRaceLabel } from "@/lib/copy";
 import { clampLifeBoxes, clampMana, healthBarColor, healthPercent, MANA_BAR_COLOR, manaPercent } from "@/lib/rules";
+import { useSessionPresence } from "@/hooks/useSessionPresence";
 import { cn } from "@/lib/utils";
 
 export type PartyAvatar = {
@@ -301,6 +302,7 @@ function AvatarFrame({
   choosing = false,
   dimmed = false,
   locked = false,
+  online,
   onOpenSheet,
   onEmotionChange,
   onLifeChange,
@@ -312,6 +314,7 @@ function AvatarFrame({
   choosing?: boolean;
   dimmed?: boolean;
   locked?: boolean;
+  online?: boolean;
   onOpenSheet?: (id: string) => void;
   onEmotionChange?: (emotion: AvatarEmotion | null) => void;
   onLifeChange?: (lifeBoxes: number) => void;
@@ -398,7 +401,11 @@ function AvatarFrame({
             <span
               className={cn(
                 "absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border border-[var(--void-950)]",
-                statusPip[member.status]
+                online === true
+                  ? "bg-[var(--ok)] shadow-[0_0_8px_var(--ok)]"
+                  : online === false
+                    ? "bg-[var(--offline)]"
+                    : statusPip[member.status]
               )}
               aria-hidden="true"
             />
@@ -527,6 +534,7 @@ function AvatarFrame({
 export function PartyAvatarRail({
   members,
   selfId,
+  sessionId,
   choosingId,
   locked = false,
   forceEmotion,
@@ -537,6 +545,7 @@ export function PartyAvatarRail({
 }: {
   members: PartyAvatar[];
   selfId?: string | null;
+  sessionId?: string;
   choosingId?: string | null;
   locked?: boolean;
   forceEmotion?: AvatarEmotion | null;
@@ -545,6 +554,7 @@ export function PartyAvatarRail({
   onSelfManaChange?: (manaCurrent: number) => void;
   onSelfEmotionChange?: (emotion: AvatarEmotion | null) => void;
 }) {
+  const live = useSessionPresence(sessionId);
   const ordered = useMemo(() => {
     if (!selfId) return members;
     const self = members.find((m) => m.id === selfId);
@@ -574,6 +584,7 @@ export function PartyAvatarRail({
             choosing={choosing}
             dimmed={!!choosingId && !choosing && !locked}
             locked={locked}
+            online={member ? live.crawlerIds.has(member.id) : undefined}
             onOpenSheet={locked ? undefined : onOpenSheet}
             onEmotionChange={locked || !isSelf ? undefined : onSelfEmotionChange}
             onLifeChange={locked || !isSelf ? undefined : onSelfLifeChange}

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRealtimeTable } from "@/hooks/useSession";
+import { useSessionPresence } from "@/hooks/useSessionPresence";
 import { LayoutGrid, ScrollText } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { AdminInRoomButton } from "@/components/hud/AdminInRoomButton";
@@ -32,6 +33,7 @@ export default function DMTablePage() {
   const [view, setView] = useState<"canvas" | string>("canvas");
   const [sheetId, setSheetId] = useState<string | null>(null);
   const admin = useAdminInRoom(session?.id);
+  const live = useSessionPresence(session?.id);
 
   useEffect(() => {
     void load();
@@ -116,6 +118,7 @@ export default function DMTablePage() {
         {crawlers.map((crawler) => {
           const src = crawlerAvatarUrl(crawler.name, crawler.portrait_url);
           const active = view === crawler.id;
+          const online = live.crawlerIds.has(crawler.id);
           return (
             <button
               key={crawler.id}
@@ -128,7 +131,8 @@ export default function DMTablePage() {
                   : "border-[var(--stroke-glass)] hover:border-[var(--stroke-cyan)]"
               )}
             >
-              <span className="h-7 w-7 overflow-hidden rounded-[8px] bg-[rgba(8,10,18,0.85)]">
+              <span className="relative h-7 w-7 shrink-0">
+                <span className="h-7 w-7 overflow-hidden rounded-[8px] bg-[rgba(8,10,18,0.85)]">
                 {src ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={src} alt="" className="h-full w-full object-cover" />
@@ -137,6 +141,14 @@ export default function DMTablePage() {
                     {crawlerInitials(crawler.name)}
                   </span>
                 )}
+                </span>
+                <span
+                  className={cn(
+                    "absolute -right-0.5 -top-0.5 z-[1] h-2 w-2 rounded-full border border-[var(--void-950)]",
+                    online ? "bg-[var(--ok)] shadow-[0_0_6px_var(--ok)]" : "bg-[var(--offline)]"
+                  )}
+                  aria-hidden="true"
+                />
               </span>
               <span className="font-display text-[11px] tracking-wide">{crawler.name}</span>
             </button>

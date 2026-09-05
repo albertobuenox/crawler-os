@@ -11,7 +11,7 @@ import { SceneHotbar } from "@/components/hud/SceneHotbar";
 import { MinimapPanel } from "@/components/hud/MinimapPanel";
 import type { ItemInstance, Resource, Skill, TableState, MapPin } from "@/lib/types";
 import { useCrawlerAdminLocked } from "@/components/layout/CrawlerAdminLock";
-import { useRealtimeTable, useSessionBroadcast } from "@/hooks/useSession";
+import { fetchActiveMembership, useRealtimeTable, useSessionBroadcast } from "@/hooks/useSession";
 import { useSceneCanvas } from "@/hooks/useSceneCanvas";
 import { updateCrawlerVitals } from "@/lib/crawler-vitals";
 import { readStoredAvatarEmotions, type AvatarEmotion } from "@/lib/crawler-art";
@@ -58,7 +58,7 @@ export default function CrawlerTablePage() {
   const load = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { data: member } = await supabase.from("session_members").select("session_id, crawler_id").eq("user_id", user.id).limit(1).maybeSingle();
+    const member = await fetchActiveMembership(user.id);
     if (!member) return;
     setSessionId(member.session_id);
     const [{ data: ts }, { data: p }, { data: crawlers }] = await Promise.all([
@@ -106,15 +106,29 @@ export default function CrawlerTablePage() {
 
   useEffect(() => {
     load();
+  }, [load]);
+
+  useEffect(() => {
+    if (!sessionId) return;
     const ch = supabase
-      .channel("crawler-table")
-      .on("postgres_changes", { event: "*", schema: "public", table: "table_state" }, () => load())
-      .on("postgres_changes", { event: "*", schema: "public", table: "map_pins" }, () => load())
+      .channel(`crawler-table:${sessionId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "table_state", filter: `session_id=eq.${sessionId}` },
+        () => load()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "map_pins", filter: `session_id=eq.${sessionId}` },
+        () => load()
+      )
       .on("postgres_changes", { event: "*", schema: "public", table: "skills" }, () => load())
       .on("postgres_changes", { event: "*", schema: "public", table: "item_instances" }, () => load())
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [load, supabase]);
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [load, sessionId, supabase]);
 
   const scene = useSceneCanvas(sessionId, { role: "crawler", selfId });
   const adminLocked = useCrawlerAdminLocked();
@@ -156,6 +170,7 @@ export default function CrawlerTablePage() {
         <PartyAvatarRail
           members={party}
           selfId={selfId}
+          sessionId={sessionId}
           choosingId={adminLocked ? undefined : choosing?.crawlerId}
           locked={adminLocked}
           forceEmotion={adminLocked ? "miedo" : undefined}
