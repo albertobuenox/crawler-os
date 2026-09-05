@@ -8,6 +8,7 @@ import { STATUS_LABEL, BRAND } from "@/lib/copy";
 import { crawlerAvatarUrl, crawlerInitials } from "@/lib/crawler-art";
 import type { CrawlerStatus, UserRole } from "@/lib/types";
 import { Cpu, User } from "lucide-react";
+import { markLoginNoticePending } from "@/lib/login-notice";
 import { LoginBackdrop } from "./LoginBackdrop";
 
 type LobbyCrawler = {
@@ -63,6 +64,7 @@ export default function LoginPage() {
       });
       const body = (await res.json()) as { redirect?: string; error?: string };
       if (!res.ok) throw new Error(body.error || "No se pudo entrar");
+      markLoginNoticePending();
       router.push(body.redirect || "/");
       router.refresh();
     } catch (err) {

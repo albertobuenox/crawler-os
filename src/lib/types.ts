@@ -228,6 +228,7 @@ export interface SceneToken {
   sprite_url: string | null;
   crawler_id: string | null;
   resource_id: string | null;
+  mob_id: string | null;
   z: number;
 }
 
@@ -383,6 +384,66 @@ export interface ChatMessage {
   channel: string;
   body: string;
   created_at: string;
+}
+
+export type MobType =
+  | "beast"
+  | "undead"
+  | "construct"
+  | "humanoid"
+  | "aberration"
+  | "elemental"
+  | "vermin"
+  | "dragon"
+  | "fiend"
+  | "plant";
+
+export interface DmNotificationDraft {
+  id: string;
+  session_id: string;
+  notification_type: NotificationType;
+  title: string;
+  body: string | null;
+  payload: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DmNote {
+  id: string;
+  session_id: string;
+  title: string;
+  body: string;
+  is_reminder: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DmChecklistItem {
+  id: string;
+  text: string;
+  done: boolean;
+}
+
+export interface DmChecklist {
+  id: string;
+  session_id: string;
+  title: string;
+  is_pinned: boolean;
+  items: DmChecklistItem[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DmMob {
+  id: string;
+  session_id: string;
+  name: string;
+  level: number;
+  mob_type: MobType;
+  sprite_url: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export const CHAT_CHANNEL_ALL = "all";

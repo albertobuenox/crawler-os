@@ -16,6 +16,7 @@ import {
   User,
   Backpack,
   Sparkles,
+  StickyNote,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NotificationBadge } from "@/components/hud/EventLog";
@@ -31,6 +32,7 @@ const dmNav = [
   { href: "/dm/resources", icon: Database, label: "Recursos", glow: "var(--glow-cyan)" },
   { href: "/dm/world", icon: Map, label: "Mundo", glow: "var(--glow-gold)" },
   { href: "/dm/table", icon: LayoutGrid, label: SCENE_LABEL, glow: "var(--glow-cyan)" },
+  { href: "/dm/notes", icon: StickyNote, label: "Notas del Master", glow: "var(--glow-gold)" },
   { href: "/dm/dice", icon: Dices, label: "Dados", glow: "var(--glow-orange)", disabled: true },
   { href: "/dm/notifications", icon: Bell, label: "Sistema", glow: "var(--glow-orange)", disabled: true },
   { href: "/dm/log", icon: ScrollText, label: "Registro", glow: "var(--glow-cyan)", disabled: true },

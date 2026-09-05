@@ -34,6 +34,9 @@ import {
   Tv,
   User,
   Users,
+  StickyNote,
+  Skull,
+  ListChecks,
   type LucideIcon,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -73,6 +76,9 @@ const ICONS: Record<CommandIcon, LucideIcon> = {
   user: User,
   box: Box,
   smartphone: Smartphone,
+  "sticky-note": StickyNote,
+  skull: Skull,
+  list: ListChecks,
 };
 
 const CommandPaletteContext = createContext<{ open: () => void }>({ open: () => {} });

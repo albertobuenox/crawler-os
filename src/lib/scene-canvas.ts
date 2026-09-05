@@ -90,6 +90,7 @@ function parseToken(raw: unknown, index: number): SceneToken | null {
     sprite_url: typeof row.sprite_url === "string" ? row.sprite_url : null,
     crawler_id: typeof row.crawler_id === "string" ? row.crawler_id : null,
     resource_id: typeof row.resource_id === "string" ? row.resource_id : null,
+    mob_id: typeof row.mob_id === "string" ? row.mob_id : null,
     z: asNumber(row.z, 100 + index),
   };
 }
@@ -144,7 +145,7 @@ export function makeSceneToken(
   kind: SceneTokenKind,
   x: number,
   y: number,
-  extra?: Partial<Pick<SceneToken, "label" | "sprite_url" | "crawler_id" | "resource_id" | "size">>
+  extra?: Partial<Pick<SceneToken, "label" | "sprite_url" | "crawler_id" | "resource_id" | "mob_id" | "size">>
 ): SceneToken {
   return {
     id: newSceneId(),
@@ -157,6 +158,7 @@ export function makeSceneToken(
     sprite_url: extra?.sprite_url ?? null,
     crawler_id: extra?.crawler_id ?? null,
     resource_id: extra?.resource_id ?? null,
+    mob_id: extra?.mob_id ?? null,
     z: 1000 + (Date.now() % 100000),
   };
 }

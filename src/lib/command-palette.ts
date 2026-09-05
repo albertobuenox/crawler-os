@@ -42,7 +42,10 @@ export type CommandIcon =
   | "gift"
   | "user"
   | "box"
-  | "smartphone";
+  | "smartphone"
+  | "sticky-note"
+  | "skull"
+  | "list";
 
 export type CommandRun =
   | "phase-exploration"
@@ -52,7 +55,7 @@ export type CommandRun =
   | "sign-out"
   | "copy-code";
 
-export type CreateKind = "crawler" | "resource" | "skill";
+export type CreateKind = "crawler" | "resource" | "skill" | "notification" | "note" | "checklist" | "mob";
 
 export type PaletteCommand = {
   id: string;
@@ -82,6 +85,7 @@ export function buildPaletteCommands(ctx: PaletteContext): PaletteCommand[] {
     nav("go-resources", "Recursos", "/dm/resources", "database", ["loot", "items", "objetos", "catálogo"]),
     nav("go-world", "Mundo", "/dm/world", "map", ["piso", "combate", "descanso", "fn", "minimapa", "mapa"]),
     nav("go-table", SCENE_LABEL, "/dm/table", "layout-grid", ["mesa", "tv", "pantalla", "proyección", "lienzo", "mapa", "escena"]),
+    nav("go-master-notes", "Notas del Master", "/dm/notes", "sticky-note", ["notas", "recordatorios", "checklist", "mobs", "notificaciones", "bestiario"]),
     nav("go-log", "Registro", "/dm/log", "scroll", ["eventos", "log", "historial"]),
     nav("go-notifications", "Sistema", "/dm/notifications", "bell", ["notificaciones", "avisos"]),
     nav("go-settings", "Ajustes", "/dm/settings", "settings", ["config", "cuenta"]),
@@ -124,6 +128,46 @@ export function buildPaletteCommands(ctx: PaletteContext): PaletteCommand[] {
       icon: "plus",
       href: "/dm/skills?new=1",
       createKind: "skill",
+    },
+    {
+      id: "create-notification",
+      group: "create",
+      label: "Nueva notificación",
+      hint: "Notas del Master",
+      keywords: ["crear", "aviso", "sistema", "reward", "penalty"],
+      icon: "bell",
+      href: "/dm/notes?tab=notifications&new=1",
+      createKind: "notification",
+    },
+    {
+      id: "create-note",
+      group: "create",
+      label: "Nueva nota",
+      hint: "Notas del Master",
+      keywords: ["crear", "recordatorio", "apuntes"],
+      icon: "sticky-note",
+      href: "/dm/notes?tab=notes&new=1",
+      createKind: "note",
+    },
+    {
+      id: "create-checklist",
+      group: "create",
+      label: "Nueva checklist",
+      hint: "Notas del Master",
+      keywords: ["crear", "lista", "checks", "progreso"],
+      icon: "list",
+      href: "/dm/notes?tab=checklists&new=1",
+      createKind: "checklist",
+    },
+    {
+      id: "create-mob",
+      group: "create",
+      label: "Nuevo mob",
+      hint: "Notas del Master",
+      keywords: ["crear", "enemigo", "monstruo", "bestiario"],
+      icon: "skull",
+      href: "/dm/notes?tab=mobs&new=1",
+      createKind: "mob",
     },
     {
       id: "go-combat",

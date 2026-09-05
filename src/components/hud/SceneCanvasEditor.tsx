@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { Hand, ImagePlus, MousePointer2, Skull, Trash2, User, ZoomIn, ZoomOut } from "lucide-react";
 import { SceneStage, type SceneStageTool } from "@/components/hud/SceneStage";
 import { Button } from "@/components/ui/Button";
@@ -18,23 +19,27 @@ import {
   type SceneHit,
 } from "@/lib/scene-canvas";
 import { crawlerAvatarUrl } from "@/lib/crawler-art";
-import type { Resource, SceneCanvasDoc, SceneToken } from "@/lib/types";
+import type { DmMob, Resource, SceneCanvasDoc, SceneToken } from "@/lib/types";
+import { defaultMobSprite, MOB_TYPE_LABEL } from "@/lib/master-notes";
 import { cn } from "@/lib/utils";
 
 type Stamp =
   | { type: "player"; crawler: SceneCrawlerOpt; variant: "avatar" | "full" }
-  | { type: "enemy"; resource: Resource };
+  | { type: "enemy"; resource: Resource }
+  | { type: "mob"; mob: DmMob };
 
 export function SceneCanvasEditor({
   sessionId,
   crawlers,
   monsters,
   maps = [],
+  mobs = [],
 }: {
   sessionId: string;
   crawlers: SceneCrawlerOpt[];
   monsters: Resource[];
   maps?: Resource[];
+  mobs?: DmMob[];
 }) {
   const { doc, ready, error, commit, setBusy } = useSceneCanvas(sessionId, { role: "dm" });
   const [tool, setTool] = useState<SceneStageTool>("select");
@@ -92,6 +97,14 @@ export function SceneCanvasEditor({
         label: stamp.crawler.name,
         crawler_id: stamp.crawler.id,
         sprite_url: playerSpriteUrl(stamp.crawler, stamp.variant),
+      });
+      apply({ ...map, tokens: [...map.tokens, token] }, true);
+      setSelected({ type: "token", id: token.id });
+    } else if (stamp.type === "mob") {
+      const token = makeSceneToken("enemy", world.x, world.y, {
+        label: stamp.mob.name,
+        mob_id: stamp.mob.id,
+        sprite_url: stamp.mob.sprite_url || defaultMobSprite(stamp.mob.mob_type),
       });
       apply({ ...map, tokens: [...map.tokens, token] }, true);
       setSelected({ type: "token", id: token.id });
@@ -317,6 +330,50 @@ export function SceneCanvasEditor({
         </section>
 
         <section className="glass p-3">
+          <p className="text-label text-[var(--danger)]">Mobs</p>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            {mobs.length === 0 && (
+              <p className="col-span-2 text-xs text-[var(--text-3)]">
+                Créalos en{" "}
+                <Link href="/dm/notes?tab=mobs" className="text-[var(--cyan-400)] hover:text-[var(--text-1)]">
+                  Notas del Master
+                </Link>
+                . Luego pincha y suéltalos en el mapa.
+              </p>
+            )}
+            {mobs.map((mob) => {
+              const active = stamp?.type === "mob" && stamp.mob.id === mob.id;
+              const src = mob.sprite_url || defaultMobSprite(mob.mob_type);
+              return (
+                <button
+                  key={mob.id}
+                  type="button"
+                  onClick={() => {
+                    setStamp({ type: "mob", mob });
+                    setTool("place");
+                  }}
+                  className={cn(
+                    "flex flex-col items-center gap-1 rounded-[14px] border p-2 text-center",
+                    active
+                      ? "border-[var(--stroke-danger)] shadow-[var(--glow-danger)]"
+                      : "border-[var(--stroke-glass)] hover:border-[var(--stroke-danger)]"
+                  )}
+                >
+                  <span className="relative h-12 w-12 overflow-hidden rounded-[10px] bg-[rgba(8,10,18,0.8)]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={src} alt="" className="h-full w-full object-cover" />
+                  </span>
+                  <span className="w-full truncate font-display text-[10px] tracking-wide">{mob.name}</span>
+                  <span className="text-[9px] text-[var(--text-4)]">
+                    Nv {mob.level} · {MOB_TYPE_LABEL[mob.mob_type] ?? mob.mob_type}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="glass p-3">
           <p className="text-label text-[var(--cyan-400)]">Enemigos</p>
           <div className="mt-2 grid grid-cols-2 gap-2">
             {monsters.length === 0 && (
@@ -489,7 +546,7 @@ function TokenInspector({
       <input
         ref={spriteRef}
         type="file"
-        accept="image/webp,image/png,image/jpeg,image/gif"
+        accept="image/webp,image/svg+xml,image/png,image/jpeg,image/gif,.webp,.svg"
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0];

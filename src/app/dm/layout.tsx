@@ -4,6 +4,8 @@ import { DMNavRail, DMTopBar } from "@/components/layout/Nav";
 import { FloatingUtilityMenu } from "@/components/layout/FloatingUtilityMenu";
 import { CommandPaletteRoot } from "@/components/layout/CommandPalette";
 import { DMSceneChat } from "@/components/hud/DMSceneChat";
+import { LoginWelcomeNotice } from "@/components/layout/LoginWelcomeNotice";
+import { MasterPinnedOverlays } from "@/components/dm/MasterPinnedOverlays";
 import { castSession } from "@/lib/utils";
 
 export default async function DMLayout({ children }: { children: React.ReactNode }) {
@@ -33,6 +35,7 @@ export default async function DMLayout({ children }: { children: React.ReactNode
 
   return (
     <CommandPaletteRoot>
+      <LoginWelcomeNotice />
       <div className="relative z-[var(--z-shell)] flex min-h-screen">
         <DMNavRail />
         <div className="flex min-h-screen flex-1 flex-col">
@@ -41,6 +44,7 @@ export default async function DMLayout({ children }: { children: React.ReactNode
         </div>
         <FloatingUtilityMenu />
         <DMSceneChat />
+        <MasterPinnedOverlays />
       </div>
     </CommandPaletteRoot>
   );

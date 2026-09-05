@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRealtimeTable } from "@/hooks/useSession";
 import { LayoutGrid, ScrollText } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { SceneCanvasEditor } from "@/components/hud/SceneCanvasEditor";
 import { SceneSpectator } from "@/components/hud/SceneSpectator";
 import { SceneSheetPanel } from "@/components/hud/SceneSheetPanel";
-import type { GameSession, Resource } from "@/lib/types";
+import type { DmMob, GameSession, Resource } from "@/lib/types";
 import { castSession } from "@/lib/utils";
 import { crawlerAvatarUrl, crawlerInitials } from "@/lib/crawler-art";
 import { SCENE_LABEL } from "@/lib/copy";
@@ -25,12 +26,23 @@ export default function DMTablePage() {
   const [crawlers, setCrawlers] = useState<CrawlerOpt[]>([]);
   const [monsters, setMonsters] = useState<Resource[]>([]);
   const [maps, setMaps] = useState<Resource[]>([]);
+  const [mobs, setMobs] = useState<DmMob[]>([]);
   const [view, setView] = useState<"canvas" | string>("canvas");
   const [sheetId, setSheetId] = useState<string | null>(null);
 
   useEffect(() => {
     void load();
   }, []);
+
+  useRealtimeTable("dm_mobs", session ? `session_id=eq.${session.id}` : "session_id=eq.none", () => {
+    if (!session) return;
+    void supabase
+      .from("dm_mobs")
+      .select("*")
+      .eq("session_id", session.id)
+      .order("name")
+      .then(({ data }) => setMobs((data as DmMob[]) ?? []));
+  });
 
   async function load() {
     const {
@@ -47,7 +59,7 @@ export default function DMTablePage() {
     const sess = castSession(member?.sessions);
     setSession(sess ?? null);
     if (!sess) return;
-    const [{ data: roster }, { data: resources }] = await Promise.all([
+    const [{ data: roster }, { data: resources }, { data: mobRows }] = await Promise.all([
       supabase
         .from("crawlers")
         .select("id, name, portrait_url, avatar_emotion")
@@ -59,11 +71,13 @@ export default function DMTablePage() {
         .eq("session_id", sess.id)
         .in("kind", ["monster", "map"])
         .order("name"),
+      supabase.from("dm_mobs").select("*").eq("session_id", sess.id).order("name"),
     ]);
     const catalog = (resources as Resource[]) ?? [];
     setCrawlers((roster as CrawlerOpt[]) ?? []);
     setMonsters(catalog.filter((r) => r.kind === "monster"));
     setMaps(catalog.filter((r) => r.kind === "map"));
+    setMobs((mobRows as DmMob[]) ?? []);
   }
 
   const focus = useMemo(
@@ -152,7 +166,13 @@ export default function DMTablePage() {
         <div className="relative flex min-h-0 flex-1 gap-3">
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">
             {view === "canvas" ? (
-              <SceneCanvasEditor sessionId={session.id} crawlers={crawlers} monsters={monsters} maps={maps} />
+              <SceneCanvasEditor
+                sessionId={session.id}
+                crawlers={crawlers}
+                monsters={monsters}
+                maps={maps}
+                mobs={mobs}
+              />
             ) : (
               <SceneSpectator
                 sessionId={session.id}
