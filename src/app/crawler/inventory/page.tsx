@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { InventorySlot } from "@/components/hud/InventorySlot";
 import type { Crawler, ItemInstance, Resource } from "@/lib/types";
 import { RARITY_LABEL } from "@/lib/copy";
+import { resourceBlurb } from "@/lib/resources";
 
 export default function CrawlerInventoryPage() {
   const supabase = createClient();
@@ -40,7 +41,16 @@ export default function CrawlerInventoryPage() {
             {hotlist.length === 0 ? (
               <p className="col-span-5 text-sm text-[var(--text-3)]">Hotlist vacía.</p>
             ) : hotlist.map((i) => (
-              <InventorySlot key={i.id} name={i.resource.name} rarity={i.resource.rarity} hotlist onClick={() => setSelected(i)} />
+              <InventorySlot
+                key={i.id}
+                name={i.resource.name}
+                rarity={i.resource.rarity}
+                iconUrl={i.resource.icon_url}
+                detail={resourceBlurb(i.resource)}
+                showTooltip
+                hotlist
+                onClick={() => setSelected(i)}
+              />
             ))}
           </div>
         </GlassPanel>
@@ -58,6 +68,9 @@ export default function CrawlerInventoryPage() {
                   quantity={i.quantity}
                   equipped={!!i.equipped_slot}
                   selected={selected?.id === i.id}
+                  iconUrl={i.resource.icon_url}
+                  detail={resourceBlurb(i.resource)}
+                  showTooltip
                   onClick={() => setSelected(i)}
                 />
               ))}
@@ -68,7 +81,7 @@ export default function CrawlerInventoryPage() {
         {selected && (
           <GlassPanel title={selected.resource.name}>
             <p className="text-[var(--text-cyan)]">{RARITY_LABEL[selected.resource.rarity]}</p>
-            <p className="mt-2 text-sm">{selected.resource.system_copy ?? selected.resource.description}</p>
+            <p className="mt-2 text-sm">{resourceBlurb(selected.resource)}</p>
             <Button variant="neon" className="mt-4" size="sm">Usar (avisar al Dungeon Master)</Button>
           </GlassPanel>
         )}

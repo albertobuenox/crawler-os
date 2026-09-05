@@ -1,46 +1,61 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { GlassPanel } from "@/components/ui/GlassPanel";
 import { Button } from "@/components/ui/Button";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
-import { Input, Textarea, Select } from "@/components/ui/Input";
-import type { GameSession, Resource, ResourceKind, Rarity } from "@/lib/types";
+import { ResourceEditorModal, type ResourceDraft } from "@/components/dm/ResourceEditorModal";
+import { ResourceHoverTip } from "@/components/hud/ResourceHoverTip";
+import type { GameSession, Resource, ResourceKind } from "@/lib/types";
 import { castSession } from "@/lib/utils";
 import { RARITY_COLORS } from "@/lib/types";
-import { kindOptions, rarityOptions, KIND_LABEL, RARITY_LABEL } from "@/lib/copy";
+import { KIND_LABEL, RARITY_LABEL } from "@/lib/copy";
+import { resourceDescriptionLabel } from "@/lib/resources";
 import { useCreateRequest } from "@/hooks/useDmDeepLink";
 
 const KINDS: ResourceKind[] = [
   "item", "achievement", "map", "monster", "npc", "box", "buff", "debuff", "quest", "floor", "skill_template",
 ];
 
-const RARITIES: Rarity[] = ["common", "uncommon", "rare", "epic", "legendary", "celestial"];
-
 export default function DMResourcesPage() {
   const supabase = createClient();
   const [session, setSession] = useState<GameSession | null>(null);
   const [resources, setResources] = useState<Resource[]>([]);
   const [filter, setFilter] = useState<string>("all");
-  const [showForm, setShowForm] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState<Resource | null>(null);
   const [error, setError] = useState("");
-  const [busyId, setBusyId] = useState<string | null>(null);
+  const [formError, setFormError] = useState("");
+  const [busy, setBusy] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Resource | null>(null);
-  const [form, setForm] = useState({
-    name: "",
-    kind: "item" as ResourceKind,
-    rarity: "common" as Rarity,
-    description: "",
-    system_copy: "",
-  });
-  const openCreate = useCallback(() => setShowForm(true), []);
+
+  const openCreate = useCallback(() => {
+    setEditing(null);
+    setFormError("");
+    setFormOpen(true);
+  }, []);
   useCreateRequest("resource", openCreate);
+
+  const openEdit = useCallback((resource: Resource) => {
+    setEditing(resource);
+    setFormError("");
+    setFormOpen(true);
+  }, []);
 
   useEffect(() => {
     load();
   }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const editId = params.get("edit");
+    if (!editId || resources.length === 0) return;
+    const found = resources.find((item) => item.id === editId);
+    if (found) openEdit(found);
+    params.delete("edit");
+    const query = params.toString();
+    window.history.replaceState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
+  }, [openEdit, resources]);
 
   async function load() {
     const {
@@ -61,26 +76,49 @@ export default function DMResourcesPage() {
     }
   }
 
-  async function createResource(e: React.FormEvent) {
-    e.preventDefault();
+  async function saveResource(draft: ResourceDraft) {
     if (!session) return;
-    await supabase.from("resources").insert({ session_id: session.id, ...form, payload: {} });
-    setShowForm(false);
-    load();
+    setFormError("");
+    setBusy(true);
+    const payload = {
+      name: draft.name,
+      kind: draft.kind,
+      rarity: draft.rarity,
+      description: draft.description || null,
+      system_copy: draft.system_copy || null,
+      icon_url: draft.icon_url,
+    };
+    const result = editing
+      ? await supabase.from("resources").update(payload).eq("id", editing.id).select("*").single()
+      : await supabase.from("resources").insert({ session_id: session.id, ...payload, payload: {} }).select("*").single();
+    setBusy(false);
+    if (result.error) {
+      setFormError(result.error.message);
+      return;
+    }
+    const saved = result.data as Resource;
+    setResources((current) => {
+      if (editing) return current.map((item) => (item.id === saved.id ? saved : item));
+      return [saved, ...current];
+    });
+    setFormOpen(false);
+    setEditing(null);
   }
 
   async function deleteResource() {
     if (!pendingDelete) return;
     setError("");
-    setBusyId(pendingDelete.id);
+    setBusy(true);
     const { error: deleteError } = await supabase.from("resources").delete().eq("id", pendingDelete.id);
-    setBusyId(null);
+    setBusy(false);
     if (deleteError) {
       setError(deleteError.message);
       return;
     }
     setResources((current) => current.filter((item) => item.id !== pendingDelete.id));
     setPendingDelete(null);
+    setFormOpen(false);
+    setEditing(null);
   }
 
   const filtered = filter === "all" ? resources : resources.filter((r) => r.kind === filter);
@@ -89,8 +127,8 @@ export default function DMResourcesPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap justify-between gap-4">
         <h2 className="font-display text-xl">Recursos</h2>
-        <Button variant="energy" onClick={() => setShowForm(!showForm)}>
-          {showForm ? "Cancelar" : "Nuevo recurso"}
+        <Button variant="energy" onClick={openCreate}>
+          Nuevo recurso
         </Button>
       </div>
 
@@ -98,19 +136,6 @@ export default function DMResourcesPage() {
         <p className="rounded-xl border border-[var(--stroke-danger)] bg-[var(--glass-danger)] px-3 py-2 text-sm text-[var(--danger)]">
           {error}
         </p>
-      )}
-
-      {showForm && (
-        <GlassPanel title="Editor de recursos">
-          <form onSubmit={createResource} className="grid gap-4 lg:grid-cols-2">
-            <Input label="Nombre" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-            <Select label="Tipo" value={form.kind} onChange={(e) => setForm({ ...form, kind: e.target.value as ResourceKind })} options={kindOptions(KINDS)} />
-            <Select label="Rareza" value={form.rarity} onChange={(e) => setForm({ ...form, rarity: e.target.value as Rarity })} options={rarityOptions(RARITIES)} />
-            <Textarea label="Descripción" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-            <Textarea label="Copy del Sistema" className="lg:col-span-2" value={form.system_copy} onChange={(e) => setForm({ ...form, system_copy: e.target.value })} />
-            <Button type="submit" variant="session">Guardar recurso</Button>
-          </form>
-        </GlassPanel>
       )}
 
       <div className="flex flex-wrap gap-2">
@@ -125,45 +150,72 @@ export default function DMResourcesPage() {
           <thead>
             <tr className="border-b border-[var(--stroke-glass)] text-left text-label">
               <th className="p-3">Nombre</th>
+              <th className="p-3">Descripción</th>
               <th className="p-3">Tipo</th>
               <th className="p-3">Rareza</th>
-              <th className="p-3">Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((r) => (
-              <tr key={r.id} className="border-b border-[rgba(255,255,255,0.04)] hover:bg-[rgba(0,212,255,0.04)]">
-                <td className="p-3 font-medium text-[var(--text-1)]">{r.name}</td>
-                <td className="p-3 text-[var(--text-3)]">{KIND_LABEL[r.kind]}</td>
-                <td className="p-3" style={{ color: RARITY_COLORS[r.rarity] }}>{RARITY_LABEL[r.rarity]}</td>
-                <td className="p-3">
-                  <div className="flex flex-wrap gap-1">
-                    <Link href={`/dm/resources/${r.id}`}>
-                      <Button variant="ghost" size="sm">Editar</Button>
-                    </Link>
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      loading={busyId === r.id}
-                      onClick={() => setPendingDelete(r)}
-                    >
-                      Borrar
-                    </Button>
-                  </div>
+            {filtered.map((r) => {
+              const description = resourceDescriptionLabel(r);
+              const empty = !r.description?.trim();
+              return (
+                <ResourceHoverTip key={r.id} resource={r} disabled={formOpen}>
+                  <tr className="border-b border-[rgba(255,255,255,0.04)] hover:bg-[rgba(0,212,255,0.04)]">
+                    <td className="p-3">
+                      <button
+                        type="button"
+                        onClick={() => openEdit(r)}
+                        className="text-left font-medium text-[var(--text-1)] hover:text-[var(--cyan-400)] hover:underline"
+                      >
+                        {r.name}
+                      </button>
+                    </td>
+                    <td className="p-3">
+                      <span className={`block max-w-xs truncate ${empty ? "text-[var(--text-4)]" : "text-[var(--text-3)]"}`}>
+                        {description}
+                      </span>
+                    </td>
+                    <td className="p-3 text-[var(--text-3)]">{KIND_LABEL[r.kind]}</td>
+                    <td className="p-3" style={{ color: RARITY_COLORS[r.rarity] }}>{RARITY_LABEL[r.rarity]}</td>
+                  </tr>
+                </ResourceHoverTip>
+              );
+            })}
+            {filtered.length === 0 && (
+              <tr>
+                <td colSpan={4} className="p-6 text-center text-[var(--text-3)]">
+                  No hay recursos en este filtro.
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
+
+      <ResourceEditorModal
+        open={formOpen}
+        resource={editing}
+        sessionId={session?.id ?? null}
+        busy={busy}
+        error={formError}
+        onClose={() => {
+          if (!busy) {
+            setFormOpen(false);
+            setEditing(null);
+          }
+        }}
+        onSave={(draft) => void saveResource(draft)}
+        onDelete={editing ? () => setPendingDelete(editing) : undefined}
+      />
 
       <ConfirmModal
         open={!!pendingDelete}
         title={`¿Borrar ${pendingDelete?.name ?? "este recurso"}?`}
         body="También se quitará de inventarios, cajas y logros que lo usen."
-        loading={busyId === pendingDelete?.id}
+        loading={busy}
         onCancel={() => {
-          if (!busyId) setPendingDelete(null);
+          if (!busy) setPendingDelete(null);
         }}
         onConfirm={() => void deleteResource()}
       />

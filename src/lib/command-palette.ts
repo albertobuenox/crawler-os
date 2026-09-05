@@ -328,7 +328,7 @@ export function buildPaletteCommands(ctx: PaletteContext): PaletteCommand[] {
       hint: KIND_LABEL[resource.kind],
       keywords: [resource.name.toLowerCase(), resource.kind, KIND_LABEL[resource.kind].toLowerCase(), "editar"],
       icon: "database",
-      href: `/dm/resources/${resource.id}`,
+      href: `/dm/resources?edit=${resource.id}`,
     });
   }
 

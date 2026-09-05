@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { crawlerFullBodyUrl } from "@/lib/crawler-art";
 import { collectStatBonusChips, healthBarColor } from "@/lib/rules";
 import { crawlerClassLabel, EFFECT_KIND_LABEL, BRAND } from "@/lib/copy";
+import { resourceBlurb } from "@/lib/resources";
 import { SkillListItem } from "@/components/hud/SkillListItem";
 import { sortSkillsStable } from "@/lib/skills";
 import type { Crawler, Skill, Effect, ItemInstance, Resource, StatKey, StatModifierRow } from "@/lib/types";
@@ -277,7 +278,7 @@ export function CharacterSheet({
                   rarity={item.resource.rarity}
                   quantity={item.quantity}
                   iconUrl={item.resource.icon_url}
-                  detail={item.resource.system_copy ?? item.resource.description ?? undefined}
+                  detail={resourceBlurb(item.resource)}
                   size="lg"
                   showTooltip={canViewInventory}
                 />
@@ -312,7 +313,7 @@ function EquipCell({
         name={item?.resource.name}
         rarity={item?.resource.rarity}
         iconUrl={item?.resource.icon_url}
-        detail={item ? (item.resource.system_copy ?? item.resource.description ?? undefined) : undefined}
+        detail={item ? resourceBlurb(item.resource) : undefined}
         empty={!item}
         size={compact ? "sm" : "lg"}
         showTooltip={!!item}

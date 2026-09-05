@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
+import Link from "next/link";
 import { Minus, PinOff, Square } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -303,6 +304,15 @@ export function MasterFloatWindow({
         <span className="min-w-0 flex-1 truncate font-display text-[10px] tracking-[0.14em] text-[var(--text-1)]">
           {title}
         </span>
+        {!minimized && (
+          <Link
+            href="/dm/notes"
+            data-win-action=""
+            className="shrink-0 font-display text-[9px] tracking-[0.12em] text-[var(--cyan-400)] underline-offset-2 hover:text-[var(--text-1)] hover:underline"
+          >
+            ir a notas
+          </Link>
+        )}
         <button
           type="button"
           data-win-action=""

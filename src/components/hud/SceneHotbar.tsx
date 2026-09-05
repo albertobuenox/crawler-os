@@ -25,6 +25,7 @@ import {
 } from "@/lib/hotbar";
 import type { ItemInstance, Resource, Skill } from "@/lib/types";
 import { SKILL_KIND_LABEL, SKILL_TYPE_LABEL } from "@/lib/copy";
+import { resourceBlurb } from "@/lib/resources";
 import { skillArtSlug } from "@/lib/skill-art";
 import { isSkillChecked } from "@/lib/skills";
 import { SkillHoverTip } from "@/components/hud/SkillHoverTip";
@@ -59,12 +60,7 @@ function slotEquals(a: HotbarEntry | null, b: HotbarEntry) {
 }
 
 function itemDescription(item: SheetItem): string {
-  return (
-    item.resource.description?.trim() ||
-    item.resource.system_copy?.trim() ||
-    item.notes?.trim() ||
-    "Sin descripción."
-  );
+  return resourceBlurb(item.resource, [item.notes]);
 }
 
 function ChromeButton({
