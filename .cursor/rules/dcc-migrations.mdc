@@ -1,0 +1,23 @@
+---
+description: Las migraciones SQL las aplica solo el humano — el agente escribe el archivo y recuerda aplicarlo
+alwaysApply: true
+---
+
+# Migraciones Supabase
+
+El agente puede **crear o editar** SQL en `supabase/migrations/`. Nunca las aplica.
+
+## MUST
+
+Si creas, cambias o dejas pendiente un `.sql` en `supabase/migrations/`, **al terminar el trabajo recuérdalo en voz alta**: qué archivo(s) hay que aplicar y que el humano lo lance (SQL Editor del dashboard o su CLI).
+
+Cierra con una línea tipo: `Pendiente: aplica supabase/migrations/<archivo>.sql en Supabase.`
+
+## NEVER
+
+- `supabase db push`, `supabase db reset`, `supabase migration up`, `npx supabase db …`
+- `npm run db:push`, `npm run db:reset` u otros scripts que apliquen schema
+- Pegar o ejecutar SQL contra el proyecto hosted, la API de Management o `psql` a Postgres de Supabase
+- Asumir que el schema remoto ya está al día porque el archivo existe en el repo
+
+Si el código depende de un schema que aún no está aplicado, dilo. No “arregles” el desfase lanzando la migración tú.

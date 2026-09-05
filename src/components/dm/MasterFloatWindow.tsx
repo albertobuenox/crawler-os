@@ -14,8 +14,12 @@ import { Minus, PinOff, Square } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const EDGE = 8;
+const MIN_W = 220;
+const MIN_H = 140;
+const MINIMIZED_W = 240;
+const DEFAULT_H = 280;
 
-function storageKey(id: string, kind: "pos" | "min") {
+function storageKey(id: string, kind: "pos" | "min" | "size") {
   return `crawler-os:master-float:${kind}:${id}`;
 }
 
@@ -56,6 +60,38 @@ function persistMinimized(id: string, value: boolean) {
   }
 }
 
+function readSize(id: string, fallback: { width: number; height: number }) {
+  try {
+    const raw = window.localStorage.getItem(storageKey(id, "size"));
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw) as { width?: unknown; height?: unknown };
+    const width =
+      typeof parsed.width === "number" && Number.isFinite(parsed.width) ? parsed.width : fallback.width;
+    const height =
+      typeof parsed.height === "number" && Number.isFinite(parsed.height) ? parsed.height : fallback.height;
+    return { width, height };
+  } catch {
+    return fallback;
+  }
+}
+
+function persistSize(id: string, next: { width: number; height: number }) {
+  try {
+    window.localStorage.setItem(storageKey(id, "size"), JSON.stringify(next));
+  } catch {
+    /* ignore */
+  }
+}
+
+function clampSize(width: number, height: number, origin?: { x: number; y: number }) {
+  const maxW = Math.max(MIN_W, window.innerWidth - EDGE - (origin?.x ?? EDGE));
+  const maxH = Math.max(MIN_H, window.innerHeight - EDGE - (origin?.y ?? EDGE));
+  return {
+    width: Math.round(Math.min(Math.max(width, MIN_W), maxW)),
+    height: Math.round(Math.min(Math.max(height, MIN_H), maxH)),
+  };
+}
+
 export function MasterFloatWindow({
   id,
   title,
@@ -78,9 +114,12 @@ export function MasterFloatWindow({
   const [mounted, setMounted] = useState(false);
   const [minimized, setMinimized] = useState(false);
   const [pos, setPos] = useState(defaultPos);
+  const [size, setSize] = useState({ width, height: DEFAULT_H });
   const [z, setZ] = useState(48);
+  const [resizing, setResizing] = useState(false);
   const panelRef = useRef<HTMLElement | null>(null);
   const posRef = useRef(pos);
+  const sizeRef = useRef(size);
   const dragRef = useRef<{
     pointerId: number;
     startX: number;
@@ -88,24 +127,46 @@ export function MasterFloatWindow({
     originX: number;
     originY: number;
   } | null>(null);
+  const resizeRef = useRef<{
+    startX: number;
+    startY: number;
+    originW: number;
+    originH: number;
+  } | null>(null);
   posRef.current = pos;
+  sizeRef.current = size;
 
-  const clampOffset = useCallback((x: number, y: number) => {
+  useEffect(() => {
+    if (!resizing) return;
+    const prevCursor = document.body.style.cursor;
+    const prevSelect = document.body.style.userSelect;
+    document.body.style.cursor = "nwse-resize";
+    document.body.style.userSelect = "none";
+    return () => {
+      document.body.style.cursor = prevCursor;
+      document.body.style.userSelect = prevSelect;
+    };
+  }, [resizing]);
+
+  const clampOffset = useCallback((x: number, y: number, box?: { width: number; height: number }) => {
     const el = panelRef.current;
-    const w = el?.offsetWidth ?? width;
-    const h = el?.offsetHeight ?? 48;
+    const used = box ?? sizeRef.current;
+    const w = minimized ? MINIMIZED_W : used.width;
+    const h = minimized ? (el?.offsetHeight ?? 36) : used.height;
     const maxX = Math.max(EDGE, window.innerWidth - w - EDGE);
     const maxY = Math.max(EDGE, window.innerHeight - h - EDGE);
     return {
       x: Math.round(Math.min(Math.max(x, EDGE), maxX)),
       y: Math.round(Math.min(Math.max(y, EDGE), maxY)),
     };
-  }, [width]);
+  }, [minimized]);
 
   const defaultRef = useRef(defaultPos);
+  const defaultSizeRef = useRef({ width, height: DEFAULT_H });
 
   useEffect(() => {
     setPos(readPos(id, defaultRef.current));
+    setSize(readSize(id, defaultSizeRef.current));
     setMinimized(readMinimized(id));
     setMounted(true);
   }, [id]);
@@ -113,10 +174,17 @@ export function MasterFloatWindow({
   useLayoutEffect(() => {
     if (!mounted) return;
     function recenter() {
+      const nextSize = clampSize(sizeRef.current.width, sizeRef.current.height, posRef.current);
+      setSize((current) => {
+        if (nextSize.width === current.width && nextSize.height === current.height) return current;
+        persistSize(id, nextSize);
+        return nextSize;
+      });
+      const nextPos = clampOffset(posRef.current.x, posRef.current.y, nextSize);
       setPos((current) => {
-        const next = clampOffset(current.x, current.y);
-        if (next.x !== current.x || next.y !== current.y) persistPos(id, next);
-        return next;
+        if (nextPos.x === current.x && nextPos.y === current.y) return current;
+        persistPos(id, nextPos);
+        return nextPos;
       });
     }
     recenter();
@@ -155,6 +223,46 @@ export function MasterFloatWindow({
     }
   }
 
+  function onResizeDown(e: ReactPointerEvent<HTMLButtonElement>) {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setZ(62);
+    setResizing(true);
+    resizeRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      originW: size.width,
+      originH: size.height,
+    };
+
+    function onMove(moveEvent: PointerEvent) {
+      const drag = resizeRef.current;
+      if (!drag) return;
+      setSize(
+        clampSize(
+          drag.originW + (moveEvent.clientX - drag.startX),
+          drag.originH + (moveEvent.clientY - drag.startY),
+          posRef.current
+        )
+      );
+    }
+
+    function onUp() {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+      if (!resizeRef.current) return;
+      resizeRef.current = null;
+      setResizing(false);
+      persistSize(id, sizeRef.current);
+    }
+
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+  }
+
   function toggleMin() {
     setMinimized((current) => {
       const next = !current;
@@ -171,14 +279,16 @@ export function MasterFloatWindow({
       role="dialog"
       aria-label={title}
       onPointerDown={() => setZ(62)}
-      className="fixed overflow-hidden rounded-[16px] border bg-[rgba(8,10,18,0.94)] shadow-[var(--shadow-glass)] backdrop-blur-xl"
+      className="fixed flex flex-col overflow-hidden rounded-[16px] border bg-[rgba(8,10,18,0.94)] shadow-[var(--shadow-glass)] backdrop-blur-xl"
       style={{
         left: pos.x,
         top: pos.y,
-        width: minimized ? 240 : `min(100vw - 16px, ${width}px)`,
+        width: minimized ? MINIMIZED_W : size.width,
+        height: minimized ? undefined : size.height,
         zIndex: z,
         borderColor: accent,
         boxShadow: `0 0 24px ${accent}33`,
+        userSelect: resizing ? "none" : undefined,
       }}
     >
       <div
@@ -186,7 +296,7 @@ export function MasterFloatWindow({
         onPointerMove={onHandleMove}
         onPointerUp={onHandleUp}
         onPointerCancel={onHandleUp}
-        className="flex h-9 cursor-grab touch-none items-center gap-2 border-b border-[var(--stroke-glass)] bg-[rgba(16,19,31,0.95)] px-2 select-none active:cursor-grabbing"
+        className="flex h-9 shrink-0 cursor-grab touch-none items-center gap-2 border-b border-[var(--stroke-glass)] bg-[rgba(16,19,31,0.95)] px-2 select-none active:cursor-grabbing"
         style={{ borderLeft: `3px solid ${accent}` }}
       >
         <span className="shrink-0 text-[var(--text-2)]">{icon}</span>
@@ -214,7 +324,30 @@ export function MasterFloatWindow({
           </button>
         )}
       </div>
-      {!minimized && <div className="max-h-[min(42vh,320px)] overflow-y-auto p-3">{children}</div>}
+      {!minimized && (
+        <>
+          <div className="min-h-0 flex-1 overflow-y-auto p-3 pr-4">{children}</div>
+          <button
+            type="button"
+            data-win-action=""
+            aria-label="Redimensionar"
+            title="Redimensionar"
+            onPointerDown={onResizeDown}
+            className="absolute right-0 bottom-0 z-[1] flex h-6 w-6 cursor-nwse-resize touch-none items-end justify-end rounded-tl-[8px] p-1 hover:bg-[rgba(255,255,255,0.06)]"
+          >
+            <span aria-hidden className="relative mb-0.5 mr-0.5 block h-2.5 w-2.5">
+              <span
+                className="absolute right-0 bottom-0 h-2 w-2 border-r-2 border-b-2 opacity-45"
+                style={{ borderColor: accent }}
+              />
+              <span
+                className="absolute right-0 bottom-0 h-1.5 w-1.5 border-r-2 border-b-2 opacity-80"
+                style={{ borderColor: accent }}
+              />
+            </span>
+          </button>
+        </>
+      )}
     </article>,
     document.body
   );

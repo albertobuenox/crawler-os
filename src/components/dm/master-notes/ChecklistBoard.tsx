@@ -1,31 +1,51 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Pin, PinOff, Plus, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { ListChecks, Pin, PinOff, Plus, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { GlassPanel } from "@/components/ui/GlassPanel";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
+import { Input, Textarea } from "@/components/ui/Input";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { Modal } from "@/components/ui/Modal";
 import { ChecklistProgress } from "@/components/dm/MasterFloatWindow";
 import { useRealtimeTable } from "@/hooks/useSession";
 import { checklistProgress, newChecklistItem, parseChecklistItems } from "@/lib/master-notes";
+import { BRAND } from "@/lib/copy";
 import { cn } from "@/lib/utils";
 import type { DmChecklist, DmChecklistItem } from "@/lib/types";
+
+const DEFAULT_SEED = "Preparar encuentro\nRepartir iniciativa\nDeclarar mobs";
 
 export function ChecklistBoard({ sessionId, openCreate }: { sessionId: string; openCreate?: boolean }) {
   const supabase = createClient();
   const [lists, setLists] = useState<DmChecklist[]>([]);
   const [showForm, setShowForm] = useState(!!openCreate);
   const [title, setTitle] = useState("");
-  const [seed, setSeed] = useState("Preparar encuentro\nRepartir iniciativa\nDeclarar mobs");
+  const [seed, setSeed] = useState(DEFAULT_SEED);
   const [pin, setPin] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [formError, setFormError] = useState("");
   const [pendingDelete, setPendingDelete] = useState<DmChecklist | null>(null);
 
+  const closeForm = useCallback(() => {
+    if (busy) return;
+    setShowForm(false);
+    setFormError("");
+  }, [busy]);
+
+  function resetForm() {
+    setTitle("");
+    setSeed(DEFAULT_SEED);
+    setPin(false);
+    setFormError("");
+  }
+
   useEffect(() => {
-    if (openCreate) setShowForm(true);
+    if (!openCreate) return;
+    resetForm();
+    setShowForm(true);
   }, [openCreate]);
 
   async function load() {
@@ -51,8 +71,12 @@ export function ChecklistBoard({ sessionId, openCreate }: { sessionId: string; o
 
   async function createList(e: React.FormEvent) {
     e.preventDefault();
+    if (!title.trim()) {
+      setFormError("El Sistema no archiva listas sin título.");
+      return;
+    }
     setBusy(true);
-    setError("");
+    setFormError("");
     const items = seed
       .split("\n")
       .map((line) => line.trim())
@@ -66,12 +90,10 @@ export function ChecklistBoard({ sessionId, openCreate }: { sessionId: string; o
     });
     setBusy(false);
     if (insertError) {
-      setError(insertError.message);
+      setFormError(insertError.message);
       return;
     }
-    setTitle("");
-    setSeed("");
-    setPin(false);
+    resetForm();
     setShowForm(false);
     void load();
   }
@@ -99,8 +121,14 @@ export function ChecklistBoard({ sessionId, openCreate }: { sessionId: string; o
             Ancla una lista y márcala en vivo, con barra de progreso, desde cualquier pantalla.
           </p>
         </div>
-        <Button variant="energy" onClick={() => setShowForm((v) => !v)}>
-          {showForm ? "Cancelar" : "Nueva checklist"}
+        <Button
+          variant="energy"
+          onClick={() => {
+            resetForm();
+            setShowForm(true);
+          }}
+        >
+          Nueva checklist
         </Button>
       </div>
 
@@ -110,28 +138,72 @@ export function ChecklistBoard({ sessionId, openCreate }: { sessionId: string; o
         </p>
       )}
 
-      {showForm && (
-        <GlassPanel title="Nueva checklist">
-          <form onSubmit={(e) => void createList(e)} className="grid gap-4">
-            <Input label="Título" value={title} onChange={(e) => setTitle(e.target.value)} required />
-            <label className="flex flex-col gap-1.5">
-              <span className="text-label">Ítems (uno por línea)</span>
-              <textarea
-                className="well min-h-[110px] w-full resize-y px-3 py-2 text-sm outline-none focus:border-[var(--stroke-cyan-hot)] focus:shadow-[var(--glow-cyan)]"
-                value={seed}
-                onChange={(e) => setSeed(e.target.value)}
+      <Modal
+        open={showForm}
+        eyebrow={`${BRAND} — LISTAS`}
+        title="Nueva checklist"
+        subtitle="Queda en consola. Si la anclas, te perseguirá por toda la sesión."
+        onClose={closeForm}
+      >
+        <form onSubmit={(e) => void createList(e)} className="space-y-5">
+          <Input
+            label="Título"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Lo que no puedes dejar a medias"
+            autoFocus
+            required
+          />
+          <Textarea
+            label="Ítems"
+            value={seed}
+            onChange={(e) => setSeed(e.target.value)}
+            placeholder="Uno por línea. El Sistema no numera por ti."
+            rows={5}
+          />
+          <button
+            type="button"
+            onClick={() => setPin((v) => !v)}
+            className={cn(
+              "flex w-full items-center gap-3 rounded-xl border px-3 py-3 text-left transition-colors",
+              pin
+                ? "border-[var(--stroke-cyan)] bg-[rgba(0,212,255,0.08)]"
+                : "border-[var(--stroke-glass)] hover:border-[var(--stroke-cyan)]"
+            )}
+          >
+            <Pin size={18} className={pin ? "text-[var(--cyan-400)]" : "text-[var(--text-4)]"} />
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-medium text-[var(--text-1)]">Siempre visible</span>
+              <span className="block text-xs text-[var(--text-3)]">
+                Se ancla sobre la consola y se puede marcar en vivo.
+              </span>
+            </span>
+            <span
+              className={cn(
+                "h-5 w-9 rounded-full p-0.5 transition-colors",
+                pin ? "bg-[var(--cyan-400)]" : "bg-[rgba(255,255,255,0.12)]"
+              )}
+            >
+              <span
+                className={cn(
+                  "block h-4 w-4 rounded-full bg-white transition-transform",
+                  pin ? "translate-x-4" : "translate-x-0"
+                )}
               />
-            </label>
-            <label className="flex items-center gap-2 text-sm text-[var(--text-2)]">
-              <input type="checkbox" checked={pin} onChange={(e) => setPin(e.target.checked)} />
-              Mantener siempre visible
-            </label>
+            </span>
+          </button>
+          {formError && <p className="text-sm text-[var(--danger)]">{formError}</p>}
+          <div className="flex flex-wrap justify-end gap-2 pt-1">
+            <Button type="button" variant="ghost" disabled={busy} onClick={closeForm}>
+              Cancelar
+            </Button>
             <Button type="submit" variant="session" loading={busy}>
+              <ListChecks size={14} />
               Guardar checklist
             </Button>
-          </form>
-        </GlassPanel>
-      )}
+          </div>
+        </form>
+      </Modal>
 
       <div className="grid gap-3 lg:grid-cols-2">
         {lists.length === 0 && (

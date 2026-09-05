@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ImagePlus, Skull, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { GlassPanel } from "@/components/ui/GlassPanel";
 import { Button } from "@/components/ui/Button";
 import { Input, Select } from "@/components/ui/Input";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { Modal } from "@/components/ui/Modal";
 import { defaultMobSprite, MOB_TYPE_LABEL, MOB_TYPES } from "@/lib/master-notes";
+import { BRAND } from "@/lib/copy";
 import type { DmMob, MobType } from "@/lib/types";
 
 export function MobWorkshop({ sessionId, openCreate }: { sessionId: string; openCreate?: boolean }) {
@@ -20,10 +22,26 @@ export function MobWorkshop({ sessionId, openCreate }: { sessionId: string; open
   const [busy, setBusy] = useState(false);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [formError, setFormError] = useState("");
   const [pendingDelete, setPendingDelete] = useState<DmMob | null>(null);
 
+  const closeForm = useCallback(() => {
+    if (busy) return;
+    setShowForm(false);
+    setFormError("");
+  }, [busy]);
+
+  function resetForm() {
+    setName("");
+    setLevel(1);
+    setMobType("beast");
+    setFormError("");
+  }
+
   useEffect(() => {
-    if (openCreate) setShowForm(true);
+    if (!openCreate) return;
+    resetForm();
+    setShowForm(true);
   }, [openCreate]);
 
   async function load() {
@@ -41,8 +59,12 @@ export function MobWorkshop({ sessionId, openCreate }: { sessionId: string; open
 
   async function createMob(e: React.FormEvent) {
     e.preventDefault();
+    if (!name.trim()) {
+      setFormError("El Sistema no registra bestias sin nombre.");
+      return;
+    }
     setBusy(true);
-    setError("");
+    setFormError("");
     const { error: insertError } = await supabase.from("dm_mobs").insert({
       session_id: sessionId,
       name: name.trim(),
@@ -52,11 +74,10 @@ export function MobWorkshop({ sessionId, openCreate }: { sessionId: string; open
     });
     setBusy(false);
     if (insertError) {
-      setError(insertError.message);
+      setFormError(insertError.message);
       return;
     }
-    setName("");
-    setLevel(1);
+    resetForm();
     setShowForm(false);
     void load();
   }
@@ -106,8 +127,14 @@ export function MobWorkshop({ sessionId, openCreate }: { sessionId: string; open
             Nivel, tipo y sprite. Luego los colocas en Escena igual que a los crawlers.
           </p>
         </div>
-        <Button variant="energy" onClick={() => setShowForm((v) => !v)}>
-          {showForm ? "Cancelar" : "Nuevo mob"}
+        <Button
+          variant="energy"
+          onClick={() => {
+            resetForm();
+            setShowForm(true);
+          }}
+        >
+          Nuevo mob
         </Button>
       </div>
 
@@ -117,10 +144,23 @@ export function MobWorkshop({ sessionId, openCreate }: { sessionId: string; open
         </p>
       )}
 
-      {showForm && (
-        <GlassPanel title="Nuevo mob" subtitle="El sprite por defecto sale del tipo. Puedes sustituirlo.">
-          <form onSubmit={(e) => void createMob(e)} className="grid gap-4 md:grid-cols-3">
-            <Input label="Nombre" value={name} onChange={(e) => setName(e.target.value)} required />
+      <Modal
+        open={showForm}
+        eyebrow={`${BRAND} — BESTIARIO`}
+        title="Nuevo mob"
+        subtitle="El sprite por defecto sale del tipo. Puedes sustituirlo después."
+        onClose={closeForm}
+      >
+        <form onSubmit={(e) => void createMob(e)} className="space-y-5">
+          <Input
+            label="Nombre"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Lo que sale del pasillo"
+            autoFocus
+            required
+          />
+          <div className="grid gap-4 sm:grid-cols-2">
             <Input
               label="Nivel"
               type="number"
@@ -135,19 +175,29 @@ export function MobWorkshop({ sessionId, openCreate }: { sessionId: string; open
               onChange={(e) => setMobType(e.target.value as MobType)}
               options={MOB_TYPES.map((value) => ({ value, label: MOB_TYPE_LABEL[value] }))}
             />
-            <div className="md:col-span-3 flex items-center gap-3">
-              <span className="h-14 w-14 overflow-hidden rounded-[14px] border border-[var(--stroke-glass)] bg-[rgba(8,10,18,0.85)]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={defaultMobSprite(mobType)} alt="" className="h-full w-full object-cover" />
-              </span>
-              <p className="text-xs text-[var(--text-3)]">Sprite por defecto: {MOB_TYPE_LABEL[mobType]}.</p>
-            </div>
+          </div>
+          <div className="flex items-center gap-3 rounded-xl border border-[var(--stroke-glass)] px-3 py-3">
+            <span className="h-14 w-14 overflow-hidden rounded-[14px] border border-[var(--stroke-danger)] bg-[rgba(8,10,18,0.85)]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={defaultMobSprite(mobType)} alt="" className="h-full w-full object-cover" />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-medium text-[var(--text-1)]">Sprite por defecto</span>
+              <span className="block text-xs text-[var(--text-3)]">{MOB_TYPE_LABEL[mobType]}. Cámbialo en la ficha.</span>
+            </span>
+          </div>
+          {formError && <p className="text-sm text-[var(--danger)]">{formError}</p>}
+          <div className="flex flex-wrap justify-end gap-2 pt-1">
+            <Button type="button" variant="ghost" disabled={busy} onClick={closeForm}>
+              Cancelar
+            </Button>
             <Button type="submit" variant="session" loading={busy}>
+              <Skull size={14} />
               Registrar mob
             </Button>
-          </form>
-        </GlassPanel>
-      )}
+          </div>
+        </form>
+      </Modal>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {mobs.length === 0 && (
