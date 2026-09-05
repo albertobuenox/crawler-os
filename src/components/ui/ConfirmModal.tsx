@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { BRAND } from "@/lib/copy";
@@ -26,6 +26,8 @@ export function ConfirmModal({
   onConfirm,
   onCancel,
 }: ConfirmModalProps) {
+  const pointerDownOnBackdrop = useRef(false);
+
   useEffect(() => {
     if (!open) return;
     function onKey(e: KeyboardEvent) {
@@ -44,8 +46,12 @@ export function ConfirmModal({
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
           className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center bg-[rgba(5,6,13,0.72)] p-4 backdrop-blur-sm"
-          onClick={() => {
-            if (!loading) onCancel();
+          onPointerDown={(e) => {
+            pointerDownOnBackdrop.current = e.target === e.currentTarget;
+          }}
+          onClick={(e) => {
+            if (pointerDownOnBackdrop.current && e.target === e.currentTarget && !loading) onCancel();
+            pointerDownOnBackdrop.current = false;
           }}
         >
           <motion.div

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -26,6 +26,8 @@ export function Modal({
   wide = false,
   onClose,
 }: ModalProps) {
+  const pointerDownOnBackdrop = useRef(false);
+
   useEffect(() => {
     if (!open) return;
     function onKey(e: KeyboardEvent) {
@@ -49,7 +51,13 @@ export function Modal({
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
           className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center bg-[rgba(5,6,13,0.72)] p-4 backdrop-blur-sm"
-          onClick={onClose}
+          onPointerDown={(e) => {
+            pointerDownOnBackdrop.current = e.target === e.currentTarget;
+          }}
+          onClick={(e) => {
+            if (pointerDownOnBackdrop.current && e.target === e.currentTarget) onClose();
+            pointerDownOnBackdrop.current = false;
+          }}
         >
           <motion.div
             role="dialog"
