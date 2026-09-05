@@ -18,6 +18,8 @@ import { SkillThumb } from "@/components/hud/SkillThumb";
 import { Minus, Plus, X, Skull, ShieldAlert, Flame, Droplets, Zap, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { StatBlock } from "@/components/hud/StatBlock";
+import { updateCrawlerVitals } from "@/lib/crawler-vitals";
+import { logCrawlerStatDiffs } from "@/lib/scene-log";
 
 /* ── Preset negative effects ── */
 const PRESET_EFFECTS: {
@@ -208,6 +210,11 @@ export default function DMCrawlerSheetPage() {
   async function save() {
     if (!crawler) return;
     setSaving(true);
+    const { data: before } = await supabase
+      .from("crawlers")
+      .select("str_base, int_base, con_base, dex_base, cha_base, level")
+      .eq("id", crawler.id)
+      .single();
     await supabase.from("crawlers").update({
       name: crawler.name,
       crawler_number: crawler.crawler_number?.trim() || null,
@@ -235,13 +242,21 @@ export default function DMCrawlerSheetPage() {
       pet: crawler.pet,
       sponsors: crawler.sponsors,
     }).eq("id", crawler.id);
+    if (before) {
+      logCrawlerStatDiffs({
+        sessionId: crawler.session_id,
+        crawlerId: crawler.id,
+        before,
+        after: crawler,
+      });
+    }
     setSaving(false);
   }
 
   async function persistLiveVitals(patch: { hp_boxes_filled?: number; mana_current?: number }) {
     if (!crawler) return;
     setCrawler((prev) => (prev ? { ...prev, ...patch } : prev));
-    await supabase.from("crawlers").update(patch).eq("id", crawler.id);
+    await updateCrawlerVitals(crawler.id, patch);
     await broadcast("party_patch", { id: crawler.id, ...patch });
   }
 

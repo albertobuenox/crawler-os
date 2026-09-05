@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  dieLabel,
   makeSceneDiceEvent,
   parseSceneDiceEvent,
   reduceSceneDice,
@@ -11,6 +12,7 @@ import {
   type SceneDieSides,
 } from "@/lib/scene-dice";
 import type { AvatarEmotion } from "@/lib/crawler-art";
+import { postSceneLog, SCENE_LOG_KIND } from "@/lib/scene-log";
 
 type BroadcastFn = (event: string, payload: unknown) => void | Promise<void>;
 
@@ -21,8 +23,14 @@ type SelfDice = {
   portraitUrl: string | null;
 };
 
-export function useSceneDice(broadcast: BroadcastFn, self: SelfDice | null) {
+export function useSceneDice(
+  broadcast: BroadcastFn,
+  self: SelfDice | null,
+  sessionId?: string
+) {
   const [state, setState] = useState<SceneDiceState | null>(null);
+  const sessionRef = useRef(sessionId);
+  sessionRef.current = sessionId;
 
   const ingest = useCallback((payload: unknown) => {
     const ev = parseSceneDiceEvent(payload);
@@ -89,17 +97,29 @@ export function useSceneDice(broadcast: BroadcastFn, self: SelfDice | null) {
     if (!self || state?.mode !== "ceremony" || state.crawlerId !== self.id || state.value != null) {
       return;
     }
+    const value = rollDie(state.sides);
     emit(
       makeSceneDiceEvent({
         phase: "result",
         crawlerId: self.id,
         name: self.name,
         sides: state.sides,
-        value: rollDie(state.sides),
+        value,
         emotion: state.emotion,
         portraitUrl: state.portraitUrl,
       })
     );
+    const sid = sessionRef.current;
+    if (sid) {
+      void postSceneLog({
+        kind: SCENE_LOG_KIND.roll,
+        sessionId: sid,
+        crawlerId: self.id,
+        formula: `1${dieLabel(state.sides)}`,
+        sides: state.sides,
+        value,
+      });
+    }
   }, [emit, self, state]);
 
   const closeCeremony = useCallback(() => {

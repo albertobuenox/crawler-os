@@ -82,7 +82,7 @@ export function SceneDiceProvider({ children }: { children: ReactNode }) {
     }
   );
 
-  const dice = useSceneDice(broadcast, self);
+  const dice = useSceneDice(broadcast, self, sessionId);
   ingestRef.current = dice.ingest;
 
   return <SceneDiceContext.Provider value={dice}>{children}</SceneDiceContext.Provider>;

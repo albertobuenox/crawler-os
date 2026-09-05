@@ -8,20 +8,30 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
+import { usePathname } from "next/navigation";
 import { MessageCircle, Minus, Send } from "lucide-react";
 import { chatChannelColor, chatChannelLabel, type ChatChannelOption } from "@/lib/chat";
+import { SceneLogList } from "@/components/hud/SceneLogList";
 import { useSceneChat } from "@/hooks/useSceneChat";
+import { useSceneLog } from "@/hooks/useSceneLog";
 import { BRAND } from "@/lib/copy";
 import { CHAT_BODY_MAX, CHAT_CHANNEL_ALL, type ChatMessage } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export type ChatSize = "full" | "half" | "quarter";
 export type ChatOpacity = "ghost" | "mid" | "solid";
+export type ChatPanelTab = "chat" | "log";
 
 const SIZE_STORAGE_KEY = "crawler-os:scene-chat-size";
 const OPACITY_STORAGE_KEY = "crawler-os:scene-chat-opacity";
 const MIN_STORAGE_KEY = "crawler-os:scene-chat-minimized";
 const POS_STORAGE_KEY = "crawler-os:scene-chat-pos";
+const TAB_STORAGE_KEY = "crawler-os:scene-chat-tab";
+
+const TABS: { id: ChatPanelTab; label: string }[] = [
+  { id: "chat", label: "Chat" },
+  { id: "log", label: "Log" },
+];
 const DRAG_EDGE_PAD = 8;
 
 const SIZES: { id: ChatSize; label: string; bar: string }[] = [
@@ -76,6 +86,16 @@ function readStoredOpacity(): ChatOpacity {
     /* ignore */
   }
   return "solid";
+}
+
+function readStoredTab(): ChatPanelTab {
+  try {
+    const value = window.localStorage.getItem(TAB_STORAGE_KEY);
+    if (value === "chat" || value === "log") return value;
+  } catch {
+    /* ignore */
+  }
+  return "chat";
 }
 
 function readStoredMinimized(): boolean {
@@ -154,15 +174,20 @@ export function SceneChat({
   placement?: "absolute" | "fixed";
   locked?: boolean;
 }) {
+  const pathname = usePathname();
+  const viewer = pathname.startsWith("/dm") ? "dm" : "crawler";
   const [size, setSize] = useState<ChatSize>("quarter");
   const [opacity, setOpacity] = useState<ChatOpacity>("solid");
   const [minimized, setMinimized] = useState(true);
-  const [unread, setUnread] = useState(0);
+  const [panelTab, setPanelTab] = useState<ChatPanelTab>("chat");
+  const [unreadChat, setUnreadChat] = useState(0);
+  const [unreadLog, setUnreadLog] = useState(0);
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
   const panelRef = useRef<HTMLElement | null>(null);
   const listRef = useRef<HTMLUListElement | null>(null);
-  const lastSeenCount = useRef(0);
+  const lastSeenChat = useRef(0);
+  const lastSeenLog = useRef(0);
   const historyReady = useRef(false);
   const posRef = useRef(pos);
   const dragRef = useRef<{
@@ -175,6 +200,8 @@ export function SceneChat({
   } | null>(null);
   const skipClickRef = useRef(false);
   const chat = useSceneChat(sessionId, members);
+  const rosterNames = Object.fromEntries(chat.roster.map((m) => [m.id, m.label]));
+  const log = useSceneLog(sessionId, rosterNames);
   posRef.current = pos;
 
   const canDrag = !locked && (minimized || size === "quarter" || size === "half");
@@ -211,6 +238,7 @@ export function SceneChat({
     setSize(readStoredSize());
     setOpacity(readStoredOpacity());
     setMinimized(readStoredMinimized());
+    setPanelTab(readStoredTab());
     setPos(readStoredPos());
   }, []);
 
@@ -229,26 +257,45 @@ export function SceneChat({
   }, [canDrag, size, minimized, clampOffset]);
 
   useEffect(() => {
-    if (!historyReady.current && chat.ready) {
-      lastSeenCount.current = chat.messages.length;
+    if (!historyReady.current && chat.ready && log.ready) {
+      lastSeenChat.current = chat.messages.length;
+      lastSeenLog.current = log.count;
       historyReady.current = true;
       return;
     }
+    const extraChat = Math.max(0, chat.messages.length - lastSeenChat.current);
+    const extraLog = Math.max(0, log.count - lastSeenLog.current);
     if (minimized) {
-      const extra = Math.max(0, chat.messages.length - lastSeenCount.current);
-      if (extra > 0) setUnread(extra);
+      setUnreadChat(extraChat);
+      setUnreadLog(extraLog);
       return;
     }
-    lastSeenCount.current = chat.messages.length;
-    setUnread(0);
+    if (panelTab === "chat") {
+      lastSeenChat.current = chat.messages.length;
+      setUnreadChat(0);
+      setUnreadLog(extraLog);
+    } else {
+      lastSeenLog.current = log.count;
+      setUnreadLog(0);
+      setUnreadChat(extraChat);
+    }
     const node = listRef.current;
     if (node) node.scrollTop = node.scrollHeight;
-  }, [chat.messages, chat.ready, minimized]);
+  }, [chat.messages, chat.ready, log.count, log.ready, minimized, panelTab]);
 
   function chooseSize(next: ChatSize) {
     setSize(next);
     try {
       window.localStorage.setItem(SIZE_STORAGE_KEY, next);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function chooseTab(next: ChatPanelTab) {
+    setPanelTab(next);
+    try {
+      window.localStorage.setItem(TAB_STORAGE_KEY, next);
     } catch {
       /* ignore */
     }
@@ -326,6 +373,8 @@ export function SceneChat({
   const playerIds = chat.roster.map((m) => m.id);
   const channelColor = chatChannelColor(chat.channel, playerIds);
   const canSend = Boolean(!locked && sessionId && chat.ready && chat.draft.trim() && !chat.sending);
+  const unread = unreadChat + unreadLog;
+  const composeTabIndex = minimized || panelTab !== "chat" ? -1 : 0;
 
   return (
     <section
@@ -381,7 +430,7 @@ export function SceneChat({
         >
           <div
             className={cn(
-              "relative mb-2 flex items-center justify-between gap-2",
+              "relative mb-2 flex flex-wrap items-center justify-between gap-1.5",
               canDrag && "cursor-grab touch-none select-none",
               dragging && "cursor-grabbing"
             )}
@@ -390,9 +439,45 @@ export function SceneChat({
             onPointerUp={onDragPointerUp}
             onPointerCancel={onDragPointerUp}
           >
-            <p className="min-w-0 truncate text-label" title={canDrag ? "Arrastrar chat" : undefined}>
-              Canal de party
-            </p>
+            <div
+              role="tablist"
+              aria-label="Chat y log"
+              className="flex items-center gap-0.5 rounded-full border border-[var(--stroke-glass)] p-0.5"
+            >
+              {TABS.map(({ id, label }) => {
+                const active = panelTab === id;
+                const unread = id === "chat" ? unreadChat : unreadLog;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    aria-controls={id === "chat" ? "scene-chat-thread" : "scene-log-thread"}
+                    title={label}
+                    tabIndex={minimized ? -1 : 0}
+                    onClick={() => chooseTab(id)}
+                    className={cn(
+                      "relative h-7 min-w-[2.75rem] rounded-full px-2.5 font-display text-[10px] uppercase tracking-[0.14em]",
+                      "transition-colors duration-[var(--t-ui)]",
+                      active
+                        ? "bg-[rgba(0,212,255,0.14)] text-[var(--cyan-400)]"
+                        : "text-[var(--text-4)] hover:text-[var(--text-1)]"
+                    )}
+                  >
+                    <span className="inline-flex items-center justify-center gap-1.5">
+                      {label}
+                      {!active && unread > 0 && (
+                        <span
+                          aria-hidden="true"
+                          className="h-1.5 w-1.5 rounded-full bg-[var(--cyan-400)] shadow-[0_0_6px_var(--cyan-400)]"
+                        />
+                      )}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
             <div className="flex shrink-0 touch-auto items-center gap-1">
               <div
                 role="group"
@@ -483,8 +568,20 @@ export function SceneChat({
             </div>
           </div>
           <div className="min-h-0 flex-1 overflow-hidden">
-            <ul ref={listRef} className="h-full space-y-0.5 overflow-y-auto pr-1">
-              {chat.messages.length === 0 ? (
+            <ul
+              ref={listRef}
+              id={panelTab === "chat" ? "scene-chat-thread" : "scene-log-thread"}
+              role="tabpanel"
+              className="h-full space-y-0.5 overflow-y-auto pr-1"
+            >
+              {panelTab === "log" ? (
+                <SceneLogList
+                  items={log.items}
+                  viewer={viewer}
+                  ready={log.ready}
+                  sessionId={sessionId}
+                />
+              ) : chat.messages.length === 0 ? (
                 <li className="font-mono-system text-xs text-[var(--text-3)]">
                   {sessionId
                     ? `Silencio de radio. ${BRAND} escucha el canal.`
@@ -503,7 +600,7 @@ export function SceneChat({
             </ul>
           </div>
           <form
-            className="mt-2 flex gap-2"
+            className={cn("mt-2 flex gap-2", panelTab !== "chat" && "hidden")}
             onSubmit={(e) => {
               e.preventDefault();
               void chat.send();
@@ -516,7 +613,7 @@ export function SceneChat({
               id="scene-chat-channel"
               value={chat.channel}
               disabled={locked || !sessionId || !chat.ready}
-              tabIndex={minimized ? -1 : 0}
+              tabIndex={composeTabIndex}
               onChange={(e) => chat.setChannel(e.target.value)}
               className="well h-9 w-[5.75rem] shrink-0 px-1.5 text-[11px] font-semibold disabled:opacity-60"
               style={{ color: channelColor }}
@@ -532,7 +629,7 @@ export function SceneChat({
             <input
               value={chat.draft}
               disabled={locked || !sessionId || !chat.ready || chat.sending}
-              tabIndex={minimized ? -1 : 0}
+              tabIndex={composeTabIndex}
               maxLength={CHAT_BODY_MAX}
               onChange={(e) => chat.setDraft(e.target.value)}
               placeholder={
@@ -546,7 +643,7 @@ export function SceneChat({
             <button
               type="submit"
               disabled={!canSend}
-              tabIndex={minimized ? -1 : 0}
+              tabIndex={composeTabIndex}
               aria-label="Enviar mensaje"
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--r-md)] border border-[var(--stroke-cyan)] text-[var(--cyan-400)] disabled:cursor-not-allowed disabled:opacity-45"
             >
@@ -560,7 +657,9 @@ export function SceneChat({
           tabIndex={minimized ? 0 : -1}
           aria-hidden={!minimized}
           aria-label={
-            unread > 0 ? `Abrir chat de la escena, ${unread} mensajes nuevos` : "Abrir chat de la escena"
+            unread > 0
+              ? `Abrir chat de la escena, ${unread} novedades`
+              : "Abrir chat de la escena"
           }
           title="Arrastra para mover · clic para abrir"
           onPointerDown={onDragPointerDown}
