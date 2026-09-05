@@ -13,6 +13,7 @@ import { updateCrawlerVitals } from "@/lib/crawler-vitals";
 import { clampLifeBoxes, clampMana, healthBarColor, lifeToBoxesFilled } from "@/lib/rules";
 import { cn } from "@/lib/utils";
 import { crawlerIdentityLine, mazmorreroNumberLabel, SCENE_LABEL } from "@/lib/copy";
+import { useCrawlerAdminLocked } from "@/components/layout/CrawlerAdminLock";
 import type { Crawler } from "@/lib/types";
 
 type HeaderCrawler = Pick<
@@ -31,6 +32,7 @@ export function CrawlerHeader() {
   const [inboxOpen, setInboxOpen] = useState(false);
   const mailRef = useRef<HTMLButtonElement>(null);
   const unread = useUnreadNotifications("unread-notifications-header");
+  const locked = useCrawlerAdminLocked();
 
   const sheetActive = pathname.startsWith("/crawler/sheet");
   const sceneActive = pathname.startsWith("/crawler/table");
@@ -134,6 +136,8 @@ export function CrawlerHeader() {
             </Link>
             <Link
               href="/crawler/sheet"
+              onClick={locked ? (e) => e.preventDefault() : undefined}
+              aria-disabled={locked}
               className="group/name hidden min-w-0 rounded-md outline-offset-4 md:block"
               aria-label={crawler ? `${crawler.name} — ir a la hoja de personaje` : "Hoja de personaje"}
             >
@@ -151,6 +155,7 @@ export function CrawlerHeader() {
           {crawler ? (
             <HeaderVitals
               crawler={crawler}
+              interactive={!locked}
               onLifeChange={(life) => {
                 const next = clampLifeBoxes(life);
                 setCrawler((prev) => (prev ? { ...prev, hp_boxes_filled: lifeToBoxesFilled(next) } : prev));
@@ -174,6 +179,8 @@ export function CrawlerHeader() {
               <HudTooltip text="Hoja de personaje" side="bottom" className="group">
                 <Link
                   href="/crawler/sheet"
+                  onClick={locked ? (e) => e.preventDefault() : undefined}
+                  aria-disabled={locked}
                   aria-label="Hoja de personaje"
                   className={cn(
                     iconBtn,
@@ -194,7 +201,11 @@ export function CrawlerHeader() {
                   aria-label={unread > 0 ? "Notificaciones sin leer" : "Notificaciones"}
                   aria-expanded={inboxOpen}
                   aria-haspopup="dialog"
-                  onClick={() => setInboxOpen((v) => !v)}
+                  onClick={() => {
+                    if (locked) return;
+                    setInboxOpen((v) => !v);
+                  }}
+                  disabled={locked}
                   className={cn(
                     iconBtn,
                     "relative",
@@ -252,10 +263,12 @@ export function CrawlerHeader() {
 
 function HeaderVitals({
   crawler,
+  interactive = true,
   onLifeChange,
   onManaChange,
 }: {
   crawler: HeaderCrawler;
+  interactive?: boolean;
   onLifeChange: (lifeBoxes: number) => void;
   onManaChange: (manaCurrent: number) => void;
 }) {
@@ -274,7 +287,7 @@ function HeaderVitals({
         max={10}
         color={healthBarColor(life)}
         compact
-        interactive
+        interactive={interactive}
         onCurrentChange={onLifeChange}
       />
       <ResourceBar
@@ -282,7 +295,7 @@ function HeaderVitals({
         current={crawler.mana_current}
         max={crawler.mana_max}
         compact
-        interactive
+        interactive={interactive}
         onCurrentChange={onManaChange}
       />
     </div>

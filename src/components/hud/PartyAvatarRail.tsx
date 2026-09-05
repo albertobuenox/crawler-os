@@ -300,6 +300,7 @@ function AvatarFrame({
   emotion,
   choosing = false,
   dimmed = false,
+  locked = false,
   onOpenSheet,
   onEmotionChange,
   onLifeChange,
@@ -310,6 +311,7 @@ function AvatarFrame({
   emotion?: AvatarEmotion | null;
   choosing?: boolean;
   dimmed?: boolean;
+  locked?: boolean;
   onOpenSheet?: (id: string) => void;
   onEmotionChange?: (emotion: AvatarEmotion | null) => void;
   onLifeChange?: (lifeBoxes: number) => void;
@@ -335,7 +337,7 @@ function AvatarFrame({
 
   return (
     <div
-      className={cn("group relative", dimmed && "pointer-events-none opacity-25")}
+      className={cn("group relative", dimmed && "pointer-events-none opacity-25", locked && "pointer-events-none")}
       onMouseLeave={() => setEmotionsOpen(false)}
       onBlur={(e) => {
         if (!e.currentTarget.contains(e.relatedTarget as Node)) setEmotionsOpen(false);
@@ -428,7 +430,7 @@ function AvatarFrame({
             "pointer-events-none group-hover:pointer-events-auto group-hover:opacity-100",
             "group-focus-within:pointer-events-auto group-focus-within:opacity-100",
             emotionsOpen && "pointer-events-auto opacity-100",
-            choosing && "hidden"
+            (choosing || locked) && "hidden"
           )}
         >
           <div className="flex w-7 flex-col items-start gap-1.5">
@@ -526,6 +528,8 @@ export function PartyAvatarRail({
   members,
   selfId,
   choosingId,
+  locked = false,
+  forceEmotion,
   onOpenSheet,
   onSelfLifeChange,
   onSelfManaChange,
@@ -534,6 +538,8 @@ export function PartyAvatarRail({
   members: PartyAvatar[];
   selfId?: string | null;
   choosingId?: string | null;
+  locked?: boolean;
+  forceEmotion?: AvatarEmotion | null;
   onOpenSheet?: (id: string) => void;
   onSelfLifeChange?: (lifeBoxes: number) => void;
   onSelfManaChange?: (manaCurrent: number) => void;
@@ -552,7 +558,7 @@ export function PartyAvatarRail({
       aria-label="Personajes de la party"
       className={cn(
         "relative flex w-24 shrink-0 flex-col gap-[18px] overflow-visible pt-1 sm:w-28 lg:w-32",
-        choosingId ? "z-[47]" : "z-[var(--z-drop)]"
+        locked ? "z-[73]" : choosingId ? "z-[47]" : "z-[var(--z-drop)]"
       )}
     >
       {Array.from({ length: slots }, (_, i) => {
@@ -564,13 +570,14 @@ export function PartyAvatarRail({
             key={member?.id ?? `empty-${i}`}
             member={member}
             isSelf={isSelf}
-            emotion={member?.avatar_emotion ?? null}
+            emotion={forceEmotion ?? member?.avatar_emotion ?? null}
             choosing={choosing}
-            dimmed={!!choosingId && !choosing}
-            onOpenSheet={onOpenSheet}
-            onEmotionChange={isSelf ? onSelfEmotionChange : undefined}
-            onLifeChange={isSelf ? onSelfLifeChange : undefined}
-            onManaChange={isSelf ? onSelfManaChange : undefined}
+            dimmed={!!choosingId && !choosing && !locked}
+            locked={locked}
+            onOpenSheet={locked ? undefined : onOpenSheet}
+            onEmotionChange={locked || !isSelf ? undefined : onSelfEmotionChange}
+            onLifeChange={locked || !isSelf ? undefined : onSelfLifeChange}
+            onManaChange={locked || !isSelf ? undefined : onSelfManaChange}
           />
         );
       })}

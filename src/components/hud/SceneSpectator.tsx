@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { AdminInRoomOverlay } from "@/components/hud/AdminInRoomOverlay";
 import { PartyAvatarRail, toPartyAvatar, type PartyAvatar } from "@/components/hud/PartyAvatarRail";
 import { SceneStage } from "@/components/hud/SceneStage";
 import { SceneHotbar } from "@/components/hud/SceneHotbar";
+import { useAdminInRoom } from "@/hooks/useAdminInRoom";
 import { useSceneCanvas } from "@/hooks/useSceneCanvas";
 import { useRealtimeTable, useSessionBroadcast } from "@/hooks/useSession";
 import { sortSkillsStable } from "@/lib/skills";
@@ -45,6 +47,7 @@ export function SceneSpectator({
 }) {
   const supabase = createClient();
   const { doc, commit, setBusy } = useSceneCanvas(sessionId, { role: "dm" });
+  const admin = useAdminInRoom(sessionId);
   const [party, setParty] = useState<PartyAvatar[]>([]);
   const [skills, setSkills] = useState<Skill[]>([]);
   const [items, setItems] = useState<SheetItem[]>([]);
@@ -105,7 +108,9 @@ export function SceneSpectator({
         <PartyAvatarRail
           members={party}
           selfId={crawlerId}
-          onOpenSheet={onOpenSheet}
+          locked={admin.active}
+          forceEmotion={admin.active ? "miedo" : undefined}
+          onOpenSheet={admin.active ? undefined : onOpenSheet}
         />
         <div className="flex min-h-0 min-w-0 flex-1 flex-col items-center gap-2">
           <p className="text-center font-display text-xs tracking-widest text-[var(--cyan-400)]">
@@ -125,6 +130,7 @@ export function SceneSpectator({
         </div>
       </div>
       <SceneHotbar crawlerId={crawlerId} skills={skills} items={items} readOnly />
+      <AdminInRoomOverlay active={admin.active} className="absolute inset-0" />
     </div>
   );
 }

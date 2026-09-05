@@ -3,10 +3,12 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { AdminInRoomOverlay } from "@/components/hud/AdminInRoomOverlay";
 import { TableCanvas } from "@/components/hud/TableCanvas";
 import { MinimapPanel } from "@/components/hud/MinimapPanel";
 import type { TableState, MapPin, Resource, GameSession } from "@/lib/types";
 import { castSession } from "@/lib/utils";
+import { useAdminInRoom } from "@/hooks/useAdminInRoom";
 import { useSessionBroadcast } from "@/hooks/useSession";
 import { parseSceneCanvas } from "@/lib/scene-canvas";
 
@@ -48,6 +50,8 @@ export default function TableTVPage() {
     };
   }, [load, supabase, code]);
 
+  const admin = useAdminInRoom(session?.id);
+
   useSessionBroadcast(session?.id, useCallback((event) => {
     if (event === "table_update" || event === "dice_anim" || event === "cinematic") load();
   }, [load]));
@@ -65,7 +69,8 @@ export default function TableTVPage() {
         canvas={parseSceneCanvas(tableState?.canvas)}
         className="min-h-[70vh] flex-1"
       />
-      <MinimapPanel sessionId={session?.id} placement="fixed" />
+      <MinimapPanel sessionId={session?.id} placement="fixed" blackout={admin.active} />
+      <AdminInRoomOverlay active={admin.active} />
     </div>
   );
 }

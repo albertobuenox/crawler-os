@@ -147,10 +147,12 @@ export function SceneChat({
   sessionId,
   members,
   placement = "absolute",
+  locked = false,
 }: {
   sessionId?: string;
   members?: ChatChannelOption[];
   placement?: "absolute" | "fixed";
+  locked?: boolean;
 }) {
   const [size, setSize] = useState<ChatSize>("quarter");
   const [opacity, setOpacity] = useState<ChatOpacity>("solid");
@@ -175,7 +177,7 @@ export function SceneChat({
   const chat = useSceneChat(sessionId, members);
   posRef.current = pos;
 
-  const canDrag = minimized || size === "quarter" || size === "half";
+  const canDrag = !locked && (minimized || size === "quarter" || size === "half");
 
   const clampOffset = useCallback(
     (x: number, y: number) => {
@@ -323,7 +325,7 @@ export function SceneChat({
 
   const playerIds = chat.roster.map((m) => m.id);
   const channelColor = chatChannelColor(chat.channel, playerIds);
-  const canSend = Boolean(sessionId && chat.ready && chat.draft.trim() && !chat.sending);
+  const canSend = Boolean(!locked && sessionId && chat.ready && chat.draft.trim() && !chat.sending);
 
   return (
     <section
@@ -333,6 +335,7 @@ export function SceneChat({
       className={cn(
         placement === "fixed" ? "fixed" : "absolute",
         "z-[var(--z-hud)]",
+        locked && "pointer-events-none",
         minimized ? "overflow-visible" : "overflow-hidden",
         dragging
           ? "transition-none"
@@ -512,7 +515,7 @@ export function SceneChat({
             <select
               id="scene-chat-channel"
               value={chat.channel}
-              disabled={!sessionId || !chat.ready}
+              disabled={locked || !sessionId || !chat.ready}
               tabIndex={minimized ? -1 : 0}
               onChange={(e) => chat.setChannel(e.target.value)}
               className="well h-9 w-[5.75rem] shrink-0 px-1.5 text-[11px] font-semibold disabled:opacity-60"
@@ -528,7 +531,7 @@ export function SceneChat({
             </select>
             <input
               value={chat.draft}
-              disabled={!sessionId || !chat.ready || chat.sending}
+              disabled={locked || !sessionId || !chat.ready || chat.sending}
               tabIndex={minimized ? -1 : 0}
               maxLength={CHAT_BODY_MAX}
               onChange={(e) => chat.setDraft(e.target.value)}

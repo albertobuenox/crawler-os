@@ -54,10 +54,12 @@ export function MinimapPanel({
   sessionId,
   selfId,
   placement = "absolute",
+  blackout = false,
 }: {
   sessionId?: string;
   selfId?: string | null;
   placement?: "absolute" | "fixed";
+  blackout?: boolean;
 }) {
   const { doc, ready } = useMinimap(sessionId);
   const [minimized, setMinimized] = useState(false);
@@ -221,13 +223,20 @@ export function MinimapPanel({
               <Minus size={14} />
             </button>
           </div>
-          {ready && doc ? (
+          {blackout ? (
+            <MinimapCanvas
+              doc={doc ?? { session_id: sessionId ?? "", tokens: [], strokes: [], fixtures: [], updated_at: "" }}
+              viewer="crawler"
+              selfId={selfId}
+              blackout
+            />
+          ) : ready && doc ? (
             <MinimapCanvas doc={doc} viewer="crawler" selfId={selfId} />
           ) : (
             <div className="well aspect-square animate-pulse" />
           )}
           <p className="mt-2 text-[10px] uppercase tracking-[0.14em] text-[var(--text-4)]">
-            Tú · blanco · aliados · oro · hostiles · rojo
+            {blackout ? "Señal perdida" : "Tú · blanco · aliados · oro · hostiles · rojo"}
           </p>
         </div>
         {minimized && (

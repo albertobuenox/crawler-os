@@ -28,6 +28,7 @@ export function MinimapCanvas({
   interactive,
   showLabels,
   emptyCopy = EMPTY_MINIMAP_COPY,
+  blackout = false,
   className,
   onPointerDown,
   onPointerMove,
@@ -41,6 +42,7 @@ export function MinimapCanvas({
   interactive?: boolean;
   showLabels?: boolean;
   emptyCopy?: string;
+  blackout?: boolean;
   className?: string;
   onPointerDown?: (event: ReactPointerEvent<HTMLDivElement>, point: MinimapPoint) => void;
   onPointerMove?: (event: ReactPointerEvent<HTMLDivElement>, point: MinimapPoint) => void;
@@ -57,16 +59,22 @@ export function MinimapCanvas({
     <div
       ref={rootRef}
       className={cn(
-        "relative aspect-square w-full overflow-hidden rounded-[var(--r-md)] border border-[var(--stroke-cyan)]",
-        "bg-[rgba(5,6,13,0.92)] shadow-[var(--glow-cyan)]",
+        "relative aspect-square w-full overflow-hidden rounded-[var(--r-md)]",
+        blackout
+          ? "border border-[rgba(255,255,255,0.06)] bg-[#000] shadow-none"
+          : "border border-[var(--stroke-cyan)] bg-[rgba(5,6,13,0.92)] shadow-[var(--glow-cyan)]",
         interactive && "touch-none",
         className
       )}
-      style={{
-        backgroundImage:
-          "radial-gradient(circle, rgba(0,212,255,0.26) 1px, transparent 1.15px)",
-        backgroundSize: "12px 12px",
-      }}
+      style={
+        blackout
+          ? undefined
+          : {
+              backgroundImage:
+                "radial-gradient(circle, rgba(0,212,255,0.26) 1px, transparent 1.15px)",
+              backgroundSize: "12px 12px",
+            }
+      }
       onPointerDown={
         interactive
           ? (event) => {
@@ -97,7 +105,7 @@ export function MinimapCanvas({
           : undefined
       }
     >
-      <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full" aria-hidden="true">
+      {!blackout && <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full" aria-hidden="true">
         {doc.strokes.map((stroke) => (
           <path
             key={stroke.id}
@@ -176,8 +184,8 @@ export function MinimapCanvas({
             </g>
           );
         })}
-      </svg>
-      {empty && (
+      </svg>}
+      {empty && !blackout && (
         <p className="pointer-events-none absolute inset-x-6 top-1/2 -translate-y-1/2 text-center text-xs leading-5 text-[var(--text-3)]">
           {emptyCopy}
         </p>

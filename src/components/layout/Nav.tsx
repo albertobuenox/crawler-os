@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import {
+  ChevronLeft,
   Home,
   Users,
   Database,
@@ -20,10 +21,12 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NotificationBadge } from "@/components/hud/EventLog";
+import { HudTooltip } from "@/components/hud/HudTooltip";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 import { BRAND, SCENE_LABEL } from "@/lib/copy";
 import { SkillTimerChip } from "@/components/hud/SkillTimerPanel";
 import { CommandPaletteTrigger } from "@/components/layout/CommandPalette";
+import { useCrawlerAdminLocked } from "@/components/layout/CrawlerAdminLock";
 
 const dmNav = [
   { href: "/dm", icon: Home, label: "Sesión", glow: "var(--glow-purple)", disabled: false },
@@ -120,6 +123,7 @@ const crawlerNav = [
 export function CrawlerBottomNav() {
   const pathname = usePathname();
   const unread = useUnreadNotifications("unread-notifications-nav");
+  const locked = useCrawlerAdminLocked();
 
   return (
     <nav
@@ -128,15 +132,13 @@ export function CrawlerBottomNav() {
     >
       {crawlerNav.map(({ href, icon: Icon, label, color }) => {
         const active = pathname === href || (href !== "/crawler" && pathname.startsWith(href));
-        return (
-          <Link
-            key={href}
-            href={href}
-            className={cn(
-              "relative flex flex-col items-center gap-0.5 rounded-xl px-2 py-1 text-[10px]",
-              active ? "text-[var(--text-1)]" : "text-[var(--text-3)]"
-            )}
-          >
+        const itemClass = cn(
+          "relative flex flex-col items-center gap-0.5 rounded-xl px-2 py-1 text-[10px]",
+          active ? "text-[var(--text-1)]" : "text-[var(--text-3)]",
+          locked && href !== "/crawler/table" && "pointer-events-none opacity-35"
+        );
+        const inner = (
+          <>
             <span
               className="flex h-10 w-10 items-center justify-center rounded-[14px] well"
               style={active ? { boxShadow: `0 0 16px ${color}66` } : undefined}
@@ -145,6 +147,18 @@ export function CrawlerBottomNav() {
             </span>
             {label}
             {href.includes("notifications") && <NotificationBadge count={unread} />}
+          </>
+        );
+        if (locked && href !== "/crawler/table") {
+          return (
+            <span key={href} aria-disabled="true" className={itemClass}>
+              {inner}
+            </span>
+          );
+        }
+        return (
+          <Link key={href} href={href} className={itemClass}>
+            {inner}
           </Link>
         );
       })}
@@ -152,12 +166,35 @@ export function CrawlerBottomNav() {
   );
 }
 
+function dmParentHref(pathname: string): string | null {
+  const segments = pathname.split("/").filter(Boolean);
+  if (segments[0] !== "dm" || segments.length < 2) return null;
+  segments.pop();
+  return `/${segments.join("/")}`;
+}
+
 export function DMTopBar({ sessionCode, sessionName }: { sessionCode?: string; sessionName?: string }) {
+  const pathname = usePathname();
+  const parentHref = dmParentHref(pathname);
+
   return (
     <header className="flex h-16 items-center justify-between border-b border-[var(--stroke-glass)] px-6 pr-28">
-      <div>
-        <p className="text-label text-[var(--text-cyan)]">{BRAND} / DUNGEON MASTER</p>
-        <h1 className="font-display text-lg tracking-wide">{sessionName ?? "Control de sesión"}</h1>
+      <div className="flex min-w-0 items-center gap-3">
+        {parentHref ? (
+          <HudTooltip text="Volver" side="bottom" className="group shrink-0">
+            <Link
+              href={parentHref}
+              aria-label="Volver al menú anterior"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--stroke-glass)] bg-[rgba(5,6,13,0.55)] text-[var(--text-3)] transition-[color,border-color,box-shadow,background-color] duration-[var(--t-ui)] ease-[var(--ease-hologram)] hover:border-[var(--stroke-cyan)] hover:bg-[rgba(0,212,255,0.08)] hover:text-[var(--cyan-400)] hover:shadow-[var(--glow-cyan)] focus-visible:border-[var(--stroke-cyan-hot)] focus-visible:text-[var(--cyan-300)] focus-visible:shadow-[var(--glow-cyan)]"
+            >
+              <ChevronLeft size={18} strokeWidth={1.75} />
+            </Link>
+          </HudTooltip>
+        ) : null}
+        <div className="min-w-0">
+          <p className="text-label text-[var(--text-cyan)]">{BRAND} / DUNGEON MASTER</p>
+          <h1 className="font-display text-lg tracking-wide">{sessionName ?? "Control de sesión"}</h1>
+        </div>
       </div>
       <div className="flex items-center gap-3">
         {sessionCode && <SkillTimerChip />}

@@ -10,6 +10,7 @@ import { useSceneDiceApi } from "@/components/hud/SceneDiceProvider";
 import { SceneHotbar } from "@/components/hud/SceneHotbar";
 import { MinimapPanel } from "@/components/hud/MinimapPanel";
 import type { ItemInstance, Resource, Skill, TableState, MapPin } from "@/lib/types";
+import { useCrawlerAdminLocked } from "@/components/layout/CrawlerAdminLock";
 import { useRealtimeTable, useSessionBroadcast } from "@/hooks/useSession";
 import { useSceneCanvas } from "@/hooks/useSceneCanvas";
 import { updateCrawlerVitals } from "@/lib/crawler-vitals";
@@ -116,6 +117,7 @@ export default function CrawlerTablePage() {
   }, [load, supabase]);
 
   const scene = useSceneCanvas(sessionId, { role: "crawler", selfId });
+  const adminLocked = useCrawlerAdminLocked();
 
   const { broadcast } = useSessionBroadcast(sessionId, useCallback((event, payload) => {
     if (event === "table_update") load();
@@ -154,9 +156,11 @@ export default function CrawlerTablePage() {
         <PartyAvatarRail
           members={party}
           selfId={selfId}
-          choosingId={choosing?.crawlerId}
+          choosingId={adminLocked ? undefined : choosing?.crawlerId}
+          locked={adminLocked}
+          forceEmotion={adminLocked ? "miedo" : undefined}
           onSelfLifeChange={
-            selfId
+            selfId && !adminLocked
               ? (life) => {
                   const hp_boxes_filled = lifeToBoxesFilled(life);
                   patchSelf({ hp_boxes_filled });
@@ -165,7 +169,7 @@ export default function CrawlerTablePage() {
               : undefined
           }
           onSelfManaChange={
-            selfId
+            selfId && !adminLocked
               ? (mana_current) => {
                   patchSelf({ mana_current });
                   void updateCrawlerVitals(selfId, { mana_current });
@@ -173,7 +177,7 @@ export default function CrawlerTablePage() {
               : undefined
           }
           onSelfEmotionChange={
-            selfId
+            selfId && !adminLocked
               ? (emotion: AvatarEmotion | null) => {
                   patchSelf({ avatar_emotion: emotion });
                   void updateCrawlerVitals(selfId, { avatar_emotion: emotion });
@@ -188,11 +192,12 @@ export default function CrawlerTablePage() {
             resource={resource}
             pins={pins}
             canvas={scene.doc}
-            mode="play"
+            mode={adminLocked ? "view" : "play"}
             role="crawler"
             selfId={selfId}
             className="min-h-0 w-full flex-1"
             onCommit={(next, immediate, tokenId) => {
+              if (adminLocked) return;
               if (tokenId) scene.moveOwnToken(next, tokenId, immediate);
             }}
             onBusy={scene.setBusy}
@@ -216,14 +221,15 @@ export default function CrawlerTablePage() {
           crawlerId={selfId}
           skills={skills}
           items={items}
-          lifted={choosing?.crawlerId === selfId}
-          diceLocked={!!dice.state && dice.state.crawlerId !== selfId}
-          onDiceOpenChange={dice.announceChoosing}
-          onDiePicked={dice.pickDie}
+          readOnly={adminLocked}
+          lifted={!adminLocked && choosing?.crawlerId === selfId}
+          diceLocked={adminLocked || (!!dice.state && dice.state.crawlerId !== selfId)}
+          onDiceOpenChange={adminLocked ? undefined : dice.announceChoosing}
+          onDiePicked={adminLocked ? undefined : dice.pickDie}
         />
       )}
-      <SceneChat sessionId={sessionId} members={chatMembers} />
-      <MinimapPanel sessionId={sessionId} selfId={selfId} />
+      <SceneChat sessionId={sessionId} members={chatMembers} locked={adminLocked} />
+      <MinimapPanel sessionId={sessionId} selfId={selfId} blackout={adminLocked} />
     </main>
   );
 }

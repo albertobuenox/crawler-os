@@ -318,6 +318,7 @@ export function SceneHotbar({
 
   const activate = useCallback(
     (index: number) => {
+      if (readOnly) return;
       const entry = slots[index];
       if (movingIndex != null) {
         moveSlot(movingIndex, index);
@@ -338,7 +339,7 @@ export function SceneHotbar({
         void supabase.rpc("mark_skill_used", { p_skill_id: entry.id });
       }
     },
-    [moveSlot, movingIndex, offset, persistChrome, slots, supabase]
+    [moveSlot, movingIndex, offset, persistChrome, readOnly, slots, supabase]
   );
 
   useEffect(() => {

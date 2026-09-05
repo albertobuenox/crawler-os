@@ -8,6 +8,11 @@ export const EMPTY_SCENE_CANVAS_COPY = "El marco está vacío. El Master aún no
 export const EMPTY_SCENE_EDITOR_COPY = "Sube un mapa o coloca fichas. Esto es lo que ven los crawlers.";
 export const EMPTY_MINIMAP_COPY = "El piso aún no tiene forma. El Master no ha dibujado ni un pasillo.";
 export const MINIMAP_LABEL = "Minimapa";
+export const BORANT_ICON_SRC = "/icons/borant-icon.webp";
+export const ADMIN_IN_ROOM_ACTIVATE = "Activar administrador en la sala";
+export const ADMIN_IN_ROOM_DEACTIVATE = "Desactivar administrador en la sala";
+export const ADMIN_IN_ROOM_BANNER = "Hay un administrador en la sala";
+export const ADMIN_IN_ROOM_HEADER = "SYSTEM MESSAGE";
 
 export const NO_CLASS_LABEL = "Sin clase";
 

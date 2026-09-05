@@ -4,9 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useRealtimeTable } from "@/hooks/useSession";
 import { LayoutGrid, ScrollText } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { AdminInRoomButton } from "@/components/hud/AdminInRoomButton";
 import { SceneCanvasEditor } from "@/components/hud/SceneCanvasEditor";
 import { SceneSpectator } from "@/components/hud/SceneSpectator";
 import { SceneSheetPanel } from "@/components/hud/SceneSheetPanel";
+import { useAdminInRoom } from "@/hooks/useAdminInRoom";
 import type { DmMob, GameSession, Resource } from "@/lib/types";
 import { castSession } from "@/lib/utils";
 import { crawlerAvatarUrl, crawlerInitials } from "@/lib/crawler-art";
@@ -29,6 +31,7 @@ export default function DMTablePage() {
   const [mobs, setMobs] = useState<DmMob[]>([]);
   const [view, setView] = useState<"canvas" | string>("canvas");
   const [sheetId, setSheetId] = useState<string | null>(null);
+  const admin = useAdminInRoom(session?.id);
 
   useEffect(() => {
     void load();
@@ -139,12 +142,19 @@ export default function DMTablePage() {
             </button>
           );
         })}
+        {session && (
+          <AdminInRoomButton
+            active={admin.active}
+            pending={admin.pending}
+            onToggle={() => void admin.setAdminInRoom(!admin.active)}
+          />
+        )}
         {focus && (
           <button
             type="button"
             onClick={() => setSheetId(sheetId === focus.id ? null : focus.id)}
             className={cn(
-              "ml-auto flex h-10 items-center gap-2 rounded-[12px] border px-3 font-display text-[11px] tracking-wide",
+              "flex h-10 items-center gap-2 rounded-[12px] border px-3 font-display text-[11px] tracking-wide",
               sheetId
                 ? "border-[var(--stroke-magenta)] text-[var(--magenta-400)] shadow-[var(--glow-magenta)]"
                 : "border-[var(--stroke-glass)] text-[var(--text-2)]"

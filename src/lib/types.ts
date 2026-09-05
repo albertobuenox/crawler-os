@@ -200,6 +200,7 @@ export interface TableState {
   pan_y: number;
   show_grid: boolean;
   canvas?: SceneCanvasDoc | Record<string, unknown> | null;
+  admin_in_room?: boolean;
 }
 
 export type SceneTokenKind = "player" | "enemy";

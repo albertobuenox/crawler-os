@@ -14,8 +14,9 @@ export function useRealtimeTable<T = Record<string, unknown>>(
   onChangeRef.current = onChange;
 
   useEffect(() => {
+    const topic = `${table}:${filter}:${crypto.randomUUID()}`;
     const channel = supabase
-      .channel(`${table}:${filter}`)
+      .channel(topic)
       .on(
         "postgres_changes",
         {
@@ -35,7 +36,7 @@ export function useRealtimeTable<T = Record<string, unknown>>(
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      void supabase.removeChannel(channel);
     };
   }, [supabase, table, filter]);
 }
@@ -78,6 +79,9 @@ export function useSessionBroadcast(
       )
       .on("broadcast", { event: "scene_canvas_update" }, ({ payload }) =>
         onMessageRef.current("scene_canvas_update", payload)
+      )
+      .on("broadcast", { event: "admin_in_room" }, ({ payload }) =>
+        onMessageRef.current("admin_in_room", payload)
       )
       .subscribe();
 
