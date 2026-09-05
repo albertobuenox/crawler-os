@@ -26,8 +26,10 @@ import {
 import type { ItemInstance, Resource, Skill } from "@/lib/types";
 import { SKILL_KIND_LABEL, SKILL_TYPE_LABEL } from "@/lib/copy";
 import { skillArtSlug } from "@/lib/skill-art";
-import { isSkillChecked, skillRollLabel } from "@/lib/skills";
+import { isSkillChecked } from "@/lib/skills";
+import { SkillHoverTip } from "@/components/hud/SkillHoverTip";
 import { SkillThumb, useSkillArt } from "@/components/hud/SkillThumb";
+import { tipFromSkill } from "@/lib/skill-tip";
 import { HotbarDiceTray } from "@/components/hud/HotbarDiceTray";
 import type { SceneDieSides } from "@/lib/scene-dice";
 import { cn } from "@/lib/utils";
@@ -54,21 +56,6 @@ function isTypingTarget(target: EventTarget | null) {
 
 function slotEquals(a: HotbarEntry | null, b: HotbarEntry) {
   return !!a && a.kind === b.kind && a.id === b.id;
-}
-
-function skillDescription(skill: Skill): string {
-  if (skill.notes?.trim()) return skill.notes.trim();
-  const cat = skill.skill_catalog;
-  if (cat?.description?.trim()) return cat.description.trim();
-  const parts: string[] = [
-    cat?.kind ? SKILL_KIND_LABEL[cat.kind] : SKILL_TYPE_LABEL[skill.skill_type] ?? skill.skill_type,
-    `Rango ${skill.rank}`,
-  ];
-  if (cat) {
-    parts.push(`d100 ${skillRollLabel(cat.roll_min, cat.roll_max, cat.slug)}`);
-    if (cat.animal_only) parts.push("solo animal");
-  }
-  return parts.join(" · ");
 }
 
 function itemDescription(item: SheetItem): string {
@@ -556,7 +543,7 @@ export function SceneHotbar({
                           onClick={() => assign(assignIndex, { kind: "skill", id: skill.id })}
                           className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12px] text-[var(--text-1)] hover:bg-[rgba(255,45,106,0.14)]"
                         >
-                          <SkillThumb slug={skillArtSlug(skill)} skillType={skill.skill_type} thumbUrl={skill.skill_catalog?.thumb_url} size="xs" className="border-[var(--stroke-hotbar)] bg-[rgba(255,45,106,0.1)]" />
+                          <SkillThumb slug={skillArtSlug(skill)} skillType={skill.skill_type} thumbUrl={skill.skill_catalog?.thumb_url} size="xs" className="border-[var(--stroke-hotbar)] bg-[rgba(255,45,106,0.1)]" tip={skill} />
                           <span className="min-w-0 truncate">{skill.name}</span>
                           <span className="ml-auto shrink-0 text-[10px] uppercase tracking-wider text-[var(--hp-soft)]">
                             {skill.skill_catalog?.kind
@@ -791,10 +778,11 @@ function HotbarSlot({
   const key = HOTBAR_KEYS[index];
   const filled = !!entry && (!!skill || !!item);
   const label = skill?.name ?? item?.resource.name ?? `Hueco ${key} vacío`;
-  const detail = skill ? skillDescription(skill) : item ? itemDescription(item) : null;
+  const detail = item ? itemDescription(item) : null;
   const qty = item && item.quantity > 0 ? formatHotbarQty(item.quantity) : null;
   const Icon = skill ? (skillIcon[skill.skill_type] ?? Sparkles) : Sparkles;
   const skillArt = useSkillArt(skill ? skillArtSlug(skill) : null, skill?.skill_type, skill?.skill_catalog?.thumb_url);
+  const skillTip = skill ? tipFromSkill(skill) : null;
   const holdRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -831,7 +819,7 @@ function HotbarSlot({
           moveTarget && "brightness-110"
         )}
       >
-        {filled && detail && !menuOpen && (
+        {filled && item && detail && !menuOpen && (
           <span
             role="tooltip"
             className={cn(
@@ -844,6 +832,7 @@ function HotbarSlot({
             <span className="mt-0.5 block text-[10px] leading-snug text-[var(--text-2)]">{detail}</span>
           </span>
         )}
+        <SkillHoverTip info={skillTip} disabled={!skill || menuOpen} className="block w-full">
         <button
           type="button"
           aria-label={filled ? `${label}. Tecla ${key}` : `Asignar al hueco ${key}`}
@@ -935,6 +924,7 @@ function HotbarSlot({
             />
           )}
         </button>
+        </SkillHoverTip>
         {menuOpen && filled && (
           <div
             role="menu"

@@ -25,6 +25,22 @@ export function chatChannelLabel(channel: string, members: ChatChannelOption[]):
   return members.find((m) => m.id === channel)?.label ?? "Jugador";
 }
 
+export function chatChannelCycle(members: ChatChannelOption[]): string[] {
+  return [CHAT_CHANNEL_ALL, ...members.map((member) => member.id)];
+}
+
+export function cycleChatChannel(
+  current: string,
+  members: ChatChannelOption[],
+  step = 1
+): string {
+  const channels = chatChannelCycle(members);
+  const index = channels.indexOf(current);
+  const from = index >= 0 ? index : 0;
+  const next = ((from + step) % channels.length + channels.length) % channels.length;
+  return channels[next] ?? CHAT_CHANNEL_ALL;
+}
+
 export function isChatEvent(entry: Pick<EventLogEntry, "payload"> | null | undefined): boolean {
   return entry?.payload?.kind === CHAT_EVENT_KIND;
 }

@@ -38,7 +38,7 @@ export default async function DMLayout({ children }: { children: React.ReactNode
       <LoginWelcomeNotice />
       <div className="relative z-[var(--z-shell)] flex min-h-screen">
         <DMNavRail />
-        <div className="flex min-h-screen flex-1 flex-col">
+        <div className="relative z-0 flex min-h-screen min-w-0 flex-1 flex-col">
           <DMTopBar sessionCode={session?.code} sessionName={session?.name} />
           <main className="flex-1 overflow-auto px-10 py-8 pl-16">{children}</main>
         </div>

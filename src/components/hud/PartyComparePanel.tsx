@@ -499,7 +499,7 @@ export function PartyComparePanel({
           </Link>
         </p>
       ) : (
-        <div className="max-h-[min(62vh,42rem)] overflow-auto rounded-[14px] border border-[var(--stroke-glass)]">
+        <div className="relative isolate max-h-[min(62vh,42rem)] overflow-auto rounded-[14px] border border-[var(--stroke-glass)]">
           <div
             className="min-w-max"
             style={{
@@ -507,13 +507,13 @@ export function PartyComparePanel({
               gridTemplateColumns: `9.25rem repeat(${columns}, minmax(9.5rem, 1fr))`,
             }}
           >
-            <div className="sticky left-0 top-0 z-30 border-b border-[var(--stroke-glass)] bg-[rgba(10,12,24,0.96)] px-3 py-3 text-label">
+            <div className="sticky left-0 top-0 z-[3] border-b border-[var(--stroke-glass)] bg-[rgba(10,12,24,0.96)] px-3 py-3 text-label">
               Dato
             </div>
             {orderedCrawlers.map((crawler) => (
               <div
                 key={crawler.id}
-                className="sticky top-0 z-20 border-b border-l border-[var(--stroke-glass)] bg-[rgba(10,12,24,0.96)] px-3 py-3"
+                className="sticky top-0 z-[2] border-b border-l border-[var(--stroke-glass)] bg-[rgba(10,12,24,0.96)] px-3 py-3"
               >
                 <Link href={`/dm/crawlers/${crawler.id}`} className="group flex items-start gap-2.5">
                   <ColumnAvatar crawler={crawler} />
@@ -539,7 +539,7 @@ export function PartyComparePanel({
               return (
                 <div key={group} className="contents">
                   <div
-                    className="sticky left-0 z-10 border-y border-[var(--stroke-cyan)] bg-[rgba(0,212,255,0.08)] px-3 py-1.5 text-label text-[var(--cyan-300)]"
+                    className="sticky left-0 z-[1] border-y border-[var(--stroke-cyan)] bg-[rgba(0,212,255,0.08)] px-3 py-1.5 text-label text-[var(--cyan-300)]"
                     style={{ gridColumn: "1 / -1" }}
                   >
                     {GROUP_LABEL[group]}
@@ -558,7 +558,7 @@ export function PartyComparePanel({
                           onClick={() => toggleSort(row.id)}
                           title="Ordenar crawlers por este dato"
                           className={cn(
-                            "sticky left-0 z-10 border-t border-[var(--stroke-glass)] px-3 py-2.5 text-left text-[11px] uppercase tracking-[0.12em]",
+                            "sticky left-0 z-[1] border-t border-[var(--stroke-glass)] px-3 py-2.5 text-left text-[11px] uppercase tracking-[0.12em]",
                             index % 2 === 0 ? "bg-[rgba(10,12,24,0.96)]" : "bg-[rgba(16,19,31,0.96)]",
                             glow && "bg-[rgba(251,191,36,0.12)] text-[var(--gold-400)]",
                             dim && "opacity-35",

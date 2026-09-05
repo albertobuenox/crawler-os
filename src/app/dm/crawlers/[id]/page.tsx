@@ -502,7 +502,7 @@ export default function DMCrawlerSheetPage() {
                   exit={{ opacity: 0, x: 8 }}
                   className="well mb-2 flex items-center justify-between gap-2 px-3 py-2 text-sm"
                 >
-                  <SkillThumb slug={skillArtSlug(s)} skillType={s.skill_type} thumbUrl={s.skill_catalog?.thumb_url} size="sm" />
+                  <SkillThumb slug={skillArtSlug(s)} skillType={s.skill_type} thumbUrl={s.skill_catalog?.thumb_url} size="sm" tip={s} />
                   <div className="min-w-0 flex-1">
                     <span className="font-semibold text-[var(--text-1)]">{s.name}</span>
                     <span className="ml-2 text-[var(--text-3)]">
@@ -552,7 +552,7 @@ export default function DMCrawlerSheetPage() {
                           )}
                         >
                           <span className="flex min-w-0 items-center gap-2">
-                            <SkillThumb slug={entry.slug} skillType={defaultSkillType(entry)} thumbUrl={entry.thumb_url} size="xs" />
+                            <SkillThumb slug={entry.slug} skillType={defaultSkillType(entry)} thumbUrl={entry.thumb_url} size="xs" tip={entry} />
                             <span>
                               <span className="font-medium">{entry.name}</span>
                               <span className="ml-2 text-[var(--text-4)]">

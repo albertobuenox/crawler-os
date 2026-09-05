@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { Sparkles } from "lucide-react";
+import { SkillHoverTip } from "@/components/hud/SkillHoverTip";
 import { skillArtUrl } from "@/lib/skill-art";
-import type { Skill } from "@/lib/types";
+import { toSkillTip } from "@/lib/skill-tip";
+import type { Skill, SkillCatalogEntry } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const SIZE = {
@@ -37,17 +39,19 @@ export function SkillThumb({
   thumbUrl,
   size = "sm",
   className,
+  tip,
 }: {
   slug?: string | null;
   skillType?: Skill["skill_type"] | null;
   thumbUrl?: string | null;
   size?: keyof typeof SIZE;
   className?: string;
+  tip?: Skill | SkillCatalogEntry | null;
 }) {
   const { src, ready, markFailed } = useSkillArt(slug, skillType, thumbUrl);
   const spec = SIZE[size];
 
-  return (
+  const icon = (
     <span
       aria-hidden="true"
       className={cn(
@@ -65,4 +69,7 @@ export function SkillThumb({
       )}
     </span>
   );
+
+  if (!tip) return icon;
+  return <SkillHoverTip info={toSkillTip(tip)}>{icon}</SkillHoverTip>;
 }

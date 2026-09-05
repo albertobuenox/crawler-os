@@ -186,6 +186,7 @@ export function SceneChat({
   const [dragging, setDragging] = useState(false);
   const panelRef = useRef<HTMLElement | null>(null);
   const listRef = useRef<HTMLUListElement | null>(null);
+  const composeInputRef = useRef<HTMLInputElement | null>(null);
   const lastSeenChat = useRef(0);
   const lastSeenLog = useRef(0);
   const historyReady = useRef(false);
@@ -369,6 +370,32 @@ export function SceneChat({
     }
     setDocked(false);
   }
+
+  useEffect(() => {
+    if (locked || minimized || panelTab !== "chat") return;
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Tab" || event.altKey || event.ctrlKey || event.metaKey) return;
+      if (event.repeat) return;
+      const target = event.target;
+      if (target instanceof HTMLElement) {
+        const dialog = target.closest("[role='dialog']");
+        if (dialog && !panelRef.current?.contains(dialog)) return;
+        if (!panelRef.current?.contains(target)) {
+          const tag = target.tagName;
+          if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target.isContentEditable) {
+            return;
+          }
+        }
+      }
+      event.preventDefault();
+      chat.cycleChannel(event.shiftKey ? -1 : 1);
+      composeInputRef.current?.focus();
+    }
+
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, [chat.cycleChannel, locked, minimized, panelTab]);
 
   const playerIds = chat.roster.map((m) => m.id);
   const channelColor = chatChannelColor(chat.channel, playerIds);
@@ -617,7 +644,8 @@ export function SceneChat({
               onChange={(e) => chat.setChannel(e.target.value)}
               className="well h-9 w-[5.75rem] shrink-0 px-1.5 text-[11px] font-semibold disabled:opacity-60"
               style={{ color: channelColor }}
-              aria-label="Canal de chat"
+              title="Tab cambia de canal"
+              aria-label="Canal de chat. Tab para el siguiente, Mayús+Tab para el anterior."
             >
               <option value={CHAT_CHANNEL_ALL}>All</option>
               {chat.roster.map((member) => (
@@ -627,6 +655,7 @@ export function SceneChat({
               ))}
             </select>
             <input
+              ref={composeInputRef}
               value={chat.draft}
               disabled={locked || !sessionId || !chat.ready || chat.sending}
               tabIndex={composeTabIndex}

@@ -9,25 +9,37 @@ import type {
   MinimapTokenKind,
 } from "./types";
 
-export const MINIMAP_TOKEN_KINDS: MinimapTokenKind[] = ["player", "npc", "enemy"];
-export const MINIMAP_FIXTURE_KINDS: MinimapFixtureKind[] = ["door", "obstacle"];
+export const MINIMAP_TOKEN_KINDS: MinimapTokenKind[] = ["player", "npc", "enemy", "pet", "minion"];
+export const MINIMAP_FIXTURE_KINDS: MinimapFixtureKind[] = ["stairs", "door", "obstacle"];
 
 export const MINIMAP_TOKEN_LABEL: Record<MinimapTokenKind, string> = {
-  player: "Jugador",
+  player: "Mazmorrero",
   npc: "NPC",
-  enemy: "Enemigo",
+  enemy: "Hostil",
+  pet: "Mascota",
+  minion: "Minión",
 };
 
 export const MINIMAP_FIXTURE_LABEL: Record<MinimapFixtureKind, string> = {
+  stairs: "Escaleras",
   door: "Puerta",
   obstacle: "Obstáculo",
 };
 
 export const MINIMAP_DOT = {
-  self: "var(--text-1)",
-  ally: "var(--gold-400)",
+  self: "var(--ok)",
+  ally: "var(--mana)",
   enemy: "var(--danger)",
+  npc: "var(--text-1)",
+  pet: "var(--orange-400)",
+  minion: "var(--ok)",
 } as const;
+
+export type MinimapHoverCopy = {
+  legend: string;
+  detail: string;
+  name?: string;
+};
 
 const TOKEN_HIT = 0.032;
 const FIXTURE_HIT = 0.038;
@@ -58,17 +70,61 @@ export function isMinimapEmpty(doc: MinimapDoc) {
   return doc.tokens.length === 0 && doc.strokes.length === 0 && doc.fixtures.length === 0;
 }
 
+export function isSelfToken(
+  token: MinimapToken,
+  viewer: "dm" | "crawler",
+  selfId?: string | null
+) {
+  return (
+    token.kind === "player" &&
+    viewer === "crawler" &&
+    !!token.crawler_id &&
+    token.crawler_id === selfId
+  );
+}
+
 export function tokenFill(
   token: MinimapToken,
   viewer: "dm" | "crawler",
   selfId?: string | null
 ) {
   if (token.kind === "enemy") return MINIMAP_DOT.enemy;
-  if (viewer === "crawler" && token.kind === "player" && token.crawler_id && token.crawler_id === selfId) {
-    return MINIMAP_DOT.self;
-  }
-  if (viewer === "dm" && token.kind === "player") return MINIMAP_DOT.self;
+  if (token.kind === "npc") return MINIMAP_DOT.npc;
+  if (token.kind === "pet") return MINIMAP_DOT.pet;
+  if (token.kind === "minion") return MINIMAP_DOT.minion;
+  if (isSelfToken(token, viewer, selfId)) return MINIMAP_DOT.self;
   return MINIMAP_DOT.ally;
+}
+
+export function tokenHoverCopy(
+  token: MinimapToken,
+  viewer: "dm" | "crawler",
+  selfId?: string | null
+): MinimapHoverCopy {
+  const copy =
+    token.kind === "enemy"
+      ? { legend: "Punto rojo", detail: "NPC agresivos" }
+      : token.kind === "npc"
+        ? { legend: "Punto blanco", detail: "NPC no agresivos" }
+        : token.kind === "pet"
+          ? { legend: "Punto naranja", detail: "Mascotas" }
+          : token.kind === "minion"
+            ? { legend: "Punto verde con una X", detail: "Minión" }
+            : isSelfToken(token, viewer, selfId)
+              ? { legend: "Punto verde", detail: "tú" }
+              : { legend: "Punto azul", detail: "otros mazmorreros" };
+  const name = token.label.trim();
+  const defaultName = MINIMAP_TOKEN_LABEL[token.kind];
+  if (name && name !== defaultName && name.toLowerCase() !== copy.detail.toLowerCase()) {
+    return { ...copy, name };
+  }
+  return copy;
+}
+
+export function fixtureHoverCopy(fixture: MinimapFixture): MinimapHoverCopy {
+  if (fixture.kind === "stairs") return { legend: "Cuadrado blanco", detail: "Escaleras" };
+  if (fixture.kind === "door") return { legend: "Puerta", detail: "Acceso" };
+  return { legend: "Obstáculo", detail: "Bloqueo" };
 }
 
 export function makeToken(
@@ -181,7 +237,9 @@ function parseToken(raw: unknown): MinimapToken | null {
   if (!raw || typeof raw !== "object") return null;
   const t = raw as Record<string, unknown>;
   if (typeof t.id !== "string") return null;
-  const kind = t.kind === "player" || t.kind === "npc" || t.kind === "enemy" ? t.kind : "npc";
+  const kind = MINIMAP_TOKEN_KINDS.includes(t.kind as MinimapTokenKind)
+    ? (t.kind as MinimapTokenKind)
+    : "npc";
   return {
     id: t.id,
     kind,
@@ -215,7 +273,9 @@ function parseFixture(raw: unknown): MinimapFixture | null {
   if (!raw || typeof raw !== "object") return null;
   const f = raw as Record<string, unknown>;
   if (typeof f.id !== "string") return null;
-  const kind = f.kind === "door" || f.kind === "obstacle" ? f.kind : "obstacle";
+  const kind = MINIMAP_FIXTURE_KINDS.includes(f.kind as MinimapFixtureKind)
+    ? (f.kind as MinimapFixtureKind)
+    : "obstacle";
   const rotation = Number(f.rotation);
   return {
     id: f.id,

@@ -236,7 +236,7 @@ export function MinimapPanel({
             <div className="well aspect-square animate-pulse" />
           )}
           <p className="mt-2 text-[10px] uppercase tracking-[0.14em] text-[var(--text-4)]">
-            {blackout ? "Señal perdida" : "Tú · blanco · aliados · oro · hostiles · rojo"}
+            {blackout ? "Señal perdida" : "Pasa el cursor por un punto"}
           </p>
         </div>
         {minimized && (

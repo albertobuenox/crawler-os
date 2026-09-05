@@ -112,7 +112,7 @@ export function CreateSkillModal({
       subtitle="Nombre, tipo, descripción y miniatura. El resto se asigna al crawler."
       action={
         editing && !previewSrc ? (
-          <SkillThumb slug={editing.slug} skillType={defaultSkillType(editing)} thumbUrl={editing.thumb_url} size="md" />
+          <SkillThumb slug={editing.slug} skillType={defaultSkillType(editing)} thumbUrl={editing.thumb_url} size="md" tip={editing} />
         ) : undefined
       }
       onClose={() => {

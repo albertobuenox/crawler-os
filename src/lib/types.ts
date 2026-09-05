@@ -253,8 +253,8 @@ export interface MapPin {
   crawler_id: string | null;
 }
 
-export type MinimapTokenKind = "player" | "npc" | "enemy";
-export type MinimapFixtureKind = "door" | "obstacle";
+export type MinimapTokenKind = "player" | "npc" | "enemy" | "pet" | "minion";
+export type MinimapFixtureKind = "door" | "obstacle" | "stairs";
 export type MinimapStrokeTool = "draw" | "wall";
 
 export interface MinimapPoint {

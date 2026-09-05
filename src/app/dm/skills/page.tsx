@@ -336,6 +336,7 @@ export default function DMSkillsPage() {
                         skillType={defaultSkillType(s)}
                         thumbUrl={s.thumb_url}
                         size="sm"
+                        tip={s}
                       />
                     </td>
                     <td className="p-3 font-mono-system text-[var(--cyan-400)]">

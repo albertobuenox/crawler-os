@@ -38,6 +38,7 @@ export function SkillListItem({
         thumbUrl={skill.skill_catalog?.thumb_url}
         size="md"
         className="mt-0.5"
+        tip={skill}
       />
       {showCheck && (
         <button

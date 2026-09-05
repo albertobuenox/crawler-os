@@ -128,7 +128,7 @@ export default function DMSkillsEditorPage() {
         </div>
         {selected && (
           <div className="sm:col-span-2 flex items-center gap-3">
-            <SkillThumb slug={selected.slug} skillType={defaultSkillType(selected)} thumbUrl={selected.thumb_url} size="md" />
+            <SkillThumb slug={selected.slug} skillType={defaultSkillType(selected)} thumbUrl={selected.thumb_url} size="md" tip={selected} />
             <p className="text-xs text-[var(--text-3)]">
               d100 {skillRollLabel(selected.roll_min, selected.roll_max, selected.slug)} · pág. {selected.page_ref}
               {selected.animal_only ? " · solo animal" : ""}
@@ -168,7 +168,7 @@ export default function DMSkillsEditorPage() {
           return (
             <li key={s.id} className="well flex items-center justify-between gap-3 px-3 py-2 text-sm">
               <span className="flex min-w-0 items-center gap-2.5">
-                <SkillThumb slug={skillArtSlug(s)} skillType={s.skill_type} thumbUrl={s.skill_catalog?.thumb_url} size="sm" />
+                <SkillThumb slug={skillArtSlug(s)} skillType={s.skill_type} thumbUrl={s.skill_catalog?.thumb_url} size="sm" tip={s} />
                 <span>
                   <span className="font-semibold text-[var(--text-1)]">{s.name}</span>
                   <span className="ml-2 text-[var(--text-3)]">

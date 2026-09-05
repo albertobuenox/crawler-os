@@ -201,7 +201,7 @@ export function buildPaletteCommands(ctx: PaletteContext): PaletteCommand[] {
       group: "session",
       label: "Minimapa",
       hint: "Mundo",
-      keywords: ["minimapa", "mapa", "fichas", "paredes", "enemigos"],
+      keywords: ["minimapa", "mapa", "fichas", "paredes", "enemigos", "mascotas", "minion", "escaleras", "npc"],
       icon: "map",
       href: "/dm/world#minimap",
     },

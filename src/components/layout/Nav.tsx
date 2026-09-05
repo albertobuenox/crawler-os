@@ -54,10 +54,10 @@ export function DMNavRail({ unread = 0 }: { unread?: number }) {
   }, [pathname]);
 
   return (
-    <div className="relative hidden w-14 shrink-0 lg:block">
+    <div className="relative z-[var(--z-nav)] hidden w-14 shrink-0 lg:block">
       <nav
         ref={railRef}
-        className="dm-nav-rail group/rail absolute inset-y-0 left-0 z-[var(--z-nav)] flex flex-col gap-1 overflow-hidden border-r border-[var(--stroke-glass)] py-4 backdrop-blur-xl"
+        className="dm-nav-rail group/rail absolute inset-y-0 left-0 flex flex-col gap-1 overflow-hidden border-r border-[var(--stroke-glass)] py-4 backdrop-blur-xl"
       >
         <p className="mb-3 flex h-6 items-center overflow-hidden px-3 font-display text-[8px] tracking-[0.22em] text-[var(--cyan-400)]">
           <span className="shrink-0">DM</span>

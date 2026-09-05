@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
-import { chatFromEvent, upsertChatMessage, type ChatChannelOption } from "@/lib/chat";
+import { chatFromEvent, cycleChatChannel, upsertChatMessage, type ChatChannelOption } from "@/lib/chat";
 import { MASTER_CHAT_NAME } from "@/lib/copy";
 import {
   CHAT_BODY_MAX,
@@ -187,6 +187,13 @@ export function useSceneChat(
     };
   }, [pushMessage, sessionId, supabase]);
 
+  const cycleChannel = useCallback(
+    (step = 1) => {
+      setChannel((current) => cycleChatChannel(current, roster, step));
+    },
+    [roster]
+  );
+
   const send = useCallback(async () => {
     const author = authorRef.current;
     const body = draft.trim();
@@ -222,6 +229,7 @@ export function useSceneChat(
     messages,
     channel,
     setChannel,
+    cycleChannel,
     draft,
     setDraft,
     sending,

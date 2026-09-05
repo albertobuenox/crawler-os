@@ -2,10 +2,12 @@
 
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import {
+  Bot,
   DoorOpen,
   Eraser,
   Minus,
   MousePointer2,
+  PawPrint,
   Pencil,
   RotateCw,
   Skull,
@@ -26,7 +28,10 @@ import {
   makeFixture,
   makeStroke,
   makeToken,
+  MINIMAP_DOT,
+  MINIMAP_FIXTURE_KINDS,
   MINIMAP_FIXTURE_LABEL,
+  MINIMAP_TOKEN_KINDS,
   MINIMAP_TOKEN_LABEL,
   placePartyTokens,
   sanitizeLabel,
@@ -280,6 +285,18 @@ export function MinimapEditor({
     );
   }
 
+  function updateSelectedFixture(patch: Partial<{ kind: MinimapFixtureKind }>) {
+    const current = liveDoc();
+    if (!current || !selectedId) return;
+    apply(
+      {
+        ...current,
+        fixtures: current.fixtures.map((f) => (f.id === selectedId ? { ...f, ...patch } : f)),
+      },
+      true
+    );
+  }
+
   function rotateSelected() {
     const current = liveDoc();
     if (!current || !selectedId) return;
@@ -364,7 +381,8 @@ export function MinimapEditor({
         </ToolButton>
         <span className="mx-1 h-6 w-px bg-[var(--stroke-glass)]" />
         <StampChip
-          label="Jugador"
+          label="Mazmorrero"
+          swatch={MINIMAP_DOT.ally}
           active={stamp?.type === "token" && stamp.kind === "player"}
           onPointerDown={(e) => onPalettePointerDown(e, { type: "token", kind: "player" })}
           onPointerMove={onPalettePointerMove}
@@ -374,6 +392,7 @@ export function MinimapEditor({
         </StampChip>
         <StampChip
           label="NPC"
+          swatch={MINIMAP_DOT.npc}
           active={stamp?.type === "token" && stamp.kind === "npc"}
           onPointerDown={(e) => onPalettePointerDown(e, { type: "token", kind: "npc" })}
           onPointerMove={onPalettePointerMove}
@@ -382,13 +401,46 @@ export function MinimapEditor({
           <UserRound size={14} />
         </StampChip>
         <StampChip
-          label="Enemigo"
+          label="Hostil"
+          swatch={MINIMAP_DOT.enemy}
           active={stamp?.type === "token" && stamp.kind === "enemy"}
           onPointerDown={(e) => onPalettePointerDown(e, { type: "token", kind: "enemy" })}
           onPointerMove={onPalettePointerMove}
           onPointerUp={onPalettePointerUp}
         >
           <Skull size={14} />
+        </StampChip>
+        <StampChip
+          label="Mascota"
+          swatch={MINIMAP_DOT.pet}
+          active={stamp?.type === "token" && stamp.kind === "pet"}
+          onPointerDown={(e) => onPalettePointerDown(e, { type: "token", kind: "pet" })}
+          onPointerMove={onPalettePointerMove}
+          onPointerUp={onPalettePointerUp}
+        >
+          <PawPrint size={14} />
+        </StampChip>
+        <StampChip
+          label="Minión"
+          swatch={MINIMAP_DOT.minion}
+          mark="x"
+          active={stamp?.type === "token" && stamp.kind === "minion"}
+          onPointerDown={(e) => onPalettePointerDown(e, { type: "token", kind: "minion" })}
+          onPointerMove={onPalettePointerMove}
+          onPointerUp={onPalettePointerUp}
+        >
+          <Bot size={14} />
+        </StampChip>
+        <StampChip
+          label="Escaleras"
+          swatch={MINIMAP_DOT.npc}
+          mark="square"
+          active={stamp?.type === "fixture" && stamp.kind === "stairs"}
+          onPointerDown={(e) => onPalettePointerDown(e, { type: "fixture", kind: "stairs" })}
+          onPointerMove={onPalettePointerMove}
+          onPointerUp={onPalettePointerUp}
+        >
+          <Square size={14} />
         </StampChip>
         <StampChip
           label="Puerta"
@@ -433,23 +485,28 @@ export function MinimapEditor({
           {selectedToken ? (
             <div className="well space-y-3 p-3">
               <p className="text-label">Ficha</p>
-              <div className="grid grid-cols-3 gap-1">
-                {(["player", "npc", "enemy"] as MinimapTokenKind[]).map((kind) => (
+              <div className="grid grid-cols-2 gap-1">
+                {MINIMAP_TOKEN_KINDS.map((kind) => (
                   <button
                     key={kind}
                     type="button"
                     onClick={() => updateSelectedToken({ kind })}
                     className={cn(
-                      "rounded-[var(--r-sm)] border px-1 py-1.5 text-[10px] uppercase tracking-wider",
+                      "inline-flex items-center justify-center gap-1.5 rounded-[var(--r-sm)] border px-1 py-1.5 text-[10px] uppercase tracking-wider",
                       selectedToken.kind === kind
-                        ? kind === "enemy"
-                          ? "border-[var(--stroke-danger)] text-[var(--danger)]"
-                          : kind === "player"
-                            ? "border-[var(--stroke-glass)] text-[var(--text-1)]"
-                            : "border-[var(--stroke-reward)] text-[var(--gold-400)]"
+                        ? KIND_TONE[kind]
                         : "border-[var(--stroke-glass)] text-[var(--text-3)]"
                     )}
                   >
+                    <span
+                      aria-hidden="true"
+                      className="relative inline-flex h-2 w-2 shrink-0 items-center justify-center rounded-full"
+                      style={{ background: tokenSwatch(kind) }}
+                    >
+                      {kind === "minion" && (
+                        <span className="absolute inset-0 text-[7px] leading-none text-[var(--void-950)]">×</span>
+                      )}
+                    </span>
                     {MINIMAP_TOKEN_LABEL[kind]}
                   </button>
                 ))}
@@ -460,17 +517,22 @@ export function MinimapEditor({
                 onChange={(e) => updateSelectedToken({ label: e.target.value })}
               />
               {selectedToken.kind === "player" && (
-                <Select
-                  label="Crawler"
-                  value={selectedToken.crawler_id ?? ""}
-                  onChange={(e) =>
-                    updateSelectedToken({ crawler_id: e.target.value || null })
-                  }
-                  options={[
-                    { value: "", label: "Sin vincular" },
-                    ...crawlers.map((c) => ({ value: c.id, label: c.name })),
-                  ]}
-                />
+                <>
+                  <Select
+                    label="Crawler"
+                    value={selectedToken.crawler_id ?? ""}
+                    onChange={(e) =>
+                      updateSelectedToken({ crawler_id: e.target.value || null })
+                    }
+                    options={[
+                      { value: "", label: "Sin vincular" },
+                      ...crawlers.map((c) => ({ value: c.id, label: c.name })),
+                    ]}
+                  />
+                  <p className="text-[10px] leading-4 text-[var(--text-4)]">
+                    El crawler vinculado ve este punto en verde: tú. El resto lo ve azul.
+                  </p>
+                </>
               )}
               <Button variant="ghost" size="sm" onClick={removeSelected}>
                 <Trash2 size={14} /> Quitar ficha
@@ -479,6 +541,23 @@ export function MinimapEditor({
           ) : selectedFixture ? (
             <div className="well space-y-3 p-3">
               <p className="text-label">{MINIMAP_FIXTURE_LABEL[selectedFixture.kind]}</p>
+              <div className="grid grid-cols-3 gap-1">
+                {MINIMAP_FIXTURE_KINDS.map((kind) => (
+                  <button
+                    key={kind}
+                    type="button"
+                    onClick={() => updateSelectedFixture({ kind })}
+                    className={cn(
+                      "rounded-[var(--r-sm)] border px-1 py-1.5 text-[10px] uppercase tracking-wider",
+                      selectedFixture.kind === kind
+                        ? "border-[var(--stroke-cyan)] text-[var(--cyan-400)]"
+                        : "border-[var(--stroke-glass)] text-[var(--text-3)]"
+                    )}
+                  >
+                    {MINIMAP_FIXTURE_LABEL[kind]}
+                  </button>
+                ))}
+              </div>
               <div className="flex flex-wrap gap-2">
                 <Button variant="neon" size="sm" onClick={rotateSelected}>
                   <RotateCw size={14} /> Girar
@@ -490,8 +569,8 @@ export function MinimapEditor({
             </div>
           ) : (
             <div className="well space-y-2 p-3 text-xs leading-5 text-[var(--text-3)]">
-              <p>Arrastra fichas, puertas u obstáculos al mapa. Pincha una ficha para marcar si es jugador, NPC o enemigo.</p>
-              <p>Pintar = trazo libre. Pared = línea recta. Los crawlers ven puntos: blanco (ellos), oro (aliados/NPC), rojo (enemigos).</p>
+              <p>Arrastra fichas o escaleras al mapa. Pasa el cursor por un punto para leer su leyenda.</p>
+              <p>Rojo hostil · blanco NPC · naranja mascota · azul mazmorrero · verde tú · verde+X minión · cuadrado blanco escaleras.</p>
             </div>
           )}
 
@@ -543,6 +622,22 @@ export function MinimapEditor({
   );
 }
 
+const KIND_TONE: Record<MinimapTokenKind, string> = {
+  player: "border-[var(--mana)] text-[var(--mana)]",
+  npc: "border-[var(--stroke-glass)] text-[var(--text-1)]",
+  enemy: "border-[var(--stroke-danger)] text-[var(--danger)]",
+  pet: "border-[var(--stroke-reward)] text-[var(--orange-400)]",
+  minion: "border-[var(--ok)] text-[var(--ok)]",
+};
+
+function tokenSwatch(kind: MinimapTokenKind) {
+  if (kind === "enemy") return MINIMAP_DOT.enemy;
+  if (kind === "npc") return MINIMAP_DOT.npc;
+  if (kind === "pet") return MINIMAP_DOT.pet;
+  if (kind === "minion") return MINIMAP_DOT.minion;
+  return MINIMAP_DOT.ally;
+}
+
 function ToolButton({
   label,
   active,
@@ -577,6 +672,8 @@ function ToolButton({
 function StampChip({
   label,
   active,
+  swatch,
+  mark,
   children,
   onPointerDown,
   onPointerMove,
@@ -584,6 +681,8 @@ function StampChip({
 }: {
   label: string;
   active?: boolean;
+  swatch?: string;
+  mark?: "x" | "square";
   children: React.ReactNode;
   onPointerDown: (event: ReactPointerEvent<HTMLButtonElement>) => void;
   onPointerMove: (event: ReactPointerEvent<HTMLButtonElement>) => void;
@@ -605,7 +704,22 @@ function StampChip({
           : "border-[var(--stroke-glass)] text-[var(--text-2)] hover:border-[var(--stroke-cyan)]"
       )}
     >
-      {children}
+      {swatch ? (
+        <span
+          aria-hidden="true"
+          className="relative inline-flex h-2.5 w-2.5 shrink-0 items-center justify-center"
+          style={{
+            background: swatch,
+            borderRadius: mark === "square" ? 1 : 999,
+          }}
+        >
+          {mark === "x" && (
+            <span className="absolute text-[8px] leading-none text-[var(--void-950)]">×</span>
+          )}
+        </span>
+      ) : (
+        children
+      )}
       <span className="hidden md:inline">{label}</span>
     </button>
   );

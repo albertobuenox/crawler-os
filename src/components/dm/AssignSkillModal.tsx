@@ -82,6 +82,7 @@ export function AssignSkillModal({
           skillType={defaultSkillType(shown)}
           thumbUrl={shown.thumb_url}
           size="md"
+          tip={shown}
         />
       }
       onClose={() => {
