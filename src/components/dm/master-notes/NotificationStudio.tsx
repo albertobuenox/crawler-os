@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Bell, Check, Search, Send, Trash2, X } from "lucide-react";
+import { Bell, Check, Pencil, Search, Send, Trash2, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { GlassPanel } from "@/components/ui/GlassPanel";
 import { Button } from "@/components/ui/Button";
@@ -377,14 +377,14 @@ export function NotificationStudio({
         </div>
       )}
 
-      <div className={cn("space-y-3", selectedIds.length > 0 && "pb-24")}>
+      <div className={cn("grid gap-3 sm:grid-cols-2 xl:grid-cols-3", selectedIds.length > 0 && "pb-24")}>
         {drafts.length === 0 && (
-          <p className="well px-4 py-8 text-center text-sm text-[var(--text-3)]">
+          <p className="well col-span-full px-4 py-8 text-center text-sm text-[var(--text-3)]">
             El buffer está vacío. El dungeon observa en silencio.
           </p>
         )}
         {drafts.length > 0 && filtered.length === 0 && (
-          <p className="well px-4 py-8 text-center text-sm text-[var(--text-3)]">
+          <p className="well col-span-full px-4 py-8 text-center text-sm text-[var(--text-3)]">
             Ningún aviso coincide con “{query.trim()}”.
           </p>
         )}
@@ -492,6 +492,12 @@ function DraftCard({
   onPatch: (draft: DmNotificationDraft) => void;
 }) {
   const supabase = createClient();
+  const [editing, setEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(draft.title);
+  const [editBody, setEditBody] = useState(draft.body ?? "");
+  const [editType, setEditType] = useState<NotificationType>(draft.notification_type);
+  const [saving, setSaving] = useState(false);
+  const [editError, setEditError] = useState("");
 
   const targetOptions = useMemo(
     () =>
@@ -505,71 +511,168 @@ function DraftCard({
     [players]
   );
 
-  async function persistType(next: NotificationType) {
-    onDispatchChange({ type: next });
-    const { data } = await supabase
+  function openEdit() {
+    setEditTitle(draft.title);
+    setEditBody(draft.body ?? "");
+    setEditType(draft.notification_type);
+    setEditError("");
+    setEditing(true);
+  }
+
+  function closeEdit() {
+    if (saving) return;
+    setEditing(false);
+    setEditError("");
+  }
+
+  async function saveEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editTitle.trim()) {
+      setEditError("El Sistema no genera avisos sin título.");
+      return;
+    }
+    setEditError("");
+    setSaving(true);
+    const { data, error } = await supabase
       .from("dm_notification_drafts")
-      .update({ notification_type: next, updated_at: new Date().toISOString() })
+      .update({
+        title: editTitle.trim(),
+        body: editBody.trim() || null,
+        notification_type: editType,
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", draft.id)
       .select("*")
       .single();
-    if (data) onPatch(data as DmNotificationDraft);
+    setSaving(false);
+    if (error || !data) {
+      setEditError(error?.message || "El Sistema rechazó el cambio.");
+      return;
+    }
+    onPatch(data as DmNotificationDraft);
+    setEditing(false);
   }
 
   return (
-    <GlassPanel
-      className={cn(
-        "transition-[border-color,box-shadow]",
-        selected && "!border-[var(--stroke-cyan-hot)] shadow-[var(--glow-cyan)]"
-      )}
-      title={draft.title}
-      subtitle={NOTIFICATION_TYPE_LABEL[draft.notification_type]}
-      action={
-        <div className="flex items-center gap-2">
-          <SelectMark
-            checked={selected}
-            label={selected ? `Quitar ${draft.title} del envío` : `Marcar ${draft.title} para enviar`}
-            onChange={onToggleSelect}
-          />
-          <Bell size={16} className="text-[var(--cyan-400)]" />
+    <>
+      <GlassPanel
+        className={cn(
+          "flex h-full flex-col transition-[border-color,box-shadow]",
+          selected && "!border-[var(--stroke-cyan-hot)] shadow-[var(--glow-cyan)]"
+        )}
+      >
+        <div className="mb-3 flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <h2 className="line-clamp-2 font-display text-sm font-bold tracking-[0.06em] text-[var(--text-1)]">
+              {draft.title}
+            </h2>
+            <p className="mt-1 text-xs text-[var(--text-cyan)]">
+              {NOTIFICATION_TYPE_LABEL[draft.notification_type]}
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <SelectMark
+              checked={selected}
+              label={selected ? `Quitar ${draft.title} del envío` : `Marcar ${draft.title} para enviar`}
+              onChange={onToggleSelect}
+            />
+            <button
+              type="button"
+              onClick={openEdit}
+              aria-label={`Editar ${draft.title}`}
+              className="flex h-7 w-7 items-center justify-center rounded-[9px] border border-[var(--stroke-glass)] text-[var(--cyan-400)] transition-colors hover:border-[var(--stroke-cyan)] hover:bg-[rgba(0,212,255,0.08)]"
+            >
+              <Pencil size={13} strokeWidth={1.75} />
+            </button>
+          </div>
         </div>
-      }
-    >
-      {draft.body && <p className="mb-4 text-sm leading-relaxed text-[var(--text-2)]">{draft.body}</p>}
-      <div className="grid gap-3 md:grid-cols-[1fr_1fr_6rem] md:items-end">
-        <Select
-          label="Tipo"
-          value={dispatch.type}
-          onChange={(e) => void persistType(e.target.value as NotificationType)}
-          options={NOTIFICATION_TYPES.map((value) => ({ value, label: NOTIFICATION_TYPE_LABEL[value] }))}
-        />
-        <Select
-          label="Destinatario"
-          value={dispatch.target}
-          onChange={(e) => onDispatchChange({ target: e.target.value })}
-          options={targetOptions}
-        />
-        <Input
-          label="Copias"
-          type="number"
-          min={1}
-          max={20}
-          value={dispatch.copies}
-          onChange={(e) =>
-            onDispatchChange({ copies: Math.min(20, Math.max(1, Number(e.target.value) || 1)) })
-          }
-        />
-      </div>
-      <div className="mt-4 flex flex-wrap gap-2">
-        <Button variant="energy" size="sm" loading={sending} onClick={onSend}>
-          <Send size={14} /> Enviar ahora
-        </Button>
-        <Button variant="ghost" size="sm" onClick={onAskDelete}>
-          <Trash2 size={14} /> Purgar
-        </Button>
-        <span className="self-center text-xs text-[var(--text-4)]">Almacenada. No se borra al enviar.</span>
-      </div>
-    </GlassPanel>
+        <p
+          className={cn(
+            "mb-4 min-h-[3.75rem] flex-1 text-sm leading-relaxed",
+            draft.body ? "line-clamp-4 text-[var(--text-2)]" : "text-[var(--text-4)]"
+          )}
+        >
+          {draft.body || "Sin descripción. El Sistema guarda silencio."}
+        </p>
+        <div className="mt-auto grid gap-3 sm:grid-cols-[minmax(0,1fr)_5.5rem] sm:items-end">
+          <Select
+            id={`dest-${draft.id}`}
+            label="Destinatario"
+            value={dispatch.target}
+            onChange={(e) => onDispatchChange({ target: e.target.value })}
+            options={targetOptions}
+          />
+          <Input
+            id={`copies-${draft.id}`}
+            label="Copias"
+            type="number"
+            min={1}
+            max={20}
+            value={dispatch.copies}
+            onChange={(e) =>
+              onDispatchChange({ copies: Math.min(20, Math.max(1, Number(e.target.value) || 1)) })
+            }
+          />
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button variant="energy" size="sm" loading={sending} onClick={onSend}>
+            <Send size={14} /> Enviar
+          </Button>
+          <Button variant="ghost" size="sm" onClick={onAskDelete}>
+            <Trash2 size={14} /> Purgar
+          </Button>
+        </div>
+      </GlassPanel>
+
+      <Modal
+        open={editing}
+        eyebrow={`${BRAND} — SISTEMA`}
+        title="Editar notificación"
+        subtitle="Cambia el título, el tipo o lo que leerán los crawlers."
+        action={<Pencil size={18} className="text-[var(--cyan-400)]" />}
+        onClose={closeEdit}
+      >
+        <form onSubmit={(e) => void saveEdit(e)} className="space-y-5">
+          <Input
+            id={`edit-title-${draft.id}`}
+            label="Título"
+            value={editTitle}
+            onChange={(e) => setEditTitle(e.target.value)}
+            placeholder="Lo que verán en el menú de avisos"
+            autoFocus
+            required
+          />
+          <Select
+            id={`edit-type-${draft.id}`}
+            label="Tipo"
+            value={editType}
+            onChange={(e) => setEditType(e.target.value as NotificationType)}
+            options={NOTIFICATION_TYPES.map((value) => ({
+              value,
+              label: NOTIFICATION_TYPE_LABEL[value],
+            }))}
+          />
+          <Textarea
+            id={`edit-body-${draft.id}`}
+            label="Cuerpo"
+            value={editBody}
+            onChange={(e) => setEditBody(e.target.value)}
+            placeholder="Detalle, amenaza, recompensa o burla del Sistema."
+            rows={5}
+          />
+          {editError && <p className="text-sm text-[var(--danger)]">{editError}</p>}
+          <div className="flex flex-wrap justify-end gap-2 pt-1">
+            <Button type="button" variant="ghost" disabled={saving} onClick={closeEdit}>
+              Cancelar
+            </Button>
+            <Button type="submit" variant="session" loading={saving}>
+              <Pencil size={14} />
+              Guardar cambios
+            </Button>
+          </div>
+        </form>
+      </Modal>
+    </>
   );
 }
 
