@@ -110,7 +110,12 @@ export function CrawlerHeader() {
   return (
     <>
       <NotificationInbox open={inboxOpen} onOpenChange={setInboxOpen} mailRef={mailRef} />
-      <header className="sticky top-0 z-[var(--z-nav)] shrink-0 border-b border-[var(--stroke-glass)] bg-[rgba(5,6,13,0.92)] px-3 py-2 backdrop-blur-md sm:px-4">
+      <header
+        className={cn(
+          "sticky top-0 shrink-0 border-b border-[var(--stroke-glass)] bg-[rgba(5,6,13,0.92)] px-3 py-2 backdrop-blur-md sm:px-4",
+          locked ? "z-auto" : "z-[var(--z-nav)]"
+        )}
+      >
         <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 sm:gap-3">
           <div data-header-dim="" className="flex min-w-0 items-center gap-2 sm:gap-3">
             <Link
@@ -136,8 +141,6 @@ export function CrawlerHeader() {
             </Link>
             <Link
               href="/crawler/sheet"
-              onClick={locked ? (e) => e.preventDefault() : undefined}
-              aria-disabled={locked}
               className="group/name hidden min-w-0 rounded-md outline-offset-4 md:block"
               aria-label={crawler ? `${crawler.name} — ir a la hoja de personaje` : "Hoja de personaje"}
             >
@@ -174,13 +177,14 @@ export function CrawlerHeader() {
           <div className="flex items-center justify-end gap-3">
             <div
               data-utility-menu=""
-              className="flex items-center gap-0.5 rounded-full border border-[var(--stroke-cyan)] bg-[rgba(5,6,13,0.88)] p-1 shadow-[var(--shadow-glass)]"
+              className={cn(
+                "flex items-center gap-0.5 rounded-full border border-[var(--stroke-cyan)] bg-[rgba(5,6,13,0.88)] p-1 shadow-[var(--shadow-glass)]",
+                locked && "relative z-[80]"
+              )}
             >
               <HudTooltip text="Hoja de personaje" side="bottom" className="group">
                 <Link
                   href="/crawler/sheet"
-                  onClick={locked ? (e) => e.preventDefault() : undefined}
-                  aria-disabled={locked}
                   aria-label="Hoja de personaje"
                   className={cn(
                     iconBtn,
@@ -201,11 +205,7 @@ export function CrawlerHeader() {
                   aria-label={unread > 0 ? "Notificaciones sin leer" : "Notificaciones"}
                   aria-expanded={inboxOpen}
                   aria-haspopup="dialog"
-                  onClick={() => {
-                    if (locked) return;
-                    setInboxOpen((v) => !v);
-                  }}
-                  disabled={locked}
+                  onClick={() => setInboxOpen((v) => !v)}
                   className={cn(
                     iconBtn,
                     "relative",

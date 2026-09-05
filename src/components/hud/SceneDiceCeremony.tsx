@@ -21,37 +21,53 @@ export function SceneDiceCeremony({
 }) {
   const reduceMotion = useReducedMotion();
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
-  const [spinning, setSpinning] = useState(false);
   const [shownValue, setShownValue] = useState<number | null>(null);
+  const [skipRequest, setSkipRequest] = useState(0);
+  const [dismissing, setDismissing] = useState(false);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!state) {
-      setSpinning(false);
       setShownValue(null);
       setFailedSrc(null);
+      setSkipRequest(0);
+      setDismissing(false);
       return;
     }
     if (state.value == null) {
-      setSpinning(false);
       setShownValue(null);
+      setSkipRequest(0);
+      setDismissing(false);
       return;
     }
     if (reduceMotion) {
-      setSpinning(false);
       setShownValue(state.value);
       return;
     }
-    setSpinning(true);
     setShownValue(null);
   }, [reduceMotion, state]);
 
   useEffect(() => {
-    if (shownValue == null) return;
+    if (shownValue == null || dismissing) return;
     const timer = window.setTimeout(() => onCloseRef.current(), 6500);
     return () => window.clearTimeout(timer);
-  }, [shownValue]);
+  }, [dismissing, shownValue]);
+
+  function dismiss() {
+    if (shownValue == null || dismissing) return;
+    if (reduceMotion) {
+      onClose();
+      return;
+    }
+    setDismissing(true);
+  }
+
+  useEffect(() => {
+    if (!dismissing) return;
+    const timer = window.setTimeout(() => onCloseRef.current(), 400);
+    return () => window.clearTimeout(timer);
+  }, [dismissing]);
 
   const open = !!state;
   const avatarSrc = state
@@ -59,12 +75,13 @@ export function SceneDiceCeremony({
         .filter((src): src is string => !!src && src !== failedSrc)[0] ?? null
     : null;
   const waiting = open && state && state.value == null;
+  const spinning = !!state && state.value != null && shownValue == null && !reduceMotion;
   const caption = !state
     ? ""
     : shownValue != null
       ? `${dieLabel(state.sides)} · ${shownValue}`
       : spinning
-        ? "Resolviendo vector…"
+        ? "Pulsa el marco para resolver"
         : canRoll
           ? "Pulsa el dado para tirar"
           : `${state.name} va a tirar`;
@@ -74,30 +91,54 @@ export function SceneDiceCeremony({
       {open && state && (
         <motion.div
           initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          animate={{ opacity: dismissing ? 0 : 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: reduceMotion ? 0.01 : 0.28, ease: EASE }}
+          transition={{
+            duration: reduceMotion ? 0.01 : dismissing ? 0.32 : 0.28,
+            delay: reduceMotion || !dismissing ? 0 : 0.08,
+            ease: EASE,
+          }}
           className="fixed inset-0 z-[var(--z-cinematic)] flex items-center justify-center p-4"
         >
           {shownValue != null ? (
             <button
               type="button"
               aria-label="Cerrar tirada"
-              onClick={onClose}
+              onClick={dismiss}
               className="absolute inset-0 bg-[rgba(5,6,13,0.78)] backdrop-blur-[18px]"
             />
           ) : (
             <div className="absolute inset-0 bg-[rgba(5,6,13,0.78)] backdrop-blur-[18px]" />
           )}
 
+          <AnimatePresence>
+            {dismissing && (
+              <motion.span
+                aria-hidden="true"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: [0, 0.82, 0] }}
+                transition={{ duration: 0.2, times: [0, 0.28, 1], ease: EASE }}
+                className="pointer-events-none absolute inset-0 z-[8] bg-[radial-gradient(circle_at_50%_46%,rgba(251,191,36,0.42),rgba(34,240,255,0.22)_38%,transparent_68%)]"
+              />
+            )}
+          </AnimatePresence>
+
           <motion.div
             role="dialog"
             aria-label={`Tirada de ${state.name}`}
             initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.88, y: 18 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
+            animate={dismissing ? { opacity: 0, scale: 0.96 } : { opacity: 1, scale: 1, y: 0 }}
             exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.94, y: 10 }}
-            transition={{ type: "spring", stiffness: 320, damping: 28, mass: 0.8 }}
-            className="scene-dice-frame relative w-[min(24rem,calc(100vw-2rem))] overflow-hidden px-5 pb-6 pt-6 text-center"
+            transition={
+              dismissing
+                ? { duration: 0.32, delay: 0.08, ease: EASE }
+                : { type: "spring", stiffness: 320, damping: 28, mass: 0.8 }
+            }
+            className={`scene-dice-frame relative w-[min(24rem,calc(100vw-2rem))] overflow-hidden px-5 pb-6 pt-6 text-center${spinning || shownValue != null ? " cursor-pointer" : ""}${dismissing ? " is-dismissing" : ""}`}
+            onClick={() => {
+              if (spinning) setSkipRequest((n) => n + 1);
+              else if (shownValue != null) dismiss();
+            }}
           >
             <span aria-hidden="true" className="scene-dice-tick -left-0.5 -top-0.5 border-l-2 border-t-2" />
             <span aria-hidden="true" className="scene-dice-tick -right-0.5 -top-0.5 border-r-2 border-t-2" />
@@ -145,10 +186,10 @@ export function SceneDiceCeremony({
                 canRoll={canRoll}
                 seed={state.ts ^ ((state.value ?? 0) * 97 + state.sides * 13)}
                 reduceMotion={!!reduceMotion}
+                skipRequest={skipRequest}
                 onRoll={onRoll}
                 onSettled={() => {
                   if (state.value != null) setShownValue(state.value);
-                  setSpinning(false);
                 }}
               />
               <AnimatePresence>

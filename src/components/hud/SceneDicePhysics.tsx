@@ -10,6 +10,7 @@ const RESTITUTION = 0.84;
 const GRAVITY = 1180;
 const MIN_TIME = 3.15;
 const MAX_TIME = 4.85;
+const SKIP_TIME = 0.16;
 
 type Impact = { id: number; x: number; y: number; axis: "x" | "y"; born: number };
 
@@ -49,6 +50,7 @@ export function SceneDicePhysics({
   canRoll,
   seed,
   reduceMotion,
+  skipRequest = 0,
   onRoll,
   onSettled,
 }: {
@@ -58,6 +60,7 @@ export function SceneDicePhysics({
   canRoll: boolean;
   seed: number;
   reduceMotion: boolean;
+  skipRequest?: number;
   onRoll: () => void;
   onSettled: () => void;
 }) {
@@ -66,11 +69,17 @@ export function SceneDicePhysics({
   const iconRef = useRef<HTMLDivElement>(null);
   const flashRef = useRef<HTMLDivElement>(null);
   const settledRef = useRef(false);
+  const skipRef = useRef(false);
   const onSettledRef = useRef(onSettled);
   onSettledRef.current = onSettled;
 
   useEffect(() => {
+    if (skipRequest > 0 && rolling) skipRef.current = true;
+  }, [rolling, skipRequest]);
+
+  useEffect(() => {
     settledRef.current = false;
+    skipRef.current = false;
     const arena = arenaRef.current;
     const die = dieRef.current;
     const icon = iconRef.current;
@@ -114,19 +123,58 @@ export function SceneDicePhysics({
     const impacts: Impact[] = [];
     let last = performance.now();
     let elapsed = 0;
+    let skipElapsed = 0;
+    let skipFrom: { x: number; y: number; rot: number } | null = null;
     let frame = 0;
+
+    const settle = (width: number, height: number) => {
+      if (settledRef.current) return;
+      settledRef.current = true;
+      const cx = width / 2;
+      const cy = height / 2;
+      body.x = cx;
+      body.y = cy;
+      die.style.opacity = "1";
+      die.style.transform = `translate(${cx - HALF}px, ${cy - HALF}px)`;
+      icon.style.transform = "rotate(0deg)";
+      if (flashRef.current) flashRef.current.style.opacity = "0";
+      onSettledRef.current();
+    };
 
     const tick = (now: number) => {
       const rawDt = (now - last) / 1000;
       last = now;
       const dt = clamp(rawDt, 0.001, 0.028);
-      elapsed += dt;
-      const progress = clamp(elapsed / MAX_TIME, 0, 1);
-      const ease = progress * progress;
       const width = w0();
       const height = h0();
       const cx = width / 2;
       const cy = height / 2;
+
+      if (skipRef.current) {
+        if (!skipFrom) skipFrom = { x: body.x, y: body.y, rot: body.rot };
+        skipElapsed += dt;
+        const t = clamp(skipElapsed / SKIP_TIME, 0, 1);
+        const snap = 1 - (1 - t) * (1 - t) * (1 - t);
+        body.x = skipFrom.x + (cx - skipFrom.x) * snap;
+        body.y = skipFrom.y + (cy - skipFrom.y) * snap;
+        body.rot = skipFrom.rot * (1 - snap);
+        body.squashX += (1 - body.squashX) * clamp(dt * 18, 0, 1);
+        body.squashY += (1 - body.squashY) * clamp(dt * 18, 0, 1);
+        die.style.opacity = "1";
+        die.style.transform = `translate(${body.x - HALF}px, ${body.y - HALF}px) scale(${body.squashX}, ${body.squashY})`;
+        icon.style.transform = `rotate(${body.rot}deg)`;
+        if (flashRef.current) flashRef.current.style.opacity = "0";
+        if (t >= 1) {
+          settle(width, height);
+          return;
+        }
+        frame = window.requestAnimationFrame(tick);
+        return;
+      }
+
+      elapsed += dt;
+      const progress = clamp(elapsed / MAX_TIME, 0, 1);
+      const ease = progress * progress;
 
       const attract = 3.2 + ease * 22;
       const damp = 0.12 + ease * 3.4;
@@ -235,13 +283,7 @@ export function SceneDicePhysics({
       }
 
       if (settled) {
-        settledRef.current = true;
-        body.x = cx;
-        body.y = cy;
-        die.style.opacity = "1";
-        die.style.transform = `translate(${cx - HALF}px, ${cy - HALF}px)`;
-        icon.style.transform = "rotate(0deg)";
-        onSettledRef.current();
+        settle(width, height);
         return;
       }
 
@@ -253,6 +295,8 @@ export function SceneDicePhysics({
   }, [reduceMotion, rolling, seed, waiting]);
 
   const DieIcon = DIE_ICONS[sides];
+  const canThrow = canRoll && waiting;
+  const canSkip = rolling && !reduceMotion;
 
   return (
     <div
@@ -266,11 +310,16 @@ export function SceneDicePhysics({
       />
       <button
         type="button"
-        disabled={!canRoll || !waiting}
-        onClick={onRoll}
-        aria-label={canRoll && waiting ? `Tirar d${sides}` : `Dado d${sides}`}
-        className="absolute inset-0 z-[1] cursor-default disabled:cursor-default"
-        style={{ cursor: canRoll && waiting ? "pointer" : "default" }}
+        disabled={!canThrow && !canSkip}
+        onClick={() => {
+          if (canThrow) onRoll();
+          else if (canSkip) skipRef.current = true;
+        }}
+        aria-label={
+          canThrow ? `Tirar d${sides}` : canSkip ? "Acelerar tirada" : `Dado d${sides}`
+        }
+        className="absolute inset-0 z-[1] cursor-default disabled:pointer-events-none disabled:cursor-default"
+        style={{ cursor: canThrow || canSkip ? "pointer" : "default" }}
       />
       <div
         ref={dieRef}

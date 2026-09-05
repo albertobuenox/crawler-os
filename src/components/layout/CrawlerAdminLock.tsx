@@ -17,16 +17,20 @@ export function CrawlerAdminLock({ children }: { children: ReactNode }) {
   const sessionId = useCrawlerSessionId();
   const { active } = useAdminInRoom(sessionId);
 
+  const onScene = pathname.startsWith("/crawler/table");
+  const headerAllowed =
+    pathname.startsWith("/crawler/sheet") || pathname.startsWith("/crawler/notifications");
+
   useEffect(() => {
     if (!active) return;
-    if (pathname.startsWith("/crawler/table")) return;
+    if (onScene || headerAllowed) return;
     router.replace("/crawler/table");
-  }, [active, pathname, router]);
+  }, [active, headerAllowed, onScene, router]);
 
   return (
     <CrawlerAdminLockContext.Provider value={active}>
       {children}
-      <AdminInRoomOverlay active={active} />
+      <AdminInRoomOverlay active={active && onScene} />
     </CrawlerAdminLockContext.Provider>
   );
 }
