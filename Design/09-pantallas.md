@@ -189,9 +189,11 @@ Calcar nav inferior de ref 2.
 
 ---
 
-## P15. Mapa / Piso (si se implementa)
+## P15. Minimapa / Piso
 
-Dot-matrix como el mapa de la ref 1. Markers glow = party, salida, amenaza. No tilemap pixel art.
+Dot-matrix (no tilemap pixel). El Master edita en Mundo: pintar, paredes, drag de fichas/puertas/obstáculos. Pinchar ficha = jugador / NPC / enemigo.
+
+Crawlers lo ven en Escena, solo lectura. Puntos: tú = blanco · party y NPC = oro · enemigos = rojo.
 
 ---
 

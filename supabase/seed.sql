@@ -141,6 +141,10 @@ VALUES (
 )
 ON CONFLICT (session_id) DO NOTHING;
 
+INSERT INTO minimap_state (session_id)
+VALUES ('44444444-4444-4444-4444-444444444444')
+ON CONFLICT (session_id) DO NOTHING;
+
 INSERT INTO crawlers (
   id, session_id, name, race, class_name, level,
   str_base, int_base, con_base, dex_base, cha_base,

@@ -8,7 +8,8 @@ import { Select } from "@/components/ui/Input";
 import type { Crawler, CombatRound, GameSession } from "@/lib/types";
 import { castSession } from "@/lib/utils";
 import { COMBAT_PHASES } from "@/lib/rules";
-import { PHASE_LABEL, BRAND, SCENE_LABEL } from "@/lib/copy";
+import { PHASE_LABEL, BRAND } from "@/lib/copy";
+import { MinimapEditor } from "@/components/hud/MinimapEditor";
 
 export default function DMWorldPage() {
   const supabase = createClient();
@@ -122,6 +123,13 @@ export default function DMWorldPage() {
         </div>
       </GlassPanel>
 
+      {session && (
+        <MinimapEditor
+          sessionId={session.id}
+          crawlers={crawlers.map((c) => ({ id: c.id, name: c.name }))}
+        />
+      )}
+
       <GlassPanel id="combat" className="scroll-mt-8" title="Combate — 5 fases">
         {!combat ? (
           <Button variant="energy" onClick={startCombat}>Iniciar ronda de combate</Button>
@@ -171,9 +179,6 @@ export default function DMWorldPage() {
         <Button variant="energy" onClick={createLootBox}>Crear caja de loot</Button>
       </GlassPanel>
 
-      <GlassPanel title="Chinchetas del mapa" subtitle={`Se gestionan en ${SCENE_LABEL}`}>
-        <p className="text-sm text-[var(--text-3)]">Usa la pantalla {SCENE_LABEL} para colocar chinchetas en los mapas.</p>
-      </GlassPanel>
     </div>
   );
 }

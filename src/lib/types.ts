@@ -212,6 +212,46 @@ export interface MapPin {
   crawler_id: string | null;
 }
 
+export type MinimapTokenKind = "player" | "npc" | "enemy";
+export type MinimapFixtureKind = "door" | "obstacle";
+export type MinimapStrokeTool = "draw" | "wall";
+
+export interface MinimapPoint {
+  x: number;
+  y: number;
+}
+
+export interface MinimapToken {
+  id: string;
+  kind: MinimapTokenKind;
+  label: string;
+  x: number;
+  y: number;
+  crawler_id: string | null;
+}
+
+export interface MinimapStroke {
+  id: string;
+  tool: MinimapStrokeTool;
+  points: MinimapPoint[];
+}
+
+export interface MinimapFixture {
+  id: string;
+  kind: MinimapFixtureKind;
+  x: number;
+  y: number;
+  rotation: number;
+}
+
+export interface MinimapDoc {
+  session_id: string;
+  tokens: MinimapToken[];
+  strokes: MinimapStroke[];
+  fixtures: MinimapFixture[];
+  updated_at: string;
+}
+
 export interface DiceRequest {
   id: string;
   session_id: string;

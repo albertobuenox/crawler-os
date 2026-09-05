@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient, supabaseReachError } from "@/lib/supabase/admin";
 
 type EnterBody = {
   role?: "dm" | "crawler";
@@ -149,7 +149,7 @@ export async function POST(request: Request) {
     await signInAs(admin, email);
     return NextResponse.json({ ok: true, redirect: "/dm" });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "No se pudo entrar";
+    const message = supabaseReachError(err, "No se pudo entrar");
     const friendly =
       message.toLowerCase().includes("database error creating new user")
         ? "Auth no pudo crear el perfil. En el SQL Editor de Supabase ejecuta supabase/migrations/20260903120000_fix_auth_profile_trigger.sql"

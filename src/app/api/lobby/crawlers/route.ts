@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient, supabaseReachError } from "@/lib/supabase/admin";
 
 export async function GET() {
   try {
@@ -26,7 +26,7 @@ export async function GET() {
 
     return NextResponse.json({ crawlers: data ?? [] });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "No se pudieron cargar los crawlers";
+    const message = supabaseReachError(err, "No se pudieron cargar los crawlers");
     return NextResponse.json({ error: message, crawlers: [] }, { status: 500 });
   }
 }

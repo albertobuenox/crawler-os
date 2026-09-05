@@ -8,6 +8,7 @@ import { PartyAvatarRail, toPartyAvatar, type PartyAvatar } from "@/components/h
 import { SceneChat } from "@/components/hud/SceneChat";
 import { useSceneDiceApi } from "@/components/hud/SceneDiceProvider";
 import { SceneHotbar } from "@/components/hud/SceneHotbar";
+import { MinimapPanel } from "@/components/hud/MinimapPanel";
 import type { ItemInstance, Resource, Skill, TableState, MapPin } from "@/lib/types";
 import { useRealtimeTable, useSessionBroadcast } from "@/hooks/useSession";
 import { updateCrawlerVitals } from "@/lib/crawler-vitals";
@@ -206,6 +207,7 @@ export default function CrawlerTablePage() {
         />
       )}
       <SceneChat sessionId={sessionId} members={chatMembers} />
+      <MinimapPanel sessionId={sessionId} selfId={selfId} />
     </main>
   );
 }

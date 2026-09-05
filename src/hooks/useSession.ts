@@ -73,6 +73,9 @@ export function useSessionBroadcast(
       .on("broadcast", { event: "party_patch" }, ({ payload }) =>
         onMessageRef.current("party_patch", payload)
       )
+      .on("broadcast", { event: "minimap_update" }, ({ payload }) =>
+        onMessageRef.current("minimap_update", payload)
+      )
       .subscribe();
 
     return () => {

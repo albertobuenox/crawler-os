@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { TableCanvas } from "@/components/hud/TableCanvas";
+import { MinimapPanel } from "@/components/hud/MinimapPanel";
 import type { TableState, MapPin, Resource, GameSession } from "@/lib/types";
 import { castSession } from "@/lib/utils";
 import { useSessionBroadcast } from "@/hooks/useSession";
@@ -57,6 +58,7 @@ export default function TableTVPage() {
         {session?.name && <p className="text-sm text-[var(--text-3)]">{session.name}</p>}
       </header>
       <TableCanvas tableState={tableState} resource={resource} pins={pins} className="min-h-[70vh] flex-1" />
+      <MinimapPanel sessionId={session?.id} placement="fixed" />
     </div>
   );
 }
