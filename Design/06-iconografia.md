@@ -14,7 +14,21 @@
 | Glow disc | 36–40px círculo, fill `rgba(cyan,0.12)`, icono cian, box-shadow glow | Headers de card, KPIs |
 | Nav tile | 48×48, radius 14px, well oscuro; icono con glow de color de sección | Rail y bottom nav |
 | Slot | 64×64, radius 12px, stroke rareza | Inventario |
+| Type mark | 28×28, radius 8px, well oscuro + SVG de tipo | Delante del nombre de recurso |
 | Status pip | 8px círculo + glow | Online, combat, dead |
+
+## Tipos de recurso (`public/resources/`)
+
+El distintivo va delante del nombre. Solo se pinta si el tipo tiene icono asignado.
+
+| Tipo | Archivo | Color |
+|---|---|---|
+| Equipo | `equipment.svg` | cian |
+| Consumible | `consumable.svg` | naranja |
+| Misceláneo | `item.svg` | teal |
+| PNJ | `npc.svg` | magenta |
+| Mob | `monster.svg` | rojo |
+| Caja de loot | `box.svg` (box-open) | naranja |
 
 ## Colores de nav (calcar ref 2)
 
@@ -46,7 +60,8 @@ El icono del objeto es simple. La **rareza la dice el borde y el glow**, no el i
 
 | Tipo | Icono | Color |
 |---|---|---|
-| Reward | gift / sparkles | naranja–oro |
+| Reward / Dar a Mazmorrero | gift | naranja–oro |
+| Loot box | box-open | naranja |
 | Penalty | alert-octagon / skull | `--danger` |
 | Achievement | medal | gold |
 | System | terminal / info | cian |

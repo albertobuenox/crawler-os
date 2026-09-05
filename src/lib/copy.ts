@@ -1,4 +1,6 @@
 import type { CrawlerStatus, ResourceKind, Rarity, SessionPhase } from "./types";
+import { LOOT_BOX_RARITY_LABEL, lootBoxRarityOptions as lootRaritySelect } from "./loot";
+import type { LootBoxRarity } from "./types";
 
 export const BRAND = "BORANT CORP";
 export const SCENE_LABEL = "Escena";
@@ -14,6 +16,7 @@ export const ADMIN_IN_ROOM_DEACTIVATE = "Desactivar administrador en la sala";
 export const ADMIN_IN_ROOM_BANNER = "Hay un administrador en la sala";
 export const ADMIN_IN_ROOM_HEADER = "SYSTEM MESSAGE";
 
+export const GIVE_TO_CRAWLER = "Dar a Mazmorrero";
 export const NO_CLASS_LABEL = "Sin clase";
 
 export function crawlerClassLabel(className: string | null | undefined): string {
@@ -51,7 +54,7 @@ export const KIND_LABEL: Record<ResourceKind, string> = {
   map: "Mapa",
   monster: "Monstruo",
   npc: "PNJ",
-  box: "Caja",
+  box: "Caja de loot",
   buff: "Mejora",
   debuff: "Perjuicio",
   quest: "Misión",
@@ -116,6 +119,11 @@ export function kindOptions(kinds: ResourceKind[]) {
 
 export function rarityOptions(rarities: Rarity[]) {
   return rarities.map((r) => ({ value: r, label: RARITY_LABEL[r] }));
+}
+
+export function lootBoxRarityOptions(rarities?: LootBoxRarity[]) {
+  if (!rarities) return lootRaritySelect();
+  return rarities.map((r) => ({ value: r, label: LOOT_BOX_RARITY_LABEL[r] }));
 }
 
 export function authErrorEs(message: string): string {

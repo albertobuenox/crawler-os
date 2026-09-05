@@ -9,7 +9,7 @@ export function requestCreate(kind: CreateKind) {
   window.dispatchEvent(new CustomEvent(DM_OPEN_CREATE, { detail: { kind } }));
 }
 
-export function useCreateRequest(kind: CreateKind, onOpen: () => void) {
+export function useCreateRequest(kind: CreateKind, onOpen: () => void, queryValue = "1") {
   useEffect(() => {
     function onEvent(event: Event) {
       const detail = (event as CustomEvent<{ kind?: CreateKind }>).detail;
@@ -21,11 +21,11 @@ export function useCreateRequest(kind: CreateKind, onOpen: () => void) {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("new") !== "1") return;
+    if (params.get("new") !== queryValue) return;
     onOpen();
     params.delete("new");
     const query = params.toString();
     const next = `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`;
     window.history.replaceState(null, "", next);
-  }, [onOpen]);
+  }, [onOpen, queryValue]);
 }

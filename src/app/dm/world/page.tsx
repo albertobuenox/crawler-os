@@ -8,7 +8,8 @@ import { Select } from "@/components/ui/Input";
 import type { Crawler, CombatRound, GameSession } from "@/lib/types";
 import { castSession } from "@/lib/utils";
 import { COMBAT_PHASES } from "@/lib/rules";
-import { PHASE_LABEL, BRAND } from "@/lib/copy";
+import Link from "next/link";
+import { PHASE_LABEL } from "@/lib/copy";
 import { MinimapEditor } from "@/components/hud/MinimapEditor";
 
 export default function DMWorldPage() {
@@ -89,26 +90,6 @@ export default function DMWorldPage() {
     load();
   }
 
-  async function createLootBox() {
-    if (!session) return;
-    const { data: boxRes } = await supabase.from("resources").insert({
-      session_id: session.id,
-      kind: "box",
-      name: "Caja misteriosa",
-      rarity: "legendary",
-      system_copy: `${BRAND} se siente generoso. Probablemente.`,
-      payload: { contents: [] },
-    }).select().single();
-    if (boxRes) {
-      await supabase.from("loot_boxes").insert({
-        session_id: session.id,
-        resource_id: boxRes.id,
-        contents: [{ name: "Botín aleatorio", rarity: "rare" }],
-      });
-    }
-    load();
-  }
-
   return (
     <div className="space-y-6">
       <GlassPanel title="Mundo / Piso" subtitle="FN afecta a todos los cálculos de DC">
@@ -176,7 +157,9 @@ export default function DMWorldPage() {
       </GlassPanel>
 
       <GlassPanel id="loot" className="scroll-mt-8" title="Cajas de loot">
-        <Button variant="energy" onClick={createLootBox}>Crear caja de loot</Button>
+        <Link href="/dm/objects?new=box" className="btn-energy inline-flex h-10 items-center px-4 text-sm">
+          Crear caja de loot
+        </Link>
       </GlassPanel>
 
     </div>

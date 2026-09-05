@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -20,6 +20,7 @@ interface ModalProps {
   children: React.ReactNode;
   wide?: boolean;
   size?: keyof typeof SIZE;
+  stacked?: boolean;
   onClose: () => void;
 }
 
@@ -32,24 +33,28 @@ export function Modal({
   children,
   wide = false,
   size,
+  stacked = false,
   onClose,
 }: ModalProps) {
   const box = SIZE[size ?? (wide ? "lg" : "md")];
+  const titleId = useId();
   const pointerDownOnBackdrop = useRef(false);
 
   useEffect(() => {
     if (!open) return;
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
+      if (e.key !== "Escape") return;
+      if (stacked) e.stopImmediatePropagation();
+      onClose();
     }
-    window.addEventListener("keydown", onKey);
+    window.addEventListener("keydown", onKey, stacked);
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
-      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("keydown", onKey, stacked);
       document.body.style.overflow = prev;
     };
-  }, [open, onClose]);
+  }, [open, onClose, stacked]);
 
   return (
     <AnimatePresence>
@@ -59,7 +64,10 @@ export function Modal({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center bg-[rgba(5,6,13,0.72)] p-4 backdrop-blur-sm"
+          className={cn(
+            "fixed inset-0 flex items-center justify-center bg-[rgba(5,6,13,0.72)] p-4 backdrop-blur-sm",
+            stacked ? "z-[54]" : "z-[var(--z-modal)]",
+          )}
           onPointerDown={(e) => {
             pointerDownOnBackdrop.current = e.target === e.currentTarget;
           }}
@@ -71,7 +79,7 @@ export function Modal({
           <motion.div
             role="dialog"
             aria-modal="true"
-            aria-labelledby="app-modal-title"
+            aria-labelledby={titleId}
             initial={{ scale: 0.94, y: 18 }}
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.97, opacity: 0 }}
@@ -93,7 +101,7 @@ export function Modal({
                   {action}
                   <div className="min-w-0">
                     <h3
-                      id="app-modal-title"
+                      id={titleId}
                       className="font-display text-lg tracking-wide text-[var(--text-1)]"
                     >
                       {title}

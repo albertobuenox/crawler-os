@@ -9,9 +9,13 @@ Login
  │   ├─ Crawlers
  │   │   ├─ Hoja
  │   │   └─ Inventario
+ │   ├─ Objetos
+ │   │   ├─ Equipo / Consumible / Misceláneo
+ │   │   └─ Cajas de loot
+ │   ├─ PNJs
+ │   ├─ Mobs
  │   ├─ Recursos
- │   │   ├─ Lista por tipo
- │   │   ├─ Editor
+ │   │   ├─ Mapas, logros, misiones, estados
  │   │   └─ Asignar
  │   ├─ Pisos / World
  │   ├─ Notificaciones (disparar + historial)

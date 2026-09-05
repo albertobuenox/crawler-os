@@ -2,8 +2,9 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";
-import type { NotificationType, Rarity } from "@/lib/types";
+import type { LootBoxRarity, Rarity } from "@/lib/types";
 import { RARITY_COLORS } from "@/lib/types";
+import { LOOT_BOX_RARITY_COLORS, lootHalo } from "@/lib/loot";
 
 interface CinematicOverlayProps {
   open: boolean;
@@ -12,6 +13,7 @@ interface CinematicOverlayProps {
   body?: string;
   itemName?: string;
   rarity?: Rarity;
+  lootRarity?: LootBoxRarity | null;
   onClose: () => void;
 }
 
@@ -29,10 +31,13 @@ export function CinematicOverlay({
   body,
   itemName,
   rarity = "legendary",
+  lootRarity,
   onClose,
 }: CinematicOverlayProps) {
   const config = typeConfig[type];
   const isPenalty = type === "penalty";
+  const accent = lootRarity ? LOOT_BOX_RARITY_COLORS[lootRarity] : RARITY_COLORS[rarity];
+  const glow = lootRarity ? lootHalo(lootRarity) : `0 0 24px ${accent}66`;
 
   return (
     <AnimatePresence>
@@ -88,15 +93,15 @@ export function CinematicOverlay({
               <div
                 className="mx-auto mt-6 flex h-20 w-20 items-center justify-center rounded-xl border-2 text-2xl"
                 style={{
-                  borderColor: RARITY_COLORS[rarity],
-                  boxShadow: `0 0 24px ${RARITY_COLORS[rarity]}66`,
+                  borderColor: accent,
+                  boxShadow: glow,
                 }}
               >
                 📦
               </div>
             )}
             {itemName && (
-              <p className="mt-3 font-semibold" style={{ color: RARITY_COLORS[rarity] }}>
+              <p className="mt-3 font-semibold" style={{ color: accent }}>
                 {itemName}
               </p>
             )}

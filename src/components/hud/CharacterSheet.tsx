@@ -6,13 +6,26 @@ import { Sparkles, ScrollText, User, Shield } from "lucide-react";
 import { GlassPanel } from "@/components/ui/GlassPanel";
 import { HealthBoxes, ResourceBar, useVitalPulse } from "@/components/hud/HealthBoxes";
 import { InventorySlot } from "@/components/hud/InventorySlot";
+import { InventoryBagGrid } from "@/components/hud/InventoryBagGrid";
+import { CrawlerCraftModal } from "@/components/hud/CrawlerCraftModal";
 import { cn } from "@/lib/utils";
 import { crawlerFullBodyUrl } from "@/lib/crawler-art";
 import { collectStatBonusChips, healthBarColor } from "@/lib/rules";
 import { crawlerClassLabel, EFFECT_KIND_LABEL, BRAND } from "@/lib/copy";
 import { resourceBlurb } from "@/lib/resources";
+import { slotFromResource } from "@/lib/loot";
 import { SkillListItem } from "@/components/hud/SkillListItem";
 import { sortSkillsStable } from "@/lib/skills";
+import {
+  ACCESSORY_SLOTS,
+  BODY_SLOTS,
+  HAND_SLOTS,
+  bonusLines,
+  readItemDrag,
+  resourceEquipSlot,
+  slotAccepts,
+  writeItemDrag,
+} from "@/lib/equipment";
 import type { Crawler, Skill, Effect, ItemInstance, Resource, StatKey, StatModifierRow } from "@/lib/types";
 import { StatBlock } from "@/components/hud/StatBlock";
 
@@ -32,27 +45,6 @@ const STAT_NEON = [
   "text-[var(--cyan-300)] border-[var(--stroke-cyan)] shadow-[var(--glow-cyan)]",
   "text-[var(--magenta-500)] border-[var(--stroke-magenta)] shadow-[var(--glow-magenta)]",
 ];
-
-const LEFT_SLOTS = [
-  { id: "head", label: "Cabeza" },
-  { id: "cloak", label: "Capa" },
-  { id: "chest", label: "Torso" },
-  { id: "gloves", label: "Guantes" },
-  { id: "boots", label: "Botas" },
-] as const;
-
-const RIGHT_SLOTS = [
-  { id: "hand_right", label: "Mano derecha" },
-  { id: "hand_left", label: "Mano izquierda" },
-] as const;
-
-const ACCESSORY_SLOTS = [
-  { id: "accessory_1", label: "Accesorio 1" },
-  { id: "accessory_2", label: "Accesorio 2" },
-  { id: "accessory_3", label: "Accesorio 3" },
-] as const;
-
-const INVENTORY_SLOTS = 12;
 
 type SheetItem = ItemInstance & { resource: Resource };
 
@@ -132,11 +124,15 @@ export function CharacterSheet({
   canEditSkills = false,
   canEditVitals = false,
   canViewInventory = true,
+  canEquip = false,
   advancementOpen = false,
   onToggleSkillCheck,
   onAdjustSkillRank,
   onLifeChange,
   onManaChange,
+  onEquip,
+  onUnequip,
+  onCrafted,
 }: {
   crawler: Crawler;
   skills: Skill[];
@@ -146,16 +142,24 @@ export function CharacterSheet({
   canEditSkills?: boolean;
   canEditVitals?: boolean;
   canViewInventory?: boolean;
+  canEquip?: boolean;
   advancementOpen?: boolean;
   onToggleSkillCheck?: (skill: Skill, checked: boolean) => void;
   onAdjustSkillRank?: (skill: Skill, delta: -1 | 1) => void;
   onLifeChange?: (lifeBoxes: number) => void;
   onManaChange?: (manaCurrent: number) => void;
+  onEquip?: (itemId: string, slot?: string) => void;
+  onUnequip?: (itemId: string) => void;
+  onCrafted?: () => void;
 }) {
   const [tab, setTab] = useState<SheetTab>("stats");
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [crafting, setCrafting] = useState(false);
   const { pulse, beat } = useVitalPulse();
   const bag = items.filter((i) => !i.equipped_slot);
-  const bagSlots = Math.max(INVENTORY_SLOTS, Math.ceil(bag.length / 4) * 4);
+  const canCraft = canEquip && canViewInventory;
+  const dragging = items.find((item) => item.id === draggingId) ?? null;
+  const draggingSlot = dragging ? resourceEquipSlot(dragging.resource) : null;
 
   function handleLifeChange(life: number) {
     beat(healthBarColor(life));
@@ -163,6 +167,7 @@ export function CharacterSheet({
   }
 
   return (
+    <>
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-12 lg:items-start">
       <GlassPanel
         variant="identity"
@@ -234,14 +239,32 @@ export function CharacterSheet({
       <GlassPanel className="lg:col-span-5 xl:col-span-6" title="Equipamiento" subtitle="Cuerpo entero y zonas de equipo">
         <div className="grid grid-cols-[4.5rem_minmax(0,1fr)_4.5rem] items-start gap-2 sm:grid-cols-[5.5rem_minmax(0,1fr)_5.5rem] lg:grid-cols-[5rem_minmax(0,1fr)_5rem]">
           <div className="flex flex-col gap-2">
-            {LEFT_SLOTS.map((slot) => (
-              <EquipCell key={slot.id} slot={slot} item={itemForSlot(items, slot.id)} />
+            {BODY_SLOTS.map((slot) => (
+              <EquipCell
+                key={slot.id}
+                slot={slot}
+                item={itemForSlot(items, slot.id)}
+                canEquip={canEquip}
+                highlighted={slotAccepts(slot.id, draggingSlot)}
+                onDragItem={setDraggingId}
+                onEquip={onEquip}
+                onUnequip={onUnequip}
+              />
             ))}
           </div>
           <FullBodyFrame name={crawler.name} />
           <div className="flex flex-col gap-2">
-            {RIGHT_SLOTS.map((slot) => (
-              <EquipCell key={slot.id} slot={slot} item={itemForSlot(items, slot.id)} />
+            {HAND_SLOTS.map((slot) => (
+              <EquipCell
+                key={slot.id}
+                slot={slot}
+                item={itemForSlot(items, slot.id)}
+                canEquip={canEquip}
+                highlighted={slotAccepts(slot.id, draggingSlot)}
+                onDragItem={setDraggingId}
+                onEquip={onEquip}
+                onUnequip={onUnequip}
+              />
             ))}
             <div className="mt-auto flex flex-col items-center gap-0.5 rounded-[12px] border border-[var(--stroke-magenta)] bg-[rgba(232,121,249,0.08)] px-1 py-2 text-center">
               <Shield size={14} className="text-[var(--magenta-400)]" />
@@ -252,38 +275,58 @@ export function CharacterSheet({
         </div>
         <div className="mt-3 flex justify-center gap-2">
           {ACCESSORY_SLOTS.map((slot) => (
-            <EquipCell key={slot.id} slot={slot} item={itemForSlot(items, slot.id)} compact />
+            <EquipCell
+              key={slot.id}
+              slot={slot}
+              item={itemForSlot(items, slot.id)}
+              compact
+              canEquip={canEquip}
+              highlighted={slotAccepts(slot.id, draggingSlot)}
+              onDragItem={setDraggingId}
+              onEquip={onEquip}
+              onUnequip={onUnequip}
+            />
           ))}
         </div>
       </GlassPanel>
 
-      <GlassPanel className="lg:col-span-3" title="Inventario" subtitle={canViewInventory ? "Pasa el cursor para inspeccionar" : undefined}>
-        <div className="relative min-h-[12rem]">
+      <GlassPanel
+        className="lg:col-span-3"
+        title="Inventario"
+        subtitle={canViewInventory ? (canEquip ? "Doble clic o arrastra al slot" : "Pasa el cursor para inspeccionar") : undefined}
+      >
+        <div
+          className="relative min-h-[12rem]"
+          onDragOver={(event) => {
+            if (!canEquip || !dragging?.equipped_slot) return;
+            event.preventDefault();
+          }}
+          onDrop={(event) => {
+            event.preventDefault();
+            if (!canEquip) return;
+            const id = readItemDrag(event);
+            const item = items.find((entry) => entry.id === id);
+            setDraggingId(null);
+            if (item?.equipped_slot) onUnequip?.(item.id);
+          }}
+        >
           <div
-            className={cn(
-              "grid grid-cols-3 gap-2 sm:grid-cols-4",
-              !canViewInventory && "pointer-events-none select-none blur-xl"
-            )}
+            className={cn(!canViewInventory && "pointer-events-none select-none blur-xl")}
             aria-hidden={!canViewInventory}
           >
-            {Array.from({ length: bagSlots }, (_, i) => {
-              const item = bag[i];
-              if (!item) {
-                return <InventorySlot key={`empty-${i}`} empty size="lg" />;
-              }
-              return (
-                <InventorySlot
-                  key={item.id}
-                  name={item.resource.name}
-                  rarity={item.resource.rarity}
-                  quantity={item.quantity}
-                  iconUrl={item.resource.icon_url}
-                  detail={resourceBlurb(item.resource)}
-                  size="lg"
-                  showTooltip={canViewInventory}
-                />
-              );
-            })}
+            <InventoryBagGrid
+              items={bag}
+              canCraft={canCraft}
+              canEquip={canEquip}
+              draggingId={draggingId}
+              onCraft={() => setCrafting(true)}
+              onEquip={(item) => onEquip?.(item.id)}
+              onDragStart={(event, item) => {
+                writeItemDrag(event, item.id);
+                setDraggingId(item.id);
+              }}
+              onDragEnd={() => setDraggingId(null)}
+            />
           </div>
           {!canViewInventory && (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-[rgba(5,6,13,0.45)] px-4">
@@ -295,6 +338,16 @@ export function CharacterSheet({
         </div>
       </GlassPanel>
     </div>
+    <CrawlerCraftModal
+      open={crafting}
+      sessionId={crawler.session_id}
+      onClose={() => setCrafting(false)}
+      onCreated={() => {
+        setCrafting(false);
+        onCrafted?.();
+      }}
+    />
+    </>
   );
 }
 
@@ -302,10 +355,20 @@ function EquipCell({
   slot,
   item,
   compact,
+  canEquip,
+  highlighted,
+  onDragItem,
+  onEquip,
+  onUnequip,
 }: {
   slot: { id: string; label: string };
   item: SheetItem | null;
   compact?: boolean;
+  canEquip?: boolean;
+  highlighted?: boolean;
+  onDragItem?: (id: string | null) => void;
+  onEquip?: (itemId: string, slot?: string) => void;
+  onUnequip?: (itemId: string) => void;
 }) {
   return (
     <div className={cn("flex flex-col items-center gap-1", compact ? "w-12 sm:w-14" : "min-w-0")}>
@@ -314,10 +377,46 @@ function EquipCell({
         rarity={item?.resource.rarity}
         iconUrl={item?.resource.icon_url}
         detail={item ? resourceBlurb(item.resource) : undefined}
+        bonuses={item ? bonusLines(item.resource) : undefined}
         empty={!item}
+        highlighted={highlighted}
         size={compact ? "sm" : "lg"}
-        showTooltip={!!item}
+        showTooltip={!!item && !highlighted}
         equipped={!!item}
+        draggable={canEquip && !!item}
+        onDoubleClick={
+          canEquip && item
+            ? () => onUnequip?.(item.id)
+            : undefined
+        }
+        onDragStart={
+          item
+            ? (event) => {
+                writeItemDrag(event, item.id);
+                onDragItem?.(item.id);
+              }
+            : undefined
+        }
+        onDragEnd={() => onDragItem?.(null)}
+        onDragOver={
+          canEquip && highlighted
+            ? (event) => {
+                event.preventDefault();
+              }
+            : undefined
+        }
+        onDrop={
+          canEquip && highlighted
+            ? (event) => {
+                event.preventDefault();
+                const id = readItemDrag(event);
+                onDragItem?.(null);
+                if (!id) return;
+                onEquip?.(id, slot.id);
+              }
+            : undefined
+        }
+        {...(item ? slotFromResource(item.resource) : {})}
       />
       <span className="text-center text-[8px] uppercase tracking-[0.14em] text-[var(--text-4)]">{slot.label}</span>
     </div>

@@ -15,6 +15,7 @@ import {
   Dices,
   Gift,
   Medal,
+  PackageOpen,
   Swords,
   Terminal,
   X,
@@ -41,7 +42,7 @@ const TYPE_META: Record<
   combat: { label: "COMBAT", color: "var(--hp)", Icon: Swords },
   roll: { label: "ROLL", color: "var(--text-cyan)", Icon: Dices },
   achievement: { label: "ACHIEVEMENT", color: "var(--gold-400)", Icon: Medal },
-  loot_box: { label: "LOOT BOX", color: "var(--orange-400)", Icon: Gift },
+  loot_box: { label: "LOOT BOX", color: "var(--orange-400)", Icon: PackageOpen },
 };
 
 type OpenWindow = {

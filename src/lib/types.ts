@@ -35,6 +35,14 @@ export type Rarity =
   | "legendary"
   | "celestial";
 
+export type LootBoxRarity =
+  | "bronze"
+  | "silver"
+  | "gold"
+  | "platinum"
+  | "legendary"
+  | "celestial";
+
 export type EventType =
   | "REWARD"
   | "PENALTY"
@@ -134,6 +142,23 @@ export interface Crawler {
   avatar_emotion?: string | null;
 }
 
+export type ItemCategory = "equipment" | "consumable" | "misc";
+
+export type EquipSlot =
+  | "head"
+  | "cloak"
+  | "chest"
+  | "gloves"
+  | "boots"
+  | "hand_right"
+  | "hand_left"
+  | "accessory";
+
+export interface EquipmentBonus {
+  id: string;
+  text: string;
+}
+
 export interface Resource {
   id: string;
   session_id: string;
@@ -145,6 +170,13 @@ export interface Resource {
   system_copy: string | null;
   icon_url: string | null;
   payload: Record<string, unknown>;
+  loot_rarity?: LootBoxRarity | null;
+  loot_floor?: number | null;
+  is_unique?: boolean;
+  item_category?: ItemCategory | null;
+  equip_slot?: EquipSlot | null;
+  source_loot_rarity?: LootBoxRarity | null;
+  source_loot_floor?: number | null;
 }
 
 export interface ItemInstance {
@@ -155,6 +187,8 @@ export interface ItemInstance {
   equipped_slot: string | null;
   hotlist_index: number | null;
   notes: string | null;
+  source_loot_rarity?: LootBoxRarity | null;
+  source_loot_floor?: number | null;
   resource?: Resource;
 }
 
@@ -354,6 +388,8 @@ export interface LootBox {
   assigned_crawler_id: string | null;
   status: "sealed" | "opening" | "opened";
   contents: unknown[];
+  loot_rarity?: LootBoxRarity | null;
+  loot_floor?: number | null;
 }
 
 export interface Effect {

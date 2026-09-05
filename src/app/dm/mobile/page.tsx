@@ -37,7 +37,7 @@ export default function DMMobilePage() {
           <Button variant="energy" className="w-full opacity-35" size="sm" disabled>Pedir tirada</Button>
           <Link href="/dm/table"><Button variant="neon" className="w-full" size="sm">Mostrar en Escena</Button></Link>
           <Link href="/dm/world"><Button variant="neon" className="w-full" size="sm">Fase de combate</Button></Link>
-          <Link href="/dm/crawlers"><Button variant="session" className="w-full" size="sm">Otorgar loot</Button></Link>
+          <Link href="/dm/crawlers"><Button variant="session" className="w-full" size="sm">Dar a Mazmorrero</Button></Link>
         </div>
       </GlassPanel>
 

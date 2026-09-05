@@ -1,33 +1,37 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { CatalogTable } from "@/components/dm/CatalogTable";
+import { GiveToCrawlerModal } from "@/components/dm/GiveToCrawlerModal";
 import { ResourceEditorModal, type ResourceDraft } from "@/components/dm/ResourceEditorModal";
-import { ResourceHoverTip } from "@/components/hud/ResourceHoverTip";
-import type { GameSession, Resource, ResourceKind } from "@/lib/types";
-import { castSession } from "@/lib/utils";
-import { RARITY_COLORS } from "@/lib/types";
-import { KIND_LABEL, RARITY_LABEL } from "@/lib/copy";
-import { resourceDescriptionLabel } from "@/lib/resources";
 import { useCreateRequest } from "@/hooks/useDmDeepLink";
-
-const KINDS: ResourceKind[] = [
-  "item", "achievement", "map", "monster", "npc", "box", "buff", "debuff", "quest", "floor", "skill_template",
-];
+import { useDmCatalog } from "@/hooks/useDmCatalog";
+import { catalogHref, leftoverResourceKinds } from "@/lib/objects";
+import { refreshSessionResources, upsertResource } from "@/lib/catalog-write";
+import { KIND_LABEL, RARITY_LABEL } from "@/lib/copy";
+import { RARITY_COLORS } from "@/lib/types";
+import { resourceKindLabel } from "@/lib/resources";
+import type { Resource } from "@/lib/types";
 
 export default function DMResourcesPage() {
-  const supabase = createClient();
-  const [session, setSession] = useState<GameSession | null>(null);
-  const [resources, setResources] = useState<Resource[]>([]);
+  const router = useRouter();
+  const { supabase, session, resources, setResources, crawlers, error, setError } = useDmCatalog();
   const [filter, setFilter] = useState<string>("all");
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Resource | null>(null);
-  const [error, setError] = useState("");
   const [formError, setFormError] = useState("");
   const [busy, setBusy] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Resource | null>(null);
+  const [giving, setGiving] = useState<Resource | null>(null);
+
+  const leftover = useMemo(
+    () => resources.filter((resource) => leftoverResourceKinds.includes(resource.kind)),
+    [resources],
+  );
+  const filtered = filter === "all" ? leftover : leftover.filter((resource) => resource.kind === filter);
 
   const openCreate = useCallback(() => {
     setEditing(null);
@@ -37,70 +41,56 @@ export default function DMResourcesPage() {
   useCreateRequest("resource", openCreate);
 
   const openEdit = useCallback((resource: Resource) => {
+    if (!leftoverResourceKinds.includes(resource.kind)) {
+      router.replace(catalogHref(resource));
+      return;
+    }
     setEditing(resource);
     setFormError("");
     setFormOpen(true);
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const editId = params.get("edit");
+    const createKind = params.get("new");
+    if (createKind === "equipment") {
+      router.replace("/dm/objects?new=equipment");
+      return;
+    }
     if (!editId || resources.length === 0) return;
     const found = resources.find((item) => item.id === editId);
-    if (found) openEdit(found);
+    if (!found) return;
+    if (!leftoverResourceKinds.includes(found.kind)) {
+      router.replace(catalogHref(found));
+      return;
+    }
+    openEdit(found);
     params.delete("edit");
     const query = params.toString();
-    window.history.replaceState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
-  }, [openEdit, resources]);
-
-  async function load() {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
-    const { data: member } = await supabase
-      .from("session_members")
-      .select("sessions(*)")
-      .eq("user_id", user.id)
-      .limit(1)
-      .maybeSingle();
-    const sess = castSession(member?.sessions);
-    setSession(sess ?? null);
-    if (sess) {
-      const { data } = await supabase.from("resources").select("*").eq("session_id", sess.id).order("created_at", { ascending: false });
-      setResources((data as Resource[]) ?? []);
-    }
-  }
+    window.history.replaceState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}`);
+  }, [openEdit, resources, router]);
 
   async function saveResource(draft: ResourceDraft) {
     if (!session) return;
     setFormError("");
     setBusy(true);
-    const payload = {
+    const result = await upsertResource(supabase, session.id, editing?.id ?? null, {
       name: draft.name,
       kind: draft.kind,
       rarity: draft.rarity,
       description: draft.description || null,
       system_copy: draft.system_copy || null,
       icon_url: draft.icon_url,
-    };
-    const result = editing
-      ? await supabase.from("resources").update(payload).eq("id", editing.id).select("*").single()
-      : await supabase.from("resources").insert({ session_id: session.id, ...payload, payload: {} }).select("*").single();
+      payload: editing?.payload ?? {},
+    });
     setBusy(false);
     if (result.error) {
       setFormError(result.error.message);
       return;
     }
-    const saved = result.data as Resource;
-    setResources((current) => {
-      if (editing) return current.map((item) => (item.id === saved.id ? saved : item));
-      return [saved, ...current];
-    });
+    const { data } = await refreshSessionResources(supabase, session.id);
+    setResources(data);
     setFormOpen(false);
     setEditing(null);
   }
@@ -121,12 +111,15 @@ export default function DMResourcesPage() {
     setEditing(null);
   }
 
-  const filtered = filter === "all" ? resources : resources.filter((r) => r.kind === filter);
-
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap justify-between gap-4">
-        <h2 className="font-display text-xl">Recursos</h2>
+        <div>
+          <h2 className="font-display text-xl">Recursos</h2>
+          <p className="mt-1 text-sm text-[var(--text-3)]">
+            Mapas, logros, misiones y el resto. Objetos, PNJs y mobs tienen su propio menú.
+          </p>
+        </div>
         <Button variant="energy" onClick={openCreate}>
           Nuevo recurso
         </Button>
@@ -139,59 +132,39 @@ export default function DMResourcesPage() {
       )}
 
       <div className="flex flex-wrap gap-2">
-        <Button variant={filter === "all" ? "neon" : "ghost"} size="sm" onClick={() => setFilter("all")}>Todo</Button>
-        {KINDS.map((k) => (
-          <Button key={k} variant={filter === k ? "neon" : "ghost"} size="sm" onClick={() => setFilter(k)}>{KIND_LABEL[k]}</Button>
+        <Button variant={filter === "all" ? "neon" : "ghost"} size="sm" onClick={() => setFilter("all")}>
+          Todo
+        </Button>
+        {leftoverResourceKinds.map((kind) => (
+          <Button key={kind} variant={filter === kind ? "neon" : "ghost"} size="sm" onClick={() => setFilter(kind)}>
+            {KIND_LABEL[kind]}
+          </Button>
         ))}
       </div>
 
-      <div className="overflow-x-auto rounded-xl well">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-[var(--stroke-glass)] text-left text-label">
-              <th className="p-3">Nombre</th>
-              <th className="p-3">Descripción</th>
-              <th className="p-3">Tipo</th>
-              <th className="p-3">Rareza</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((r) => {
-              const description = resourceDescriptionLabel(r);
-              const empty = !r.description?.trim();
-              return (
-                <ResourceHoverTip key={r.id} resource={r} disabled={formOpen}>
-                  <tr className="border-b border-[rgba(255,255,255,0.04)] hover:bg-[rgba(0,212,255,0.04)]">
-                    <td className="p-3">
-                      <button
-                        type="button"
-                        onClick={() => openEdit(r)}
-                        className="text-left font-medium text-[var(--text-1)] hover:text-[var(--cyan-400)] hover:underline"
-                      >
-                        {r.name}
-                      </button>
-                    </td>
-                    <td className="p-3">
-                      <span className={`block max-w-xs truncate ${empty ? "text-[var(--text-4)]" : "text-[var(--text-3)]"}`}>
-                        {description}
-                      </span>
-                    </td>
-                    <td className="p-3 text-[var(--text-3)]">{KIND_LABEL[r.kind]}</td>
-                    <td className="p-3" style={{ color: RARITY_COLORS[r.rarity] }}>{RARITY_LABEL[r.rarity]}</td>
-                  </tr>
-                </ResourceHoverTip>
-              );
-            })}
-            {filtered.length === 0 && (
-              <tr>
-                <td colSpan={4} className="p-6 text-center text-[var(--text-3)]">
-                  No hay recursos en este filtro.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <CatalogTable
+        resources={filtered}
+        empty="No hay recursos en este filtro."
+        tipsDisabled={formOpen || !!pendingDelete || !!giving}
+        onEdit={openEdit}
+        onDelete={setPendingDelete}
+        onGrant={setGiving}
+        columns={[
+          { id: "description", label: "Descripción", cell: () => null },
+          {
+            id: "type",
+            label: "Tipo",
+            cell: (resource) => <span className="text-[var(--text-3)]">{resourceKindLabel(resource)}</span>,
+          },
+          {
+            id: "rarity",
+            label: "Rareza",
+            cell: (resource) => (
+              <span style={{ color: RARITY_COLORS[resource.rarity] }}>{RARITY_LABEL[resource.rarity]}</span>
+            ),
+          },
+        ]}
+      />
 
       <ResourceEditorModal
         open={formOpen}
@@ -207,6 +180,15 @@ export default function DMResourcesPage() {
         }}
         onSave={(draft) => void saveResource(draft)}
         onDelete={editing ? () => setPendingDelete(editing) : undefined}
+      />
+
+      <GiveToCrawlerModal
+        open={!!giving}
+        sessionId={session?.id ?? null}
+        resource={giving}
+        resources={leftover}
+        crawlers={crawlers}
+        onClose={() => setGiving(null)}
       />
 
       <ConfirmModal

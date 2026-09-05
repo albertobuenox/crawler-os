@@ -3,6 +3,7 @@
 import type { MapPin, Resource, SceneCanvasDoc, TableState } from "@/lib/types";
 import { KIND_LABEL, RARITY_LABEL, EMPTY_SCENE_COPY, BRAND } from "@/lib/copy";
 import { resourceBlurb } from "@/lib/resources";
+import { boxMetaLabel } from "@/lib/loot";
 import { SceneStage, type SceneStageMode } from "@/components/hud/SceneStage";
 import { isSceneCanvasEmpty, parseSceneCanvas } from "@/lib/scene-canvas";
 import { cn } from "@/lib/utils";
@@ -112,7 +113,9 @@ export function TableCanvas({
               <div className="glass p-6">
                 <p className="text-label">{KIND_LABEL[resource.kind]}</p>
                 <h3 className="mt-2 text-2xl font-bold text-[var(--text-1)]">{resource.name}</h3>
-                <p className="mt-2 text-sm text-[var(--text-cyan)]">{RARITY_LABEL[resource.rarity]}</p>
+                <p className="mt-2 text-sm text-[var(--text-cyan)]">
+                  {resource.kind === "box" ? boxMetaLabel(resource) ?? RARITY_LABEL[resource.rarity] : RARITY_LABEL[resource.rarity]}
+                </p>
                 {(resource.description?.trim() || resource.system_copy?.trim()) && (
                   <p className="mt-4 max-w-md text-sm italic text-[var(--text-2)]">
                     {resourceBlurb(resource, [], "")}

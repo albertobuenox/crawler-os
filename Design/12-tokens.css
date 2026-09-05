@@ -45,13 +45,21 @@
   --info: #00d4ff;
   --offline: #64748b;
 
-  /* Rarity */
+  /* Rarity (objetos / recursos genéricos) */
   --rarity-common: #e2e8f0;
   --rarity-uncommon: #34d399;
   --rarity-rare: #00d4ff;
   --rarity-epic: #a855f7;
   --rarity-legendary: #fbbf24;
   --rarity-celestial: #e879f9;
+
+  /* Loot box rarity */
+  --loot-bronze: #cd7f32;
+  --loot-silver: #c0c8d4;
+  --loot-gold: #fbbf24;
+  --loot-platinum: #e5eef7;
+  --loot-legendary: #f97316;
+  --loot-celestial: #e879f9;
 
   /* Text */
   --text-1: #f8fafc;

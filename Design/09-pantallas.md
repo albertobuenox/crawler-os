@@ -53,11 +53,25 @@ Empty: “No hay sesión activa. El dungeon está aburrido.” + CTA iniciar.
 
 ---
 
-## P4. Master — Recursos (índice)
+## P4. Master — Objetos
 
-Tabla densa filtrable. Tabs: Items · Equipo · Consumibles · Monstruos · NPCs · Pisos · Quests · Logros · Cajas · Tablas de loot · Estados.
+Tabla: Nombre · Descripción · Tipo · Slot · Origen. El equipo no muestra rareza genérica; el slot va en su columna.
 
-Toolbar: search, filter rareza/piso, botón fill “NUEVO RECURSO”.
+Filtros: Todo · Equipo · Consumible · Misceláneo · Cajas.
+
+Toolbar: Nuevo equipo · Nuevo consumible · Nuevo misceláneo · Nueva caja de loot.
+
+La caja pide tipo (rareza de caja) y piso. Un slot `+` elige Objeto creado o Crear (equipo / consumible / misc). El contenido hereda rareza y piso de la caja.
+
+PNJs y Mobs tienen menús propios. Recursos queda para mapas, logros, misiones y estados.
+
+---
+
+## P4b. Master — Recursos (resto)
+
+Tabla densa filtrable. Tabs: Mapas · Logros · Misiones · Mejoras · Perjuicios · Pisos · Plantillas.
+
+Toolbar: botón fill “NUEVO RECURSO”.
 
 Row click → P5.
 

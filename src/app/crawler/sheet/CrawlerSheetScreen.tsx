@@ -3,11 +3,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { CharacterSheet } from "@/components/hud/CharacterSheet";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { updateCrawlerVitals } from "@/lib/crawler-vitals";
 import { clampMana, lifeToBoxesFilled } from "@/lib/rules";
 import type { Crawler, Skill, Effect, ItemInstance, Resource, StatModifierRow } from "@/lib/types";
 import { sortSkillsStable } from "@/lib/skills";
 import { useSkillTimer } from "@/hooks/useSkillTimer";
+import { useEquipFlow } from "@/hooks/useEquipFlow";
 
 type SheetItem = ItemInstance & { resource: Resource };
 
@@ -79,6 +81,7 @@ export function CrawlerSheetScreen({ crawlerId }: { crawlerId?: string }) {
     const channel = supabase
       .channel(`sheet-skills:${crawler.id}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "skills" }, () => void load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "item_instances" }, () => void load())
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "crawlers", filter: `id=eq.${crawler.id}` },
@@ -105,6 +108,7 @@ export function CrawlerSheetScreen({ crawlerId }: { crawlerId?: string }) {
   const isOwnSheet = Boolean(crawler && userId && crawler.owner_user_id === userId);
   const canEditSkills = isOwnSheet;
   const canEditVitals = isOwnSheet;
+  const equip = useEquipFlow(items, load);
 
   async function persistVitals(patch: { hp_boxes_filled?: number; mana_current?: number }) {
     if (!crawler) return;
@@ -137,11 +141,35 @@ export function CrawlerSheetScreen({ crawlerId }: { crawlerId?: string }) {
         canEditSkills={canEditSkills}
         canEditVitals={canEditVitals}
         canViewInventory={isOwnSheet}
+        canEquip={isOwnSheet}
         advancementOpen={advancementOpen}
         onToggleSkillCheck={onToggleSkillCheck}
         onAdjustSkillRank={onAdjustSkillRank}
         onLifeChange={(life) => void persistVitals({ hp_boxes_filled: lifeToBoxesFilled(life) })}
         onManaChange={(mana) => void persistVitals({ mana_current: clampMana(mana, crawler.mana_max) })}
+        onEquip={(itemId, slot) => {
+          const item = items.find((entry) => entry.id === itemId);
+          if (item) void equip.equip(item, slot);
+        }}
+        onUnequip={(itemId) => {
+          const item = items.find((entry) => entry.id === itemId);
+          if (item) void equip.unequip(item);
+        }}
+        onCrafted={() => void load()}
+      />
+      {equip.error ? (
+        <p className="mt-3 text-sm text-[var(--danger)]">{equip.error}</p>
+      ) : null}
+      <ConfirmModal
+        open={!!equip.pending}
+        title={equip.confirmCopy?.title ?? "¿Desequipar?"}
+        body={equip.confirmCopy?.body}
+        confirmLabel={equip.confirmCopy?.confirmLabel}
+        loading={equip.busy}
+        onCancel={() => {
+          if (!equip.busy) equip.cancelPending();
+        }}
+        onConfirm={() => void equip.confirmPending()}
       />
     </main>
   );

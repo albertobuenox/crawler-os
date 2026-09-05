@@ -4,8 +4,20 @@ import { cloneElement, useCallback, useEffect, useId, useLayoutEffect, useRef, u
 import { createPortal } from "react-dom";
 import type { Resource } from "@/lib/types";
 import { RARITY_COLORS } from "@/lib/types";
-import { KIND_LABEL, RARITY_LABEL } from "@/lib/copy";
-import { resourceDescriptionLabel } from "@/lib/resources";
+import { RARITY_LABEL } from "@/lib/copy";
+import {
+  LOOT_BOX_RARITY_COLORS,
+  LOOT_BOX_RARITY_LABEL,
+  boxLootFloor,
+  boxLootRarity,
+  itemIsUnique,
+  lootFloorLabel,
+  lootOriginLabel,
+} from "@/lib/loot";
+import { Star } from "lucide-react";
+import { resourceDescriptionLabel, resourceKindLabel } from "@/lib/resources";
+import { ResourceKindMark } from "@/components/hud/ResourceKindMark";
+import { bonusLines, EQUIP_SLOT_LABEL, resourceEquipSlot } from "@/lib/equipment";
 import { cn } from "@/lib/utils";
 
 const SHOW_DELAY = 140;
@@ -197,6 +209,8 @@ function ResourceTipCard({
   const description = resourceDescriptionLabel(resource);
   const copy = resource.system_copy?.trim() || "—";
   const slug = resource.slug?.trim();
+  const slot = resourceEquipSlot(resource);
+  const bonuses = bonusLines(resource);
 
   return (
     <div
@@ -217,18 +231,53 @@ function ResourceTipCard({
         </div>
       ) : null}
       <div className="space-y-2 px-3 py-3">
-        <p className="font-display text-[15px] leading-tight tracking-wide text-[var(--text-1)]">{resource.name}</p>
+        <div className="flex items-start gap-2">
+          <ResourceKindMark resource={resource} className="mt-0.5" />
+          <p className="font-display text-[15px] leading-tight tracking-wide text-[var(--text-1)]">{resource.name}</p>
+        </div>
         <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] uppercase tracking-[0.14em]">
-          <span className="text-[var(--cyan-400)]">{KIND_LABEL[resource.kind]}</span>
-          <span style={{ color: RARITY_COLORS[resource.rarity] }}>{RARITY_LABEL[resource.rarity]}</span>
+          <span className="text-[var(--cyan-400)]">{resourceKindLabel(resource)}</span>
+          {resource.kind === "box" ? (
+            <>
+              {(() => {
+                const rarity = boxLootRarity(resource);
+                return rarity ? (
+                  <span style={{ color: LOOT_BOX_RARITY_COLORS[rarity] }}>{LOOT_BOX_RARITY_LABEL[rarity]}</span>
+                ) : null;
+              })()}
+              <span className="text-[var(--text-3)]">{lootFloorLabel(boxLootFloor(resource))}</span>
+            </>
+          ) : resource.kind !== "item" ? (
+            <span style={{ color: RARITY_COLORS[resource.rarity] }}>{RARITY_LABEL[resource.rarity]}</span>
+          ) : null}
+          {itemIsUnique(resource) ? (
+            <span className="inline-flex items-center gap-1 text-[var(--gold-400)]">
+              <Star size={10} fill="currentColor" />
+              Único
+            </span>
+          ) : null}
+          {slot ? <span className="text-[var(--text-3)]">Slot · {EQUIP_SLOT_LABEL[slot]}</span> : null}
           {slug ? <span className="text-[var(--text-4)]">{slug}</span> : null}
         </p>
+        {lootOriginLabel(resource) ? (
+          <p className="text-[10px] text-[var(--text-3)]">{lootOriginLabel(resource)}</p>
+        ) : null}
         <div>
           <p className="text-[9px] uppercase tracking-[0.16em] text-[var(--text-4)]">Descripción</p>
           <p className={cn("mt-0.5 text-[12px] leading-relaxed", resource.description?.trim() ? "text-[var(--text-2)]" : "text-[var(--text-4)]")}>
             {description}
           </p>
         </div>
+        {bonuses.length > 0 ? (
+          <div>
+            <p className="text-[9px] uppercase tracking-[0.16em] text-[var(--text-4)]">Bonificadores</p>
+            <ul className="mt-0.5 space-y-0.5">
+              {bonuses.map((line) => (
+                <li key={line} className="text-[12px] leading-snug text-[var(--cyan-300)]">{line}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
         <div>
           <p className="text-[9px] uppercase tracking-[0.16em] text-[var(--text-4)]">Copy del Sistema</p>
           <p className={cn("mt-0.5 text-[12px] italic leading-relaxed", resource.system_copy?.trim() ? "text-[var(--text-3)]" : "text-[var(--text-4)]")}>

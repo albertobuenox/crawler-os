@@ -128,6 +128,21 @@ El canto superior-izquierdo de cada card lleva highlight (luz incidente). El can
 | Legendary | `#FBBF24` | `rgba(251,191,36,0.6)` |
 | Celestial / Unique | `#E879F9` + `#F97316` | dual glow magenta-naranja |
 
+Único es un flag aparte (`is_unique`), no una rareza. Estrella oro en la miniatura.
+
+## Rareza de cajas de loot (solo `kind = box`)
+
+| Rareza | Token | Halo |
+|---|---|---|
+| Bronce | `--loot-bronze` `#CD7F32` | cobre |
+| Plata | `--loot-silver` `#C0C8D4` | plata fría |
+| Oro | `--loot-gold` `#FBBF24` | oro |
+| Platino | `--loot-platinum` `#E5EEF7` | blanco hielo |
+| Legendario | `--loot-legendary` `#F97316` | naranja + oro |
+| Celestial | `--loot-celestial` `#E879F9` | dual magenta-naranja |
+
+La miniatura de la caja lleva halo de esa rareza. El equipo insertado en la caja hereda `source_loot_rarity` + `source_loot_floor`.
+
 ## Atmósfera de fondo (no es color plano)
 
 El canvas siempre tiene:

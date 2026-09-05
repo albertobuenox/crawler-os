@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/Button";
 import { CinematicOverlay } from "@/components/hud/CinematicOverlay";
 import type { LootBox, Resource } from "@/lib/types";
 import { BRAND } from "@/lib/copy";
+import { InventorySlot } from "@/components/hud/InventorySlot";
+import { LOOT_BOX_RARITY_LABEL, boxLootFloor, boxLootRarity, lootFloorLabel } from "@/lib/loot";
 
 export default function CrawlerLootPage() {
   const supabase = createClient();
@@ -47,12 +49,32 @@ export default function CrawlerLootPage() {
         {boxes.length === 0 ? (
           <p className="text-sm text-[var(--text-3)]">Ninguna caja sellada. {BRAND} acapara.</p>
         ) : (
-          boxes.map((b) => (
-            <div key={b.id} className="well mb-2 flex items-center justify-between p-3">
-              <span>{b.resource.name}</span>
-              <Button variant="energy" size="sm" onClick={() => openBox(b)}>Abrir</Button>
-            </div>
-          ))
+          boxes.map((b) => {
+            const rarity = boxLootRarity(b.resource) ?? b.loot_rarity;
+            const floor = boxLootFloor(b.resource) ?? b.loot_floor;
+            return (
+              <div key={b.id} className="well mb-2 flex items-center gap-3 p-3">
+                <div className="w-16 shrink-0">
+                  <InventorySlot
+                    name={b.resource.name}
+                    rarity={b.resource.rarity}
+                    iconUrl={b.resource.icon_url}
+                    lootRarity={rarity}
+                    sourceLabel={lootFloorLabel(floor)}
+                    showTooltip
+                  />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-[var(--text-1)]">{b.resource.name}</p>
+                  <p className="text-xs text-[var(--text-3)]">
+                    {rarity ? `${LOOT_BOX_RARITY_LABEL[rarity]} · ` : ""}
+                    {lootFloorLabel(floor)}
+                  </p>
+                </div>
+                <Button variant="energy" size="sm" onClick={() => openBox(b)}>Abrir</Button>
+              </div>
+            );
+          })
         )}
       </GlassPanel>
 
@@ -63,6 +85,7 @@ export default function CrawlerLootPage() {
         body={`${BRAND} ha decidido que te mereces un premio.`}
         itemName={opening?.resource.name}
         rarity={opening?.resource.rarity}
+        lootRarity={opening ? boxLootRarity(opening.resource) ?? opening.loot_rarity : null}
         onClose={() => { setOpening(null); load(); }}
       />
     </main>

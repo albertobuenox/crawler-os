@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ArrowLeftRight, GripHorizontal, Locate, Minus, Plus, Scaling, Sparkles, Sword, Trash2, Wand, Wrench, X, Zap, ZoomIn, ZoomOut } from "lucide-react";
+import { ArrowLeftRight, GripHorizontal, Locate, Minus, Plus, Scaling, Sparkles, Star, Sword, Trash2, Wand, Wrench, X, Zap, ZoomIn, ZoomOut } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import {
   clampHotbarScale,
@@ -26,6 +26,7 @@ import {
 import type { ItemInstance, Resource, Skill } from "@/lib/types";
 import { SKILL_KIND_LABEL, SKILL_TYPE_LABEL } from "@/lib/copy";
 import { resourceBlurb } from "@/lib/resources";
+import { itemIsUnique } from "@/lib/loot";
 import { skillArtSlug } from "@/lib/skill-art";
 import { isSkillChecked } from "@/lib/skills";
 import { SkillHoverTip } from "@/components/hud/SkillHoverTip";
@@ -563,12 +564,17 @@ export function SceneHotbar({
                           onClick={() => assign(assignIndex, { kind: "item", id: item.id })}
                           className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12px] text-[var(--text-1)] hover:bg-[rgba(255,45,106,0.14)]"
                         >
-                          {item.resource.icon_url ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={item.resource.icon_url} alt="" className="h-5 w-5 object-contain" />
-                          ) : (
-                            <Sparkles size={14} className="shrink-0 text-[var(--hotbar)]" />
-                          )}
+                          <span className="relative shrink-0">
+                            {item.resource.icon_url ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={item.resource.icon_url} alt="" className="h-5 w-5 object-contain" />
+                            ) : (
+                              <Sparkles size={14} className="text-[var(--hotbar)]" />
+                            )}
+                            {itemIsUnique(item.resource) ? (
+                              <Star size={8} className="absolute -right-1 -top-1 text-[var(--gold-400)]" fill="currentColor" />
+                            ) : null}
+                          </span>
                           <span className="min-w-0 truncate">{item.resource.name}</span>
                           <span className="ml-auto font-stat text-[11px] text-[var(--hotbar)]">
                             {formatHotbarQty(item.quantity)}
@@ -901,6 +907,11 @@ function HotbarSlot({
               +
             </span>
           )}
+          {filled && item && itemIsUnique(item.resource) ? (
+            <span className="absolute right-px top-px text-[var(--gold-400)] drop-shadow-[0_0_6px_rgba(251,191,36,0.8)]">
+              <Star size={9} fill="currentColor" />
+            </span>
+          ) : null}
           {qty && (
             <span
               className="absolute bottom-px left-px font-stat leading-none text-[var(--hotbar)] drop-shadow-[0_0_4px_rgba(255,45,106,0.9)]"

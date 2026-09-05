@@ -1,4 +1,5 @@
-import { KIND_LABEL, SCENE_LABEL } from "@/lib/copy";
+import { GIVE_TO_CRAWLER, KIND_LABEL, SCENE_LABEL } from "@/lib/copy";
+import { catalogHref } from "@/lib/objects";
 import type { ResourceKind, SessionPhase } from "@/lib/types";
 
 export type CommandGroup = "go" | "create" | "session" | "crawlers" | "resources" | "system";
@@ -55,7 +56,19 @@ export type CommandRun =
   | "sign-out"
   | "copy-code";
 
-export type CreateKind = "crawler" | "resource" | "skill" | "notification" | "note" | "checklist" | "mob";
+export type CreateKind =
+  | "crawler"
+  | "resource"
+  | "equipment"
+  | "consumable"
+  | "misc"
+  | "box"
+  | "npc"
+  | "skill"
+  | "notification"
+  | "note"
+  | "checklist"
+  | "mob";
 
 export type PaletteCommand = {
   id: string;
@@ -82,7 +95,10 @@ export function buildPaletteCommands(ctx: PaletteContext): PaletteCommand[] {
     nav("go-session", "Sesión", "/dm", "home", ["dashboard", "control", "inicio", "piso"]),
     nav("go-crawlers", "Crawlers", "/dm/crawlers", "users", ["jugadores", "personajes", "party"]),
     nav("go-skills", "Skills", "/dm/skills", "sparkles", ["habilidades", "catálogo", "d100"]),
-    nav("go-resources", "Recursos", "/dm/resources", "database", ["loot", "items", "objetos", "catálogo"]),
+    nav("go-objects", "Objetos", "/dm/objects", "box", ["loot", "items", "objetos", "equipo", "consumible", "caja"]),
+    nav("go-npcs", "PNJs", "/dm/npcs", "user", ["npc", "pnj", "personaje"]),
+    nav("go-mobs", "Mobs", "/dm/mobs", "skull", ["enemigo", "monstruo", "bestiario"]),
+    nav("go-resources", "Recursos", "/dm/resources", "database", ["mapa", "logro", "misión", "buff", "catálogo"]),
     nav("go-world", "Mundo", "/dm/world", "map", ["piso", "combate", "descanso", "fn", "minimapa", "mapa"]),
     nav("go-table", SCENE_LABEL, "/dm/table", "layout-grid", ["mesa", "tv", "pantalla", "proyección", "lienzo", "mapa", "escena"]),
     nav("go-master-notes", "Notas del Master", "/dm/notes", "sticky-note", ["notas", "recordatorios", "checklist", "mobs", "notificaciones", "bestiario"]),
@@ -118,6 +134,56 @@ export function buildPaletteCommands(ctx: PaletteContext): PaletteCommand[] {
       icon: "plus",
       href: "/dm/resources?new=1",
       createKind: "resource",
+    },
+    {
+      id: "create-equipment",
+      group: "create",
+      label: "Nuevo equipo",
+      hint: "Abrir formulario",
+      keywords: ["crear", "equipo", "arma", "armadura", "slot", "único"],
+      icon: "plus",
+      href: "/dm/objects?new=equipment",
+      createKind: "equipment",
+    },
+    {
+      id: "create-consumable",
+      group: "create",
+      label: "Nuevo consumible",
+      hint: "Abrir formulario",
+      keywords: ["crear", "poción", "consumible", "usar"],
+      icon: "plus",
+      href: "/dm/objects?new=consumable",
+      createKind: "consumable",
+    },
+    {
+      id: "create-misc",
+      group: "create",
+      label: "Nuevo misceláneo",
+      hint: "Abrir formulario",
+      keywords: ["crear", "objeto", "llave", "quest"],
+      icon: "plus",
+      href: "/dm/objects?new=misc",
+      createKind: "misc",
+    },
+    {
+      id: "create-box",
+      group: "create",
+      label: "Nueva caja de loot",
+      hint: "Objetos",
+      keywords: ["crear", "caja", "botín", "loot"],
+      icon: "box",
+      href: "/dm/objects?new=box",
+      createKind: "box",
+    },
+    {
+      id: "create-npc",
+      group: "create",
+      label: "Nuevo PNJ",
+      hint: "Abrir formulario",
+      keywords: ["crear", "npc", "pnj"],
+      icon: "user",
+      href: "/dm/npcs?new=1",
+      createKind: "npc",
     },
     {
       id: "create-skill",
@@ -166,7 +232,7 @@ export function buildPaletteCommands(ctx: PaletteContext): PaletteCommand[] {
       hint: "Notas del Master",
       keywords: ["crear", "enemigo", "monstruo", "bestiario"],
       icon: "skull",
-      href: "/dm/notes?tab=mobs&new=1",
+      href: "/dm/mobs?new=1",
       createKind: "mob",
     },
     {
@@ -194,7 +260,7 @@ export function buildPaletteCommands(ctx: PaletteContext): PaletteCommand[] {
       hint: "Mundo",
       keywords: ["caja", "botín", "box"],
       icon: "box",
-      href: "/dm/world#loot",
+      href: "/dm/objects?new=box",
     },
     {
       id: "go-minimap",
@@ -302,11 +368,11 @@ export function buildPaletteCommands(ctx: PaletteContext): PaletteCommand[] {
       {
         id: `crawler-grant-${crawler.id}`,
         group: "crawlers",
-        label: `Otorgar a ${crawler.name}`,
+        label: `${GIVE_TO_CRAWLER} — ${crawler.name}`,
         hint: "Loot",
-        keywords: [nameKey, "grant", "loot", "dar", "recompensa", "item"],
+        keywords: [nameKey, "grant", "loot", "dar", "recompensa", "item", "otorgar", "mazmorrero"],
         icon: "gift",
-        href: `/dm/crawlers/${crawler.id}/grant`,
+        href: `/dm/crawlers?give=${crawler.id}`,
       },
       {
         id: `crawler-skills-${crawler.id}`,
@@ -328,7 +394,7 @@ export function buildPaletteCommands(ctx: PaletteContext): PaletteCommand[] {
       hint: KIND_LABEL[resource.kind],
       keywords: [resource.name.toLowerCase(), resource.kind, KIND_LABEL[resource.kind].toLowerCase(), "editar"],
       icon: "database",
-      href: `/dm/resources?edit=${resource.id}`,
+      href: catalogHref(resource),
     });
   }
 

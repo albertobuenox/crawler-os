@@ -211,11 +211,12 @@ export const COMBAT_PHASES = [
 
 export const GEAR_SLOTS = [
   "head",
-  "torso",
-  "arms",
-  "hands",
-  "legs",
-  "feet",
+  "cloak",
+  "chest",
+  "gloves",
+  "boots",
+  "hand_right",
+  "hand_left",
   "accessory",
 ] as const;
 

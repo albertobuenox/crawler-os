@@ -7,11 +7,12 @@ import { GlassPanel } from "@/components/ui/GlassPanel";
 import { Button } from "@/components/ui/Button";
 import { Input, Select } from "@/components/ui/Input";
 import { ResourceBar, HealthBoxes } from "@/components/hud/HealthBoxes";
+import { GiveToCrawlerModal } from "@/components/dm/GiveToCrawlerModal";
 import type { Crawler, GameSession, StatKey } from "@/lib/types";
 import { STAT_LABELS } from "@/lib/types";
 import { castSession } from "@/lib/utils";
 import { assignStartingStat, formatSigned, formatStat, STARTING_STAT_VALUES, STAT_KEYS, statModifier } from "@/lib/rules";
-import { crawlerClassLabel, STATUS_LABEL } from "@/lib/copy";
+import { crawlerClassLabel, GIVE_TO_CRAWLER, STATUS_LABEL } from "@/lib/copy";
 import { crawlerAvatarUrl, crawlerInitials } from "@/lib/crawler-art";
 import { Copy, Gift, Trash2, Pencil, UserPlus, X } from "lucide-react";
 import { useCreateRequest } from "@/hooks/useDmDeepLink";
@@ -24,6 +25,7 @@ function CrawlerContextMenu({
   onDelete,
   onDuplicate,
   onAssignUser,
+  onGive,
 }: {
   crawler: Crawler;
   position: { x: number; y: number };
@@ -31,6 +33,7 @@ function CrawlerContextMenu({
   onDelete: (id: string) => void;
   onDuplicate: (c: Crawler) => void;
   onAssignUser: (c: Crawler) => void;
+  onGive: (c: Crawler) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -51,6 +54,7 @@ function CrawlerContextMenu({
   };
 
   const items = [
+    { icon: <Gift size={14} className="text-[var(--orange-400)]" />, label: GIVE_TO_CRAWLER, action: () => { onGive(crawler); onClose(); } },
     { icon: <Pencil size={14} />, label: "Editar", href: `/dm/crawlers/${crawler.id}` },
     { icon: <Copy size={14} />, label: "Copiar", action: () => { onDuplicate(crawler); onClose(); } },
     { icon: <UserPlus size={14} />, label: "Asignar usuario", action: () => { onAssignUser(crawler); onClose(); } },
@@ -194,8 +198,20 @@ export default function DMCrawlersPage() {
 
   const [contextMenu, setContextMenu] = useState<{ crawler: Crawler; x: number; y: number } | null>(null);
   const [assignTarget, setAssignTarget] = useState<Crawler | null>(null);
+  const [giveTarget, setGiveTarget] = useState<Crawler | null>(null);
   const openCreate = useCallback(() => setShowForm(true), []);
   useCreateRequest("crawler", openCreate);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const giveId = params.get("give");
+    if (!giveId || crawlers.length === 0) return;
+    const found = crawlers.find((item) => item.id === giveId);
+    if (found) setGiveTarget(found);
+    params.delete("give");
+    const query = params.toString();
+    window.history.replaceState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}`);
+  }, [crawlers]);
 
   function setStartingStat(key: StatKey, next: number) {
     setForm((current) => assignStartingStat(current, key, next));
@@ -345,14 +361,15 @@ export default function DMCrawlersPage() {
                 <ResourceBar label="Maná" current={c.mana_current} max={c.mana_max} />
               </div>
               <div className="mt-4 flex justify-end pointer-events-auto" onClick={(e) => e.stopPropagation()}>
-                <Link
-                  href={`/dm/crawlers/${c.id}/grant`}
-                  title="Otorgar"
-                  aria-label="Otorgar"
+                <button
+                  type="button"
+                  title={GIVE_TO_CRAWLER}
+                  aria-label={GIVE_TO_CRAWLER}
+                  onClick={() => setGiveTarget(c)}
                   className="flex h-9 w-9 items-center justify-center rounded-full btn-energy transition-[filter,box-shadow] duration-300 ease-out hover:brightness-125 hover:saturate-125 hover:shadow-[0_0_22px_rgba(251,146,60,0.7)]"
                 >
                   <Gift size={16} />
-                </Link>
+                </button>
               </div>
             </GlassPanel>
           </div>
@@ -367,8 +384,17 @@ export default function DMCrawlersPage() {
           onDelete={deleteCrawler}
           onDuplicate={duplicateCrawler}
           onAssignUser={(c) => setAssignTarget(c)}
+          onGive={(c) => setGiveTarget(c)}
         />
       )}
+
+      <GiveToCrawlerModal
+        open={!!giveTarget}
+        sessionId={session?.id ?? null}
+        crawler={giveTarget}
+        crawlers={crawlers}
+        onClose={() => setGiveTarget(null)}
+      />
 
       {assignTarget && (
         <AssignUserModal
